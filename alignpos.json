@@ -1,0 +1,23 @@
+{
+	"ws_erp_host" : "http://104.236.110.12/",
+	"ws_erp_user" : "administrator",
+	"ws_erp_passwd" : "VAlignIt@2021ad",
+	
+	"db_pos_host" : "localhost",
+	"db_pos_port" : 3306,
+	"db_pos_name" : "alignpos",
+	"db_pos_user" : "alignpos",
+	"db_pos_passwd" : "alignpos123",
+	
+    "ui_theme": "DefaultNoMoreNagging",
+    "ui_pad_button_color": "SteelBlue3",
+    "ui_function_button_color": "SteelBlue",
+    "ui_readonly_text_color": "grey32",
+    "ui_readonly_background_color": "grey89",
+
+	"ui_f1_tooltip": "Click here to display the help document\nexplaining all the functions, actions\nand navigations",
+	
+	"terminal_id" : "01",
+	"walk_in_customer" : "CUST-00000",
+	"carry_bag_item": "ITEM-1001"
+}
