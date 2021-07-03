@@ -10,8 +10,9 @@
 	"db_pos_passwd" : "alignpos123",
 	
     "ui_theme": "DefaultNoMoreNagging",
-    "ui_pad_button_color": "SteelBlue3",
-    "ui_function_button_color": "SteelBlue",
+    "ui_pad_button_color": "light slate gray",
+    "ui_nav_button_color": "NavyBlue",
+    "ui_function_button_color": "RoyalBlue",
     "ui_readonly_text_color": "grey32",
     "ui_readonly_background_color": "grey89",
 
@@ -19,5 +20,5 @@
 	
 	"terminal_id" : "01",
 	"walk_in_customer" : "CUST-00000",
-	"carry_bag_item": "ITEM-1001"
+	"carry_bag_item": "ITEM-9001"
 }
