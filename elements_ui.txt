@@ -1,0 +1,310 @@
+	def __init__(self, popup):
+		#initialize elements
+		self.__mobile_number = ""
+		self.__customer_name = ""
+		self.__customer_address = ""
+		self.__net_amount = float(0.00)
+		self.__discount_amount_hd = float(0.00)
+		self.__roundoff_adjustment = float(0.00)
+		self.__invoice_amount = float(0.00)
+		self.__redeem_adjustment_hd = float(0.00)
+		self.__exchange_adjustment_hd = float(0.00)
+		self.__cash_amount = float(0.00)
+		self.__card_amount = float(0.00)
+		self.__card_reference = ""
+		self.__cash_return = float(0.00)
+		self.__exchange_voucher = ""
+		self.__exchange_adjustment = float(0.00)
+		self.__discount_amount = float(0.00)
+		self.__discount_pin = ""
+		self.__available_points = int(0)
+		self.__available_adjustment = float(0.00)
+		self.__redeem_points = int(0)
+		self.__redeem_adjustment = float(0.00)
+		self.__redeem_pin = ""
+		self.__mobile_number_header = ""
+		self.__customer_name_header = ""
+		self.__balance_amount = float(0.00)
+
+		#set initial elements
+		self.__popup.Element("_MOBILE_NUMBER_").update(value = self.__mobile_number)
+		self.__popup.Element("_CUSTOMER_NAME_").update(value = self.__customer_name)
+		self.__popup.Element("_CUSTOMER_ADDRESS_").update(value = self.__customer_address)
+		self.__popup.Element("_NET_AMOUNT_").update(value = "{:.2f}".format(self.__net_amount))
+		self.__popup.Element("_DISCOUNT_AMOUNT_HD_").update(value = "{:.2f}".format(self.__discount_amount_hd))
+		self.__popup.Element("_ROUNDOFF_ADJUSTMENT_").update(value = "{:.2f}".format(self.__roundoff_adjustment))
+		self.__popup.Element("_INVOICE_AMOUNT_").update(value = "{:.2f}".format(self.__invoice_amount))
+		self.__popup.Element("_REDEEM_ADJUSTMENT_HD_").update(value = "{:.2f}".format(self.__redeem_adjustment_hd))
+		self.__popup.Element("_EXCHANGE_ADJUSTMENT_HD_").update(value = "{:.2f}".format(self.__exchange_adjustment_hd))
+		self.__popup.Element("_CASH_AMOUNT_").update(value = "{:.2f}".format(self.__cash_amount))
+		self.__popup.Element("_CARD_AMOUNT_").update(value = "{:.2f}".format(self.__card_amount))
+		self.__popup.Element("_CARD_REFERENCE_").update(value = self.__card_reference)
+		self.__popup.Element("_CASH_RETURN_").update(value = "{:.2f}".format(self.__cash_return))
+		self.__popup.Element("_EXCHANGE_VOUCHER_").update(value = self.__exchange_voucher)
+		self.__popup.Element("_EXCHANGE_ADJUSTMENT_").update(value = "{:.2f}".format(self.__exchange_adjustment))
+		self.__popup.Element("_DISCOUNT_AMOUNT_").update(value = "{:.2f}".format(self.__discount_amount))
+		self.__popup.Element("_DISCOUNT_PIN_").update(value = self.__discount_pin)
+		self.__popup.Element("_AVAILABLE_POINTS_").update(value = self.__available_points)
+		self.__popup.Element("_AVAILABLE_ADJUSTMENT_").update(value = "{:.2f}".format(self.__available_adjustment))
+		self.__popup.Element("_REDEEM_POINTS_").update(value = self.__redeem_points)
+		self.__popup.Element("_REDEEM_ADJUSTMENT_").update(value = "{:.2f}".format(self.__redeem_adjustment))
+		self.__popup.Element("_REDEEM_PIN_").update(value = self.__redeem_pin)
+		self.__popup.Element("_MOBILE_NUMBER_HEADER_").update(value = self.__mobile_number_header)
+		self.__popup.Element("_CUSTOMER_NAME_HEADER_").update(value = self.__customer_name_header)
+		self.__popup.Element("_BALANCE_AMOUNT_").update(value = "{:.2f}".format(self.__balance_amount))
+
+		#avoid focus
+		self.__popup["_MOBILE_NUMBER_"].Widget.config(takefocus=0) 
+		self.__popup["_CUSTOMER_NAME_"].Widget.config(takefocus=0) 
+		self.__popup["_CUSTOMER_ADDRESS_"].Widget.config(takefocus=0) 
+		self.__popup["_NET_AMOUNT_"].Widget.config(takefocus=0) 
+		self.__popup["_DISCOUNT_AMOUNT_HD_"].Widget.config(takefocus=0) 
+		self.__popup["_ROUNDOFF_ADJUSTMENT_"].Widget.config(takefocus=0) 
+		self.__popup["_INVOICE_AMOUNT_"].Widget.config(takefocus=0) 
+		self.__popup["_REDEEM_ADJUSTMENT_HD_"].Widget.config(takefocus=0) 
+		self.__popup["_EXCHANGE_ADJUSTMENT_HD_"].Widget.config(takefocus=0) 
+		self.__popup["_CASH_AMOUNT_"].Widget.config(takefocus=0) 
+		self.__popup["_CARD_AMOUNT_"].Widget.config(takefocus=0) 
+		self.__popup["_CARD_REFERENCE_"].Widget.config(takefocus=0) 
+		self.__popup["_CASH_RETURN_"].Widget.config(takefocus=0) 
+		self.__popup["_EXCHANGE_VOUCHER_"].Widget.config(takefocus=0) 
+		self.__popup["_EXCHANGE_ADJUSTMENT_"].Widget.config(takefocus=0) 
+		self.__popup["_DISCOUNT_AMOUNT_"].Widget.config(takefocus=0) 
+		self.__popup["_DISCOUNT_PIN_"].Widget.config(takefocus=0) 
+		self.__popup["_AVAILABLE_POINTS_"].Widget.config(takefocus=0) 
+		self.__popup["_AVAILABLE_ADJUSTMENT_"].Widget.config(takefocus=0) 
+		self.__popup["_REDEEM_POINTS_"].Widget.config(takefocus=0) 
+		self.__popup["_REDEEM_ADJUSTMENT_"].Widget.config(takefocus=0) 
+		self.__popup["_REDEEM_PIN_"].Widget.config(takefocus=0) 
+		self.__popup["_MOBILE_NUMBER_HEADER_"].Widget.config(takefocus=0) 
+		self.__popup["_CUSTOMER_NAME_HEADER_"].Widget.config(takefocus=0) 
+		self.__popup["_BALANCE_AMOUNT_"].Widget.config(takefocus=0) 
+
+	#setters
+	def set_mobile_number(self, mobile_number):
+		self.__mobile_number = mobile_number
+		self.__popup.Element("_MOBILE_NUMBER_").update(value = self.__mobile_number)
+
+	def set_customer_name(self, customer_name):
+		self.__customer_name = customer_name
+		self.__popup.Element("_CUSTOMER_NAME_").update(value = self.__customer_name)
+
+	def set_customer_address(self, customer_address):
+		self.__customer_address = customer_address
+		self.__popup.Element("_CUSTOMER_ADDRESS_").update(value = self.__customer_address)
+
+	def set_net_amount(self, net_amount):
+		self.__net_amount = net_amount
+		self.__popup.Element("_NET_AMOUNT_").update(value = "{:.2f}".format(self.__net_amount))
+
+	def set_discount_amount_hd(self, discount_amount_hd):
+		self.__discount_amount_hd = discount_amount_hd
+		self.__popup.Element("_DISCOUNT_AMOUNT_HD_").update(value = "{:.2f}".format(self.__discount_amount_hd))
+
+	def set_roundoff_adjustment(self, roundoff_adjustment):
+		self.__roundoff_adjustment = roundoff_adjustment
+		self.__popup.Element("_ROUNDOFF_ADJUSTMENT_").update(value = "{:.2f}".format(self.__roundoff_adjustment))
+
+	def set_invoice_amount(self, invoice_amount):
+		self.__invoice_amount = invoice_amount
+		self.__popup.Element("_INVOICE_AMOUNT_").update(value = "{:.2f}".format(self.__invoice_amount))
+
+	def set_redeem_adjustment_hd(self, redeem_adjustment_hd):
+		self.__redeem_adjustment_hd = redeem_adjustment_hd
+		self.__popup.Element("_REDEEM_ADJUSTMENT_HD_").update(value = "{:.2f}".format(self.__redeem_adjustment_hd))
+
+	def set_exchange_adjustment_hd(self, exchange_adjustment_hd):
+		self.__exchange_adjustment_hd = exchange_adjustment_hd
+		self.__popup.Element("_EXCHANGE_ADJUSTMENT_HD_").update(value = "{:.2f}".format(self.__exchange_adjustment_hd))
+
+	def set_cash_amount(self, cash_amount):
+		self.__cash_amount = cash_amount
+		self.__popup.Element("_CASH_AMOUNT_").update(value = "{:.2f}".format(self.__cash_amount))
+
+	def set_card_amount(self, card_amount):
+		self.__card_amount = card_amount
+		self.__popup.Element("_CARD_AMOUNT_").update(value = "{:.2f}".format(self.__card_amount))
+
+	def set_card_reference(self, card_reference):
+		self.__card_reference = card_reference
+		self.__popup.Element("_CARD_REFERENCE_").update(value = self.__card_reference)
+
+	def set_cash_return(self, cash_return):
+		self.__cash_return = cash_return
+		self.__popup.Element("_CASH_RETURN_").update(value = "{:.2f}".format(self.__cash_return))
+
+	def set_exchange_voucher(self, exchange_voucher):
+		self.__exchange_voucher = exchange_voucher
+		self.__popup.Element("_EXCHANGE_VOUCHER_").update(value = self.__exchange_voucher)
+
+	def set_exchange_adjustment(self, exchange_adjustment):
+		self.__exchange_adjustment = exchange_adjustment
+		self.__popup.Element("_EXCHANGE_ADJUSTMENT_").update(value = "{:.2f}".format(self.__exchange_adjustment))
+
+	def set_discount_amount(self, discount_amount):
+		self.__discount_amount = discount_amount
+		self.__popup.Element("_DISCOUNT_AMOUNT_").update(value = "{:.2f}".format(self.__discount_amount))
+
+	def set_discount_pin(self, discount_pin):
+		self.__discount_pin = discount_pin
+		self.__popup.Element("_DISCOUNT_PIN_").update(value = self.__discount_pin)
+
+	def set_available_points(self, available_points):
+		self.__available_points = available_points
+		self.__popup.Element("_AVAILABLE_POINTS_").update(value = self.__available_points)
+
+	def set_available_adjustment(self, available_adjustment):
+		self.__available_adjustment = available_adjustment
+		self.__popup.Element("_AVAILABLE_ADJUSTMENT_").update(value = "{:.2f}".format(self.__available_adjustment))
+
+	def set_redeem_points(self, redeem_points):
+		self.__redeem_points = redeem_points
+		self.__popup.Element("_REDEEM_POINTS_").update(value = self.__redeem_points)
+
+	def set_redeem_adjustment(self, redeem_adjustment):
+		self.__redeem_adjustment = redeem_adjustment
+		self.__popup.Element("_REDEEM_ADJUSTMENT_").update(value = "{:.2f}".format(self.__redeem_adjustment))
+
+	def set_redeem_pin(self, redeem_pin):
+		self.__redeem_pin = redeem_pin
+		self.__popup.Element("_REDEEM_PIN_").update(value = self.__redeem_pin)
+
+	def set_mobile_number_header(self, mobile_number_header):
+		self.__mobile_number_header = mobile_number_header
+		self.__popup.Element("_MOBILE_NUMBER_HEADER_").update(value = self.__mobile_number_header)
+
+	def set_customer_name_header(self, customer_name_header):
+		self.__customer_name_header = customer_name_header
+		self.__popup.Element("_CUSTOMER_NAME_HEADER_").update(value = self.__customer_name_header)
+
+	def set_balance_amount(self, balance_amount):
+		self.__balance_amount = balance_amount
+		self.__popup.Element("_BALANCE_AMOUNT_").update(value = "{:.2f}".format(self.__balance_amount))
+
+	#getters
+	def get_mobile_number(self):
+		self.__mobile_number = self.__popup.Element("_MOBILE_NUMBER_").get()
+		return self.__mobile_number
+
+	def get_customer_name(self):
+		self.__customer_name = self.__popup.Element("_CUSTOMER_NAME_").get()
+		return self.__customer_name
+
+	def get_customer_address(self):
+		self.__customer_address = self.__popup.Element("_CUSTOMER_ADDRESS_").get()
+		return self.__customer_address
+
+	def get_net_amount(self):
+		self.__net_amount = self.__popup.Element("_NET_AMOUNT_").get()
+		return self.__net_amount
+
+	def get_discount_amount_hd(self):
+		self.__discount_amount_hd = self.__popup.Element("_DISCOUNT_AMOUNT_HD_").get()
+		return self.__discount_amount_hd
+
+	def get_roundoff_adjustment(self):
+		self.__roundoff_adjustment = self.__popup.Element("_ROUNDOFF_ADJUSTMENT_").get()
+		return self.__roundoff_adjustment
+
+	def get_invoice_amount(self):
+		self.__invoice_amount = self.__popup.Element("_INVOICE_AMOUNT_").get()
+		return self.__invoice_amount
+
+	def get_redeem_adjustment_hd(self):
+		self.__redeem_adjustment_hd = self.__popup.Element("_REDEEM_ADJUSTMENT_HD_").get()
+		return self.__redeem_adjustment_hd
+
+	def get_exchange_adjustment_hd(self):
+		self.__exchange_adjustment_hd = self.__popup.Element("_EXCHANGE_ADJUSTMENT_HD_").get()
+		return self.__exchange_adjustment_hd
+
+	def get_cash_amount(self):
+		self.__cash_amount = self.__popup.Element("_CASH_AMOUNT_").get()
+		return self.__cash_amount
+
+	def get_card_amount(self):
+		self.__card_amount = self.__popup.Element("_CARD_AMOUNT_").get()
+		return self.__card_amount
+
+	def get_card_reference(self):
+		self.__card_reference = self.__popup.Element("_CARD_REFERENCE_").get()
+		return self.__card_reference
+
+	def get_cash_return(self):
+		self.__cash_return = self.__popup.Element("_CASH_RETURN_").get()
+		return self.__cash_return
+
+	def get_exchange_voucher(self):
+		self.__exchange_voucher = self.__popup.Element("_EXCHANGE_VOUCHER_").get()
+		return self.__exchange_voucher
+
+	def get_exchange_adjustment(self):
+		self.__exchange_adjustment = self.__popup.Element("_EXCHANGE_ADJUSTMENT_").get()
+		return self.__exchange_adjustment
+
+	def get_discount_amount(self):
+		self.__discount_amount = self.__popup.Element("_DISCOUNT_AMOUNT_").get()
+		return self.__discount_amount
+
+	def get_discount_pin(self):
+		self.__discount_pin = self.__popup.Element("_DISCOUNT_PIN_").get()
+		return self.__discount_pin
+
+	def get_available_points(self):
+		self.__available_points = self.__popup.Element("_AVAILABLE_POINTS_").get()
+		return self.__available_points
+
+	def get_available_adjustment(self):
+		self.__available_adjustment = self.__popup.Element("_AVAILABLE_ADJUSTMENT_").get()
+		return self.__available_adjustment
+
+	def get_redeem_points(self):
+		self.__redeem_points = self.__popup.Element("_REDEEM_POINTS_").get()
+		return self.__redeem_points
+
+	def get_redeem_adjustment(self):
+		self.__redeem_adjustment = self.__popup.Element("_REDEEM_ADJUSTMENT_").get()
+		return self.__redeem_adjustment
+
+	def get_redeem_pin(self):
+		self.__redeem_pin = self.__popup.Element("_REDEEM_PIN_").get()
+		return self.__redeem_pin
+
+	def get_mobile_number_header(self):
+		self.__mobile_number_header = self.__popup.Element("_MOBILE_NUMBER_HEADER_").get()
+		return self.__mobile_number_header
+
+	def get_customer_name_header(self):
+		self.__customer_name_header = self.__popup.Element("_CUSTOMER_NAME_HEADER_").get()
+		return self.__customer_name_header
+
+	def get_balance_amount(self):
+		self.__balance_amount = self.__popup.Element("_BALANCE_AMOUNT_").get()
+		return self.__balance_amount
+
+	#property
+	mobile_number = property(get_mobile_number, set_mobile_number)
+	customer_name = property(get_customer_name, set_customer_name)
+	customer_address = property(get_customer_address, set_customer_address)
+	net_amount = property(get_net_amount, set_net_amount)
+	discount_amount_hd = property(get_discount_amount_hd, set_discount_amount_hd)
+	roundoff_adjustment = property(get_roundoff_adjustment, set_roundoff_adjustment)
+	invoice_amount = property(get_invoice_amount, set_invoice_amount)
+	redeem_adjustment_hd = property(get_redeem_adjustment_hd, set_redeem_adjustment_hd)
+	exchange_adjustment_hd = property(get_exchange_adjustment_hd, set_exchange_adjustment_hd)
+	cash_amount = property(get_cash_amount, set_cash_amount)
+	card_amount = property(get_card_amount, set_card_amount)
+	card_reference = property(get_card_reference, set_card_reference)
+	cash_return = property(get_cash_return, set_cash_return)
+	exchange_voucher = property(get_exchange_voucher, set_exchange_voucher)
+	exchange_adjustment = property(get_exchange_adjustment, set_exchange_adjustment)
+	discount_amount = property(get_discount_amount, set_discount_amount)
+	discount_pin = property(get_discount_pin, set_discount_pin)
+	available_points = property(get_available_points, set_available_points)
+	available_adjustment = property(get_available_adjustment, set_available_adjustment)
+	redeem_points = property(get_redeem_points, set_redeem_points)
+	redeem_adjustment = property(get_redeem_adjustment, set_redeem_adjustment)
+	redeem_pin = property(get_redeem_pin, set_redeem_pin)
+	mobile_number_header = property(get_mobile_number_header, set_mobile_number_header)
+	customer_name_header = property(get_customer_name_header, set_customer_name_header)
+	balance_amount = property(get_balance_amount, set_balance_amount)
