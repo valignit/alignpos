@@ -505,10 +505,12 @@ def open_payment_popup():
            
         if event in ('\t', 'TAB') and prev_event == '_CASH_AMOUNT_':
             ui_payment_popup.cash_amount = ui_payment_popup.cash_amount
+            ui_payment_popup.cash_return = 0
             set_payment_popup_elements(ui_payment_popup)
             
         if event in ('\t', 'TAB') and prev_event == '_CARD_AMOUNT_':
-            ui_payment_popup.card_amount = ui_payment_popup.card_amount        
+            ui_payment_popup.card_amount = ui_payment_popup.card_amount 
+            ui_payment_popup.cash_return = 0            
             set_payment_popup_elements(ui_payment_popup)
             
         if event in ('\t', 'TAB') and prev_event == '_DISCOUNT_AMOUNT_':
@@ -794,6 +796,10 @@ def main():
         if event == 'Escape:27':
             ui_window.close()
             break
+
+        if event == 'ENTER':        
+            kb.press(Key.enter)
+            kb.release(Key.enter)
             
         if event == 'ESC':
             kb.press(Key.esc)
@@ -857,6 +863,7 @@ def main():
                 ui_detail_pane.focus_items_list_row(idx)             
             else:
                 save_invoice()
+                sg.popup_auto_close('Saving Invoice', button_type=5)                
                 ui_search_pane.focus_barcode()
 
         if event in ('F3:114', 'F3'):
