@@ -21,7 +21,7 @@ class MainWindow:
 
     action_button:  dict = {
                         'size':(13, 2), 
-                        'font':('Calibri 11 bold'), 
+                        'font':('Calibri 12 bold'), 
                         'button_color': (config["ui_function_button_color"])
                     }
 
@@ -125,7 +125,7 @@ class MainWindow:
                         size=(38,1), 
                         enable_events = True
                     ),
-                    sg.Button('Quick Item-F12', 
+                    sg.Button('Quick Item-F11', 
                         size=(13, 1), 
                         font='Calibri 11 bold', 
                         key='_QUICK_ITEMS_', 
@@ -950,7 +950,7 @@ class UiChangeQtyPopup:
 
     def set_new_qty(self, new_qty):
         self.__new_qty = new_qty
-        self.__popup.Element('_NEW_QTY_').update(value = self.__new_qty)
+        self.__popup.Element('_NEW_QTY_').update(value = "{:.2f}".format(float(self.__new_qty)))
         
     def get_new_qty(self):
         self.__new_qty = self.__popup.Element('_NEW_QTY_').get()        
@@ -961,6 +961,7 @@ class UiChangeQtyPopup:
 
     def focus_new_qty(self):
         self.__popup.Element('_NEW_QTY_').SetFocus() 
+        self.__popup.Element('_NEW_QTY_').update(select=True)        
 
     item_name = property(get_item_name, set_item_name)     
     existing_qty = property(get_existing_qty, set_existing_qty) 
@@ -1200,7 +1201,7 @@ class PaymentPopup:
                     size=(5,1),
                     justification = 'right'
                 ),
-                sg.Input(key='_AVAILABLE_ADJUSTMENT_',
+                sg.Input(key='_AVAILABLE_BALANCE_',
                     readonly=True, 
                     disabled_readonly_text_color=config["ui_readonly_text_color"], 
                     disabled_readonly_background_color=config["ui_readonly_background_color"],                     
@@ -1338,7 +1339,7 @@ class UiPaymentPopup:
 		self.__discount_amount = float(0.00)
 		self.__discount_pin = ""
 		self.__available_points = int(0)
-		self.__available_adjustment = float(0.00)
+		self.__available_balance = float(0.00)
 		self.__redeem_points = int(0)
 		self.__redeem_adjustment = float(0.00)
 		self.__redeem_pin = ""
@@ -1367,7 +1368,7 @@ class UiPaymentPopup:
 		self.__popup.Element("_DISCOUNT_AMOUNT_").update(value = "{:.2f}".format(self.__discount_amount))
 		self.__popup.Element("_DISCOUNT_PIN_").update(value = self.__discount_pin)
 		self.__popup.Element("_AVAILABLE_POINTS_").update(value = self.__available_points)
-		self.__popup.Element("_AVAILABLE_ADJUSTMENT_").update(value = "{:.2f}".format(self.__available_adjustment))
+		self.__popup.Element("_AVAILABLE_BALANCE_").update(value = "{:.2f}".format(self.__available_balance))
 		self.__popup.Element("_REDEEM_POINTS_").update(value = self.__redeem_points)
 		self.__popup.Element("_REDEEM_ADJUSTMENT_").update(value = "{:.2f}".format(self.__redeem_adjustment))
 		self.__popup.Element("_REDEEM_PIN_").update(value = self.__redeem_pin)
@@ -1387,7 +1388,7 @@ class UiPaymentPopup:
 		self.__popup["_CASH_RETURN_"].Widget.config(takefocus=0) 
 		self.__popup["_EXCHANGE_ADJUSTMENT_"].Widget.config(takefocus=0) 
 		self.__popup["_AVAILABLE_POINTS_"].Widget.config(takefocus=0) 
-		self.__popup["_AVAILABLE_ADJUSTMENT_"].Widget.config(takefocus=0) 
+		self.__popup["_AVAILABLE_BALANCE_"].Widget.config(takefocus=0) 
 		self.__popup["_REDEEM_ADJUSTMENT_"].Widget.config(takefocus=0) 
 		self.__popup["_MOBILE_NUMBER_HEADER_"].Widget.config(takefocus=0) 
 		self.__popup["_CUSTOMER_NAME_HEADER_"].Widget.config(takefocus=0) 
@@ -1469,9 +1470,9 @@ class UiPaymentPopup:
 		self.__available_points = available_points
 		self.__popup.Element("_AVAILABLE_POINTS_").update(value = self.__available_points)
 
-	def set_available_adjustment(self, available_adjustment):
-		self.__available_adjustment = available_adjustment
-		self.__popup.Element("_AVAILABLE_ADJUSTMENT_").update(value = "{:.2f}".format(float(self.__available_adjustment)))
+	def set_available_balance(self, available_balance):
+		self.__available_balance = available_balance
+		self.__popup.Element("_AVAILABLE_BALANCE_").update(value = "{:.2f}".format(float(self.__available_balance)))
 
 	def set_redeem_points(self, redeem_points):
 		self.__redeem_points = redeem_points
@@ -1574,8 +1575,8 @@ class UiPaymentPopup:
 		self.__available_points = self.__popup.Element("_AVAILABLE_POINTS_").get()
 		return self.__available_points
 
-	def get_available_adjustment(self):
-		self.__available_adjustment = self.__popup.Element("_AVAILABLE_ADJUSTMENT_").get()
+	def get_available_balance(self):
+		self.__available_adjustment = self.__popup.Element("_AVAILABLE_BALANCE_").get()
 		return self.__available_adjustment
 
 	def get_redeem_points(self):
@@ -1633,7 +1634,7 @@ class UiPaymentPopup:
 	discount_amount = property(get_discount_amount, set_discount_amount)
 	discount_pin = property(get_discount_pin, set_discount_pin)
 	available_points = property(get_available_points, set_available_points)
-	available_adjustment = property(get_available_adjustment, set_available_adjustment)
+	available_balance = property(get_available_balance, set_available_balance)
 	redeem_points = property(get_redeem_points, set_redeem_points)
 	redeem_adjustment = property(get_redeem_adjustment, set_redeem_adjustment)
 	redeem_pin = property(get_redeem_pin, set_redeem_pin)

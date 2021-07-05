@@ -74,7 +74,7 @@ def initialize_action_pane(context):
         ui_window.Element('F5').update(text='Delete Invoice\nF5')
     else:
         ui_window.Element('F1').update(text='Item Addon\nF1')
-        ui_window.Element('F2').update(text='Change Quantity\nF2')
+        ui_window.Element('F2').update(text='Change Qty\nF2')
         ui_window.Element('F3').update(text='Change Price\nF3')
         ui_window.Element('F4').update(text='', button_color='gray99', disabled = True)
         ui_window.Element('F5').update(text='Delete Item\nF5')
@@ -412,11 +412,15 @@ def open_change_qty_popup(row_item):
     
     ui_change_qty_popup.item_name = ui_detail_pane.item_name
     ui_change_qty_popup.existing_qty = ui_detail_pane.qty
-    ui_change_qty_popup.new_qty = ''
-    
+    ui_change_qty_popup.new_qty = 0.00
+    ui_change_qty_popup.focus_new_qty()
+
+    prev_event = ''       
     while True:
         event, values = ui_popup.read()
         print('eventc=', event)
+        if event in ('\t', 'TAB') and prev_event == '_NEW_QTY_':
+            ui_change_qty_popup.new_qty = ui_change_qty_popup.new_qty
         if event in ("Exit", '_CHANGE_QTY_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
             break        
         if event == "_CHANGE_QTY_OK_" or event == "F12:123" or event == '\r':
@@ -431,7 +435,8 @@ def open_change_qty_popup(row_item):
                 ui_detail_pane.net_amount = float(ui_detail_pane.selling_amount) + float(ui_detail_pane.tax_amount)
                 ui_detail_pane.update_item_line(row_item)                
             break
-            
+        prev_event = event
+    
     ui_popup.close() 
 
 
@@ -481,6 +486,17 @@ def open_payment_popup():
             ui_payment_popup.discount_amount_hd = ui_payment_popup.discount_amount       
             set_payment_popup_elements(ui_payment_popup)
             
+        if event in ('\t', 'TAB') and prev_event == '_REDEEM_POINTS_':
+            if ui_payment_popup.redeem_points in ('', '0'):
+                continue
+            if int(ui_payment_popup.redeem_points) > int(ui_payment_popup.available_points):
+                ui_payment_popup.redeem_points = 0
+                popup_message('OK', 'Redeem points are more than available points')                
+                continue
+            ui_payment_popup.redeem_adjustment = int(ui_payment_popup.redeem_points) * 0.10
+            ui_payment_popup.redeem_adjustment_hd = ui_payment_popup.redeem_adjustment          
+            set_payment_popup_elements(ui_payment_popup)
+            
         if event in ("Exit", '_PAYMENT_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
             break
             
@@ -510,8 +526,8 @@ def process_mobile_number(ui_payment_popup):
         ui_payment_popup.customer_address = db_customer_row.address
         ui_payment_popup.mobile_number_header = db_customer_row.mobile_number
         ui_payment_popup.customer_name_header = db_customer_row.customer_name
-        ui_payment_popup.loyalty_points = db_customer_row.loyalty_points
-        ui_payment_popup.loyalty_balance = db_customer_row.loyalty_points *  0.10     
+        ui_payment_popup.available_points = db_customer_row.loyalty_points
+        ui_payment_popup.available_balance = db_customer_row.loyalty_points *  0.10     
         ui_header_pane.mobile_number = db_customer_row.mobile_number
         ui_header_pane.customer_number = db_customer_row.name
         ui_header_pane.mobile_number = db_customer_row.mobile_number
@@ -641,21 +657,38 @@ def open_item_name_popup(item_name):
     ui_popup.close() 
 
 ######
-# Popup window for message
-def popup_message_ok_cancel(message):
-    ui_popup = sg.Window('Confirm', 
-                      [[sg.T(message)],
-                      [sg.B(key='Ok1', button_text='Ok - F12'), sg.Exit(key='Cancel', button_text='Cancel - Esc')]],keep_on_top = True, return_keyboard_events = True)
+# Popup windows for message
+def popup_message(type, message):
+    ui_message_layout = [
+        [sg.T(message)],
+        [sg.B(key='_OK_', button_text='Ok - F12'), 
+         sg.B(key='_CANCEL_', button_text='Cancel - Esc', visible=True)]
+    ]
+    ui_popup =  sg.Window('Confirm', 
+                    layout=ui_message_layout, 
+                    keep_on_top = True, 
+                    return_keyboard_events = True, 
+                    modal=True, 
+                    finalize=True
+                )
 
+    ui_popup["_OK_"].Widget.config(takefocus=0) 
+    ui_popup["_CANCEL_"].Widget.config(takefocus=0) 
+
+    if type == 'OK':
+        ui_popup.Element("_CANCEL_").update(visible=False)
+    else:
+        ui_popup.Element("_CANCEL_").update(visible=True)
+    
     while True:
         event, values = ui_popup.read()
         print('message:', event)
-        if event in ('Escape:27', 'Ok', 'Cancel', 'F12:123', 'F12'):
+        if event in ('Escape:27', '_OK_', '_CANCEL_', 'F12:123', 'F12', '\r'):
             break
         if event == sg.WIN_CLOSED:
             return 'Cancel'
     ui_popup.close()
-    if event in ('Escape:27', 'Cancel'):      
+    if event in ('Escape:27', '_CANCEL_'):
         return 'Cancel'
     else:
         return 'Ok'
@@ -713,15 +746,18 @@ def main():
 
     kb = Controller()
 
-    prev_event = ''
-      
+    ui_window['_BARCODE_'].bind('<FocusIn>', '+CLICK+')
+    ui_window['_ITEM_NAME_'].bind('<FocusIn>', '+CLICK+')
+    
+    prev_event = ''      
     while True:
         event, values = ui_window.read()
         print('eventm=', event, 'prev=', prev_event)
+
         if event == sg.WIN_CLOSED:
             ui_window.close()
             break
-            
+
         if event == 'Escape:27':
             ui_window.close()
             break
@@ -758,6 +794,11 @@ def main():
             kb.press(Key.backspace)
             kb.release(Key.backspace)
 
+        if event == '+CLICK+':
+            initialize_action_pane('INVOICE')
+        else:
+            initialize_action_pane('ITEM')        
+                        
         if ui_window.FindElementWithFocus().Key == '_ITEMS_LIST_':
             if len(ui_detail_pane.items_list) > 0:
                 initialize_action_pane('ITEM')
@@ -821,13 +862,13 @@ def main():
                     ui_search_pane.focus_barcode()     
             else:
                 if len(ui_detail_pane.items_list) > 0 and ui_header_pane.invoice_number == '':
-                    confirm_delete = popup_message_ok_cancel('Invoice will be Deleted')
+                    confirm_delete = popup_message('OK_CANCEL', 'Invoice will be Deleted')
                     if confirm_delete == 'Ok':       
                         delete_invoice()
                         clear_invoice()
                 ui_search_pane.focus_barcode()
             
-        if event in ('F12:123', 'F12', '_QUICK_ITEMS_'):
+        if event in ('F11:122', 'F11', '_QUICK_ITEMS_'):
             process_carry_bag()
             ui_search_pane.focus_barcode()
 
