@@ -401,7 +401,7 @@ def open_change_qty_popup(row_item):
     ui_popup = sg.Window("Change Quantity", 
                     change_qty_popup.layout, 
                     location=(300,250), 
-                    size=(350,185), 
+                    size=(530,280), 
                     modal=True, 
                     finalize=True,
                     keep_on_top = True,
@@ -412,32 +412,62 @@ def open_change_qty_popup(row_item):
     
     ui_change_qty_popup.item_name = ui_detail_pane.item_name
     ui_change_qty_popup.existing_qty = ui_detail_pane.qty
-    ui_change_qty_popup.new_qty = 0.00
+    ui_change_qty_popup.new_qty_f = 0.00
     ui_change_qty_popup.focus_new_qty()
 
-    prev_event = ''       
+    prev_event = '' 
+    focus = None
     while True:
         event, values = ui_popup.read()
-        print('eventc=', event)
-        if event in ('\t', 'TAB') and prev_event == '_NEW_QTY_':
-            ui_change_qty_popup.new_qty = ui_change_qty_popup.new_qty
-        if event in ("Exit", '_CHANGE_QTY_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
-            break        
-        if event == "_CHANGE_QTY_OK_" or event == "F12:123" or event == '\r':
-            print('here')
+        if ui_popup.FindElementWithFocus():
+            focus = ui_popup.FindElementWithFocus().Key
+        print('eventc=', event, 'prev=', prev_event, 'focus:', focus)
+        
+        if event == 'ENTER':        
+            kb.press(Key.enter)
+            kb.release(Key.enter)
+            
+        if event == 'TAB':        
+            kb.press(Key.tab)
+            kb.release(Key.tab)
+            
+        if event == 'DEL':
+            kb.press(Key.delete)
+            kb.release(Key.delete)
+            
+        if event == 'BACKSPACE':
+            kb.press(Key.backspace)
+            kb.release(Key.backspace)
+            
+        if event in ('Exit', '_CHANGE_QTY_ESC_', 'Escape:27', sg.WIN_CLOSED):
+            break             
+            
+        if event in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T0'):
+            if focus == '_NEW_QTY_':
+                ui_change_qty_popup.append_char('_NEW_QTY_', event[1])
+          
+        if event == '\t':
+            if focus == '_NEW_QTY_':     
+                ui_change_qty_popup.new_qty_f = ui_change_qty_popup.new_qty
+                ui_change_qty_popup.focus_new_qty()       
+         
+        if event in ('_CHANGE_QTY_OK_', 'F12:123', '\r'):
             if not ui_change_qty_popup.new_qty:
                 break;
-            if float(ui_change_qty_popup.new_qty) > 0 and ui_change_qty_popup.new_qty != ui_change_qty_popup.existing_qty:
-                ui_detail_pane.qty = ui_change_qty_popup.new_qty
-                ui_detail_pane.selling_amount = float(ui_detail_pane.qty) * float(ui_detail_pane.selling_price)
-                ui_detail_pane.tax_rate = float(ui_detail_pane.cgst_tax_rate) + float(ui_detail_pane.sgst_tax_rate)
-                ui_detail_pane.tax_amount = float(ui_detail_pane.selling_amount) * float(ui_detail_pane.tax_rate) / 100
-                ui_detail_pane.net_amount = float(ui_detail_pane.selling_amount) + float(ui_detail_pane.tax_amount)
-                ui_detail_pane.update_item_line(row_item)                
+            process_change_qty(ui_change_qty_popup, row_item)
             break
-        prev_event = event
-    
+
     ui_popup.close() 
+
+
+def process_change_qty(ui_change_qty_popup, row_item):
+    if float(ui_change_qty_popup.new_qty) > 0 and ui_change_qty_popup.new_qty != ui_change_qty_popup.existing_qty:
+        ui_detail_pane.qty = ui_change_qty_popup.new_qty
+        ui_detail_pane.selling_amount = float(ui_detail_pane.qty) * float(ui_detail_pane.selling_price)
+        ui_detail_pane.tax_rate = float(ui_detail_pane.cgst_tax_rate) + float(ui_detail_pane.sgst_tax_rate)
+        ui_detail_pane.tax_amount = float(ui_detail_pane.selling_amount) * float(ui_detail_pane.tax_rate) / 100
+        ui_detail_pane.net_amount = float(ui_detail_pane.selling_amount) + float(ui_detail_pane.tax_amount)
+        ui_detail_pane.update_item_line(row_item)                
 
 
 ######
@@ -734,6 +764,7 @@ ui_action_pane = UiActionPane(ui_window)
 ui_summary_pane = UiSummaryPane(ui_window)
 ui_keypad_pane = UiKeypadPane(ui_window)
 
+kb = Controller()
 
 ######
 # Main function
@@ -744,15 +775,17 @@ def main():
     initialize_search_pane()
     initialize_action_pane('INVOICE')
 
-    kb = Controller()
 
     ui_window['_BARCODE_'].bind('<FocusIn>', '+CLICK+')
     ui_window['_ITEM_NAME_'].bind('<FocusIn>', '+CLICK+')
     
-    prev_event = ''      
+    prev_event = '' 
+    focus = None    
     while True:
         event, values = ui_window.read()
-        print('eventm=', event, 'prev=', prev_event)
+        if ui_window.FindElementWithFocus():
+            focus = ui_window.FindElementWithFocus().Key
+        print('eventm=', event, 'prev=', prev_event, 'focus=', focus)
 
         if event == sg.WIN_CLOSED:
             ui_window.close()
@@ -799,7 +832,7 @@ def main():
         else:
             initialize_action_pane('ITEM')        
                         
-        if ui_window.FindElementWithFocus().Key == '_ITEMS_LIST_':
+        if focus == '_ITEMS_LIST_':
             if len(ui_detail_pane.items_list) > 0:
                 initialize_action_pane('ITEM')
             else:
@@ -821,7 +854,7 @@ def main():
                 idx = values['_ITEMS_LIST_'][0]
                 open_change_qty_popup(idx)
                 sum_item_list()
-                ui_detail_pane.focus_items_list()                
+                ui_detail_pane.focus_items_list_row(idx)             
             else:
                 save_invoice()
                 ui_search_pane.focus_barcode()
@@ -831,7 +864,7 @@ def main():
                 idx = values['_ITEMS_LIST_'][0]
                 open_change_qty_popup(idx)
                 sum_item_list()
-                ui_detail_pane.focus_items_list()                
+                ui_detail_pane.focus_items_list_row(idx)
             else:
                 if ui_header_pane.invoice_number == '':
                     save_invoice()
@@ -872,7 +905,7 @@ def main():
             process_carry_bag()
             ui_search_pane.focus_barcode()
 
-        if event in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T0') and ui_window.FindElementWithFocus().Key == '_BARCODE_':
+        if event in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T0') and focus == '_BARCODE_':
             inp_val = ui_search_pane.barcode
             inp_val += event[1]
             ui_search_pane.barcode = inp_val
@@ -882,18 +915,18 @@ def main():
                 process_barcode(ui_search_pane.barcode)
                 initialize_search_pane()
                 
-        if event in ('1', '2', '3', '4', '5', '6', '7', '8', '9', '0') and ui_window.FindElementWithFocus().Key == '_BARCODE_':
+        if event in ('1', '2', '3', '4', '5', '6', '7', '8', '9', '0') and focus == '_BARCODE_':
             if (ui_search_pane.barcode[0].isnumeric() and len(ui_search_pane.barcode) > 12) or \
                (ui_search_pane.barcode[0] == 'I' and len(ui_search_pane.barcode) > 8) or \
                (ui_search_pane.barcode[0] == 'E' and len(ui_search_pane.barcode) > 7):
                 process_barcode(ui_search_pane.barcode)
                 initialize_search_pane()
 
-        if event == 'v:86' and ui_window.FindElementWithFocus().Key == '_BARCODE_':
+        if event == 'v:86' and focus == '_BARCODE_':
             process_barcode(ui_search_pane.barcode)
             initialize_search_pane()
             
-        if event.isalnum() and ui_window.FindElementWithFocus().Key == '_ITEM_NAME_':
+        if event.isalnum() and focus == '_ITEM_NAME_':
             if len(ui_search_pane.item_name) > 2:
                 open_item_name_popup(ui_search_pane.item_name)
                 initialize_search_pane()            

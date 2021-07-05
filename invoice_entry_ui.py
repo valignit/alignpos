@@ -9,6 +9,13 @@ with open('./alignpos.json') as file_config:
 
 ###
 # Main Window Layout
+
+pad_button:  dict = {
+                    'size':(4, 2), 
+                    'font':('Calibri 11 bold'), 
+                    'button_color': (config["ui_pad_button_color"])
+                }
+
 class MainWindow:
              
     sg.theme(config["ui_theme"])
@@ -25,11 +32,6 @@ class MainWindow:
                         'button_color': (config["ui_function_button_color"])
                     }
 
-    pad_button:  dict = {
-                        'size':(4, 2), 
-                        'font':('Calibri 11 bold'), 
-                        'button_color': (config["ui_pad_button_color"])
-                    }
 
     ui_title_pane_layout = [
         [
@@ -884,8 +886,8 @@ class UiKeypadPane:
 class ChangeQtyPopup:
     
     def __init__(self):
-        self.__layout = [
-            [sg.Text('', key='_ITEM_NAME_', size=(30,2),  font=("Helvetica Bold", 12))],
+        left_pane_layout = [
+            [sg.Text('', key='_ITEM_NAME_', size=(25,2),  font=("Helvetica Bold", 14))],
             [sg.Text('Existing Quantity:', size=(15,1),  font=("Helvetica", 11)),     
              sg.Input(key='_EXISTING_QTY_',
                 readonly=True, 
@@ -895,7 +897,7 @@ class ChangeQtyPopup:
                 size=(15,1),
                 justification = 'right'
             )],
-            [sg.Text('New Quantity:', size=(15,1),  font=("Helvetica", 11)),             
+            [sg.Text('New Quantity:', size=(15,1),  font=("Helvetica", 11), pad=((5,5),(10,10))),             
              sg.Input(key='_NEW_QTY_',
                 readonly=False, 
                 focus=True, 
@@ -905,7 +907,7 @@ class ChangeQtyPopup:
                 enable_events=True,
                 justification = 'right'
             )],
-            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(15,10)))],                        
+            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(90,10)))],                        
             [sg.Button('Ok-F12', 
                 size=(8, 1), 
                 font='Calibri 12 bold', 
@@ -915,6 +917,47 @@ class ChangeQtyPopup:
                 font='Calibri 12 bold', 
                 key='_CHANGE_QTY_ESC_'), 
             ]           
+        ]
+        
+        right_pane_layout = [
+            [
+                sg.Button(key='UP', button_text='↑', **pad_button),
+                sg.Button(key='T7', button_text='7', **pad_button),
+                sg.Button(key='T8', button_text='8', **pad_button),
+                sg.Button(key='T9', button_text='9', **pad_button),                    
+            ],
+            [
+                sg.Button(key='DOWN', button_text='↓', **pad_button),
+                sg.Button(key='T4', button_text='4', **pad_button),
+                sg.Button(key='T5', button_text='5', **pad_button),
+                sg.Button(key='T6', button_text='6', **pad_button),                    
+            ],
+            [
+                sg.Button(key='RIGHT', button_text='→', **pad_button),
+                sg.Button(key='T1', button_text='1', **pad_button),
+                sg.Button(key='T2', button_text='2', **pad_button),
+                sg.Button(key='T3', button_text='3', **pad_button),                    
+                
+            ],
+            [
+                sg.Button(key='LEFT', button_text='←', **pad_button),
+                sg.Button(key='T0', button_text='0', **pad_button),
+                sg.Button('ENT', size=(10, 2), font='Calibri 11 bold', key='ENTER', button_color = config["ui_pad_button_color"]),
+            ],            
+            [
+                sg.Button(key='BACKSPACE', button_text='\u232B', size=(4, 2), font='Calibri 11 bold', button_color = config["ui_pad_button_color"]),
+                sg.Button(key='FULL_STOP', button_text='.', **pad_button),                    
+                sg.Button(key='DEL', button_text='DEL', **pad_button),                    
+                sg.Button(key='TAB', button_text='TAB', **pad_button),                    
+            ],            
+        
+        ]
+
+        self.__layout = [
+            [
+                sg.Column(left_pane_layout, vertical_alignment = 'top', pad = None),
+                sg.Column(right_pane_layout, vertical_alignment = 'center', pad = None)
+            ]
         ]
 
     def get_layout(self):
@@ -933,6 +976,30 @@ class UiChangeQtyPopup:
         self.__existing_qty = float(0.00)
         self.__new_qty = float(0.00)
 
+        self.__popup['_EXISTING_QTY_'].Widget.config(takefocus=0)
+        self.__popup['T1'].Widget.config(takefocus=0)     
+        self.__popup['T2'].Widget.config(takefocus=0)
+        self.__popup['T3'].Widget.config(takefocus=0)
+        self.__popup['T4'].Widget.config(takefocus=0)
+        self.__popup['T5'].Widget.config(takefocus=0)
+        self.__popup['T6'].Widget.config(takefocus=0)
+        self.__popup['T7'].Widget.config(takefocus=0)
+        self.__popup['T8'].Widget.config(takefocus=0)
+        self.__popup['T9'].Widget.config(takefocus=0)
+        self.__popup['T0'].Widget.config(takefocus=0)
+        self.__popup['UP'].Widget.config(takefocus=0)     
+        self.__popup['DOWN'].Widget.config(takefocus=0)     
+        self.__popup['LEFT'].Widget.config(takefocus=0)
+        self.__popup['RIGHT'].Widget.config(takefocus=0)
+        self.__popup['ENTER'].Widget.config(takefocus=0)
+        self.__popup['BACKSPACE'].Widget.config(takefocus=0)
+        self.__popup['FULL_STOP'].Widget.config(takefocus=0)
+        self.__popup['TAB'].Widget.config(takefocus=0)
+        self.__popup['DEL'].Widget.config(takefocus=0)
+        self.__popup["_CHANGE_QTY_OK_"].Widget.config(takefocus=0) 
+        self.__popup["_CHANGE_QTY_ESC_"].Widget.config(takefocus=0) 
+        
+
     def set_item_name(self, item_name):
         self.__item_name = item_name
         self.__popup.Element('_ITEM_NAME_').update(value = self.__item_name)
@@ -950,6 +1017,10 @@ class UiChangeQtyPopup:
 
     def set_new_qty(self, new_qty):
         self.__new_qty = new_qty
+        self.__popup.Element('_NEW_QTY_').update(value = self.__new_qty)
+        
+    def set_new_qty_f(self, new_qty):
+        self.__new_qty = new_qty
         self.__popup.Element('_NEW_QTY_').update(value = "{:.2f}".format(float(self.__new_qty)))
         
     def get_new_qty(self):
@@ -963,9 +1034,19 @@ class UiChangeQtyPopup:
         self.__popup.Element('_NEW_QTY_').SetFocus() 
         self.__popup.Element('_NEW_QTY_').update(select=True)        
 
+    def append_char(self, key, char):
+        if self.__popup[key].Widget.select_present():
+            self.__new_qty = ''
+            self.__popup.Element(key).update(value = self.__new_qty)
+        
+        self.__new_qty = self.__popup.Element('_NEW_QTY_').get()        
+        self.__new_qty = str(self.__new_qty) + char
+        self.__popup.Element(key).update(value = self.__new_qty)
+
     item_name = property(get_item_name, set_item_name)     
     existing_qty = property(get_existing_qty, set_existing_qty) 
     new_qty = property(get_new_qty, set_new_qty) 
+    new_qty_f = property(get_new_qty, set_new_qty_f) 
 
 
 ###
