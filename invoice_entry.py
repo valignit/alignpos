@@ -143,7 +143,7 @@ def process_barcode(barcode):
         db_item_row = db_item_table.first(filter.format(barcode))
         if db_item_row:
             move_db_item_to_ui_detail_pane(db_item_row)
-    elif (ui_search_pane.barcode[0] == 'E' and len(ui_search_pane.barcode) > 7):
+    elif (ui_search_pane.barcode[0] == 'E' and len(ui_search_pane.barcode) > 8):
         filter = "parent='{}'"   
         db_estimate_item_cursor = db_estimate_item_table.list(filter.format(barcode))
         for db_estimate_item_row in db_estimate_item_cursor:
@@ -210,6 +210,7 @@ def insert_invoice():
         return
 
     db_query = DbQuery(db_conn, 'SELECT nextval("REFERENCE_NUMBER")')
+    db_query = DbQuery(db_conn, 'SELECT nextval("ESTIMATE_NUMBER")')
     for db_row in db_query.result:
         ui_header_pane.reference_number = db_row[0]
 
@@ -862,8 +863,8 @@ def main():
                 sum_item_list()
                 ui_detail_pane.focus_items_list_row(idx)             
             else:
-                save_invoice()
                 sg.popup_auto_close('Saving Invoice', button_type=5)                
+                save_invoice()
                 ui_search_pane.focus_barcode()
 
         if event in ('F3:114', 'F3'):
@@ -918,14 +919,14 @@ def main():
             ui_search_pane.barcode = inp_val
             if (ui_search_pane.barcode[0].isnumeric() and len(ui_search_pane.barcode) > 12) or \
                (ui_search_pane.barcode[0] == 'I' and len(ui_search_pane.barcode) > 8) or \
-               (ui_search_pane.barcode[0] == 'E' and len(ui_search_pane.barcode) > 7):
+               (ui_search_pane.barcode[0] == 'E' and len(ui_search_pane.barcode) > 8):
                 process_barcode(ui_search_pane.barcode)
                 initialize_search_pane()
                 
         if event in ('1', '2', '3', '4', '5', '6', '7', '8', '9', '0') and focus == '_BARCODE_':
             if (ui_search_pane.barcode[0].isnumeric() and len(ui_search_pane.barcode) > 12) or \
                (ui_search_pane.barcode[0] == 'I' and len(ui_search_pane.barcode) > 8) or \
-               (ui_search_pane.barcode[0] == 'E' and len(ui_search_pane.barcode) > 7):
+               (ui_search_pane.barcode[0] == 'E' and len(ui_search_pane.barcode) > 8):
                 process_barcode(ui_search_pane.barcode)
                 initialize_search_pane()
 

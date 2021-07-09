@@ -44,18 +44,6 @@ class EstimateItem(object):
     pass    
 
 ###
-# tabEstimate Table Layout
-class Estimate(object):
-    pass    
-
-
-###
-# tabEstimate Item - Table Layout   
-class EstimateItem(object):
-    pass    
-
-
-###
 # Database Connection object for alignpos
 class ConnAlignPos():
 
@@ -89,8 +77,10 @@ class ConnAlignPos():
         db_item_tab = Table('tabItem', db_table_meta, autoload=True)   
         db_invoice_tab = Table('tabInvoice', db_table_meta, autoload=True)   
         db_invoice_item_tab = Table('tabInvoice Item', db_table_meta, autoload=True)   
-        db_estimate_tab = Table('tabEstimate', db_table_meta, autoload=True)   
-        db_estimate_item_tab = Table('tabEstimate Item', db_table_meta, autoload=True)   
+        #db_estimate_tab = Table('tabEstimate', db_table_meta, autoload=True)   
+        #db_estimate_item_tab = Table('tabEstimate Item', db_table_meta, autoload=True)   
+        db_estimate_tab = Table('tabInvoice', db_table_meta, autoload=True)   
+        db_estimate_item_tab = Table('tabInvoice Item', db_table_meta, autoload=True)   
 
         # Table mappers - add additional tables as required
         mapper(Customer, db_customer_tab)

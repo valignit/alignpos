@@ -17,6 +17,8 @@
     "ui_readonly_background_color": "grey89",
 
 	"ui_f1_tooltip": "Click here to display the help document\nexplaining all the functions, actions\nand navigations",
+
+	"log_folder_path": "log/",
 	
 	"terminal_id" : "01",
 	"walk_in_customer" : "CUST-00000",

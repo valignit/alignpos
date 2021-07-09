@@ -80,7 +80,7 @@ class MainWindow:
                         disabled_readonly_background_color=config["ui_readonly_background_color"] ,
                         default_text='' ,font=("Helvetica", 12),size=(10,1)
                     ),
-                    sg.Text('Reference No:', size=(8,1),font=("Helvetica", 12)),
+                    sg.Text('Estimate No:', size=(10,1),font=("Helvetica", 12)),
                     sg.Input(key='_REFERENCE_NUMBER_',
                         readonly=True, 
                         disabled_readonly_text_color=config["ui_readonly_text_color"], 
@@ -96,7 +96,7 @@ class MainWindow:
                         disabled_readonly_background_color=config["ui_readonly_background_color"],
                         default_text='',
                         font=("Helvetica", 12),
-                        size=(15,1)
+                        size=(13,1)
                     ),
                     sg.Button(key='_FIND_', button_text='FIND\nF10', **nav_button, pad = ((12,13),(0,0))),
                     sg.Button(key='_BEGIN_', button_text='BEGN\nPgUp',**nav_button, pad = ((5,0),(0,0))),

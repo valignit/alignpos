@@ -34,7 +34,7 @@ def print_log(msg):
 ##############################
 # Main
 ##############################
-print_log('alignPOS - Upload Item Stock Price - Version 1.0')
+print_log('alignPOS - Download Updated Items - Version 1.0')
 print_log('------------------------------------------------')
 
 ######
@@ -126,7 +126,7 @@ for ws_erp_row_item in ws_erp_resp_json["items"]:
     item_stock = ws_erp_row_item["shop_stock"]
     item_selling_price = ws_erp_row_item["standard_rate"]
     item_maximum_retail_price = ws_erp_row_item["maximum_retail_price"]
-    item_sync_date_time = ws_erp_row_item["item_sync_date_time"]
+    item_sync_date_time = ws_erp_row_item["modified"]
 
     db_pos_sql_stmt = (
         "UPDATE tabItem SET stock = %s, selling_price = %s, maximum_retail_price = %s, modified = now(), modified_by = %s WHERE item_code = %s"
