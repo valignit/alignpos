@@ -12,16 +12,26 @@ import json
 import requests
 import mariadb
 import sys
-import datetime
+from datetime import datetime, timedelta
 
 
-now = datetime.datetime.now()
+last_sync = '2000-01-01 00:01:01.000001'
+item_count = 0
 
-with open('./alignpos.json') as file_config:
-  config = json.load(file_config)
-  
-file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
-file_log = open(file_name, "w")
+item_name = ''
+item_code = ''
+item_item_name = ''
+item_group = ''
+item_stock = 0
+item_selling_price = 0
+item_maximum_retail_price = 0
+item_uom = ''
+item_barcode = ''
+item_tax_template = ''
+cgst_tax_rate = 0
+sgst_tax_rate = 0
+item_modified = ''
+             
 
 ##############################
 # Print and Log
@@ -35,6 +45,14 @@ def print_log(msg):
 ##############################
 # Main
 ##############################
+now = datetime.now()
+
+with open('./alignpos.json') as file_config:
+  config = json.load(file_config)
+  
+file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
+file_log = open(file_name, "w")
+
 print_log('alignPOS - Download Updated Items - Version 1.1')
 print_log('-----------------------------------------------')
 
@@ -115,36 +133,37 @@ except requests.exceptions.RequestException as ws_err:
     sys.exit(1)
 
 ######
-# Fetch each Item from Item List from ERP   
-item_count = 0
-for ws_erp_row_item in ws_erp_resp_json["items"]:
-    print_log("Processing Item: " + ws_erp_row_item["name"])
+# Fetch each Item from Item List from ERP
+
+item_update_count = 0
+for ws_item_row in ws_erp_resp_json["items"]:
+    print_log("Processing Item: " + ws_item_row["name"])
     item_count+=1
-    item_name = ws_erp_row_item["name"]
-    item_code = ws_erp_row_item["item_code"]
-    item_item_name = ws_erp_row_item["item_name"]
-    item_group = ws_erp_row_item["item_group"]
-    item_stock = ws_erp_row_item["shop_stock"]
-    item_selling_price = ws_erp_row_item["standard_rate"]
-    item_maximum_retail_price = ws_erp_row_item["maximum_retail_price"]
-    last_sync_date_time = ws_erp_row_item["modified"]
-    
-    #print(str(item_selling_price),',',str(item_maximum_retail_price))
-    
+    item_update_count+=1
+    item_name = ws_item_row["name"]
+    item_code = ws_item_row["item_code"]
+    item_item_name = ws_item_row["item_name"]
+    item_group = ws_item_row["item_group"]
+    item_stock = ws_item_row["shop_stock"]
+    item_selling_price = ws_item_row["standard_rate"]
+    item_maximum_retail_price = ws_item_row["maximum_retail_price"]
+    item_tax_template = ''
+    item_modified = ws_item_row["modified"]
+
     # Pick first uom of the Item 
-    for uom in ws_erp_row_item["uoms"]:
+    for uom in ws_item_row["uoms"]:
         item_uom = uom["uom"]
         #print_log(item_uom)
         break
 
     # Pick first barcode of the Item 
-    for barcode in ws_erp_row_item["barcodes"]:
+    for barcode in ws_item_row["barcodes"]:
         item_barcode = barcode["name"]
         #print_log(item_barcode)
         break
 
     # Pick first Tax template of the Item     
-    for tax in ws_erp_row_item["taxes"]:
+    for tax in ws_item_row["taxes"]:
         item_tax_template = tax["item_tax_template"]
         #print_log(item_tax_template)        
         break
@@ -176,9 +195,13 @@ for ws_erp_row_item in ws_erp_resp_json["items"]:
             cgst_tax_rate = tax["tax_rate"]
         if tax["tax_type"] == 'SGST - AFSM':
             sgst_tax_rate = tax["tax_rate"]
-             
-        #print_log(cgst_tax_rate)        
+  
+    item_modified_datetime = datetime.strptime(ws_item_row["modified"], '%Y-%m-%d %H:%M:%S.%f')
+    last_sync_datetime = datetime.strptime(last_sync, '%Y-%m-%d %H:%M:%S.%f') 
 
+    if item_modified_datetime > last_sync_datetime:
+        last_sync = item_modified
+    
     db_pos_sql_stmt = (
        "UPDATE tabItem  SET item_name = %s, \
                             item_group = %s, \
@@ -206,13 +229,15 @@ for ws_erp_row_item in ws_erp_resp_json["items"]:
         db_pos_conn.rollback()
         sys.exit(1)
 
+print_log(f"Total Items Updated: {item_update_count}")
 
-print_log(f"Total Items Updated: {item_count}")
 
+######
+# Update Last sync date time
 if (item_count > 0):
-    ######
-    # Update Last sync date time
-    ws_erp_payload = {"date": last_sync_date_time }
+    ws_erp_payload = {"date": last_sync}
+    
+    print('payload:', ws_erp_payload)
 
     ws_erp_method = '/api/method/put_item_sync_date_time'
     try:
@@ -222,19 +247,18 @@ if (item_count > 0):
         ws_erp_resp_json = json.loads(ws_erp_resp_text)
         #print_log(ws_erp_resp_json["data"])
     except requests.exceptions.HTTPError as ws_err:
-        print_log(f"ERP web service error 204a: {ws_err}")
+        print_log(f"ERP web service error 202a: {ws_err}")
         sys.exit(1)
     except requests.exceptions.ConnectionError as ws_err:
-        print_log(f"ERP web service error 204b: {ws_err}")
+        print_log(f"ERP web service error 202b: {ws_err}")
         sys.exit(1)
     except requests.exceptions.Timeout as ws_err:
-        print_log(f"ERP web service error 204c: {ws_err}")
+        print_log(f"ERP web service error 202c: {ws_err}")
         sys.exit(1)
     except requests.exceptions.RequestException as ws_err:
-        print_log(f"ERP web service error 204d: {ws_err}")
+        print_log(f"ERP web service error 202d: {ws_err}")
         sys.exit(1)
-
-    print_log(f"Time Stamp Updated: {last_sync_date_time}")
+    print_log(f"Time Stamp Updated: {str(last_sync_datetime)}")
 
 
 ######    
