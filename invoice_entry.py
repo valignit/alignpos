@@ -7,7 +7,7 @@ from pynput.keyboard import Key, Controller
 from invoice_entry_ui import MainWindow, UiTitlePane, UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiSummaryPane, UiKeypadPane, \
                              ChangeQtyPopup, UiChangeQtyPopup, ItemNamePopup, UiItemNamePopup,\
                              PaymentPopup, UiPaymentPopup
-from alignpos_db import ConnAlignPos, DbTable, DbQuery, Customer, Item, Invoice, InvoiceItem, Estimate, EstimateItem
+from alignpos_db import ConnAlignPos, DbTable, DbQuery, Customer, Item, Invoice, InvoiceItem, Estimate, EstimateItem, ExchangeAdjustment
 
 
 ######
@@ -70,13 +70,13 @@ def initialize_action_pane(context):
         ui_window.Element('F1').update(text='New Invoice\nF1')
         ui_window.Element('F2').update(text='Save Invoice\nF2')
         ui_window.Element('F3').update(text='Payment\nF3')
-        ui_window.Element('F4').update(text='Print Invoice\nF4', button_color = config["ui_function_button_color"], disabled = False)
+        ui_window.Element('F4').update(text='Print Invoice\nF4')
         ui_window.Element('F5').update(text='Delete Invoice\nF5')
     else:
-        ui_window.Element('F1').update(text='Item Addon\nF1')
+        ui_window.Element('F1').update(text='Item Details\nF1')
         ui_window.Element('F2').update(text='Change Qty\nF2')
         ui_window.Element('F3').update(text='Change Price\nF3')
-        ui_window.Element('F4').update(text='', button_color='gray99', disabled = True)
+        ui_window.Element('F4').update(text='Get Weight\nF4')
         ui_window.Element('F5').update(text='Delete Item\nF5')
        
 
@@ -263,7 +263,7 @@ def update_invoice():
 
     if not db_invoice_row:
         return
-
+    db_invoice_row.invoice_number = ui_header_pane.invoice_number
     db_invoice_row.customer = ui_header_pane.customer_number
     db_invoice_row.total_amount = ui_summary_pane.total_amount
     db_invoice_row.net_amount = ui_summary_pane.net_amount
@@ -272,7 +272,7 @@ def update_invoice():
     db_invoice_row.sgst_tax_amount = ui_summary_pane.total_sgst_amount
     db_invoice_row.paid_amount = ui_summary_pane.paid_amount   
     db_invoice_row.terminal_id = ui_title_pane.terminal_id  
-
+###
     filter = "parent='{}'"
     db_invoice_item_cursor = db_invoice_item_table.list(filter.format(ui_header_pane.reference_number))
     for db_invoice_item_row in db_invoice_item_cursor:
@@ -502,21 +502,36 @@ def open_payment_popup():
                 process_mobile_number(ui_payment_popup)
 
         if event == '_MOBILE_NUMBER_' and len(ui_payment_popup.mobile_number) > 9:
-                process_mobile_number(ui_payment_popup)
-           
+            process_mobile_number(ui_payment_popup)
+
+        if event == '_EXCHANGE_VOUCHER_':
+            exchange_voucher = ui_payment_popup.exchange_voucher.partition(' | ')
+            print(exchange_voucher[2])
+            ui_payment_popup.exchange_adjustment_hd = exchange_voucher[2]
+            ui_payment_popup.exchange_adjustment = float(exchange_voucher[2])
+            ui_payment_popup.cash_amount = 0
+            ui_payment_popup.cash_return = 0
+            set_payment_popup_elements(ui_payment_popup)
+
         if event in ('\t', 'TAB') and prev_event == '_CASH_AMOUNT_':
+            if not ui_payment_popup.cash_amount:
+                ui_payment_popup.cash_amount = 0
             ui_payment_popup.cash_amount = ui_payment_popup.cash_amount
             ui_payment_popup.cash_return = 0
             set_payment_popup_elements(ui_payment_popup)
             
         if event in ('\t', 'TAB') and prev_event == '_CARD_AMOUNT_':
+            if not ui_payment_popup.card_amount:
+                ui_payment_popup.card_amount = 0
             ui_payment_popup.card_amount = ui_payment_popup.card_amount 
             ui_payment_popup.cash_return = 0            
             set_payment_popup_elements(ui_payment_popup)
             
         if event in ('\t', 'TAB') and prev_event == '_DISCOUNT_AMOUNT_':
             ui_payment_popup.discount_amount = ui_payment_popup.discount_amount       
-            ui_payment_popup.discount_amount_hd = ui_payment_popup.discount_amount       
+            ui_payment_popup.discount_amount_hd = ui_payment_popup.discount_amount
+            ui_payment_popup.cash_amount = 0
+            ui_payment_popup.cash_return = 0            
             set_payment_popup_elements(ui_payment_popup)
             
         if event in ('\t', 'TAB') and prev_event == '_REDEEM_POINTS_':
@@ -533,12 +548,20 @@ def open_payment_popup():
         if event in ("Exit", '_PAYMENT_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
             break
             
-        if event == "_PAYMENT_OK_" or event == "F12:123" or event == '\r':
+        if event == "_PAYMENT_OK_" or event == "F12:123":
             set_payment_popup_elements(ui_payment_popup)
             if float(ui_payment_popup.balance_amount) == 0:
                 if float(ui_payment_popup.card_amount) > 0 and ui_payment_popup.card_reference == '':
-                    sg.popup('Enter Card Reference',keep_on_top = True)            
+                    sg.popup('Enter Card Reference',keep_on_top = True)
+                    ui_payment_popup.focus_card_reference()                    
                 else:
+                    if float(ui_payment_popup.cash_return) > 0:
+                        msg = 'Please return back ' + ui_payment_popup.cash_return + ' cash to customer'
+                        sg.popup(msg, keep_on_top = True)
+                    move_payment_popup_to_summary_pane(ui_payment_popup)
+                    generate_invoice_number()
+                    update_invoice()
+                    sg.popup('Invoice generated', keep_on_top = True)
                     break
             else:
                 sg.popup('Settle Balance amount',keep_on_top = True)
@@ -566,7 +589,15 @@ def process_mobile_number(ui_payment_popup):
         ui_header_pane.mobile_number = db_customer_row.mobile_number
         ui_header_pane.customer_name = db_customer_row.customer_name
         ui_header_pane.customer_address = db_customer_row.address
-
+        filter = "customer='{}' and invoice_number is NULL"
+        exchange_voucher_list = []
+        exchange_voucher_list.append('None | 0.00')
+        db_exchange_adjustment_cursor = db_exchange_adjustment_table.list(filter.format(ui_payment_popup.customer_number))
+        if db_exchange_adjustment_cursor:
+            for db_exchange_adjustment_row in db_exchange_adjustment_cursor:
+                exchange_voucher = db_exchange_adjustment_row.name + " | {:.2f}".format(db_exchange_adjustment_row.exchange_amount)
+                exchange_voucher_list.append(exchange_voucher)
+        ui_payment_popup.set_exchange_voucher(exchange_voucher_list)
 
 def initialize_payment_popup_elements(ui_payment_popup):
     ui_payment_popup.mobile_number = ui_header_pane.mobile_number
@@ -576,7 +607,6 @@ def initialize_payment_popup_elements(ui_payment_popup):
     ui_payment_popup.customer_number = ui_header_pane.customer_number
     ui_payment_popup.customer_address = ui_header_pane.customer_address
     ui_payment_popup.net_amount = ui_summary_pane.net_amount
-    #ui_payment_popup.discount_amount = ui_summary_pane.discount_amount
     ui_payment_popup.discount_amount = 0
     invoice_actual_amount = float(ui_payment_popup.net_amount) - float(ui_payment_popup.discount_amount)
     invoice_rounded_amount = round(invoice_actual_amount, 0)
@@ -588,9 +618,30 @@ def initialize_payment_popup_elements(ui_payment_popup):
                             float(ui_payment_popup.exchange_adjustment) + \
                             float(ui_payment_popup.redeem_adjustment)
     ui_payment_popup.cash_return = 0.00
+    
+    filter = "customer='{}' and invoice_number is NULL"
+    exchange_voucher_list = []
+    exchange_voucher_list.append('None | 0.00')
+    db_exchange_adjustment_cursor = db_exchange_adjustment_table.list(filter.format(ui_payment_popup.customer_number))
+    if db_exchange_adjustment_cursor:
+        for db_exchange_adjustment_row in db_exchange_adjustment_cursor:
+            exchange_voucher = db_exchange_adjustment_row.name + " | {:.2f}".format(db_exchange_adjustment_row.exchange_amount)
+            exchange_voucher_list.append(exchange_voucher)
+    ui_payment_popup.set_exchange_voucher(exchange_voucher_list)
 
 
 def set_payment_popup_elements(ui_payment_popup):
+    if not ui_payment_popup.cash_amount or ui_payment_popup.cash_amount == '':
+       ui_payment_popup.cash_amount = 0
+    if not ui_payment_popup.card_amount or ui_payment_popup.card_amount == '':
+       ui_payment_popup.card_amount = 0
+    if not ui_payment_popup.exchange_adjustment or ui_payment_popup.exchange_adjustment == '':
+       ui_payment_popup.exchange_adjustment = 0
+    if not ui_payment_popup.discount_amount or ui_payment_popup.discount_amount == '':
+       ui_payment_popup.discount_amount = 0
+ 
+    ui_summary_pane.discount_amount = float(ui_payment_popup.discount_amount)
+ 
     invoice_actual_amount = float(ui_payment_popup.net_amount) - float(ui_payment_popup.discount_amount)
     invoice_rounded_amount = round(invoice_actual_amount, 0)
     ui_payment_popup.invoice_amount = invoice_rounded_amount
@@ -610,25 +661,26 @@ def set_payment_popup_elements(ui_payment_popup):
                                         float(ui_payment_popup.cash_return)
 
 
-def process_payment():
-    db_invoice_row = db_invoice_table.get_row(ui_header_pane.reference_number)
+def move_payment_popup_to_summary_pane(ui_payment_popup):
+    ui_summary_pane.discount_amount = float(ui_payment_popup.discount_amount)
+    ui_summary_pane.invoice_amount = float(ui_payment_popup.invoice_amount)
+    ui_summary_pane.roundoff_amount = float(ui_payment_popup.roundoff_adjustment)
+    ui_summary_pane.cash_amount = float(ui_payment_popup.cash_amount)
+    ui_summary_pane.card_amount = float(ui_payment_popup.card_amount)
+    ui_summary_pane.card_reference = ui_payment_popup.card_reference
+    ui_summary_pane.cash_return = float(ui_payment_popup.cash_return)
+    ui_summary_pane.exchange_amount = float(ui_payment_popup.exchange_adjustment)
+    ui_summary_pane.redeem_points = ui_payment_popup.redeem_points
+    ui_summary_pane.redeem_amount = float(ui_payment_popup.redeem_adjustment)
+    ui_summary_pane.paid_amount = float(ui_payment_popup.invoice_amount)
+    exchange_voucher = ui_payment_popup.exchange_voucher.partition(' | ')
+    ui_summary_pane.exchange_voucher = exchange_voucher[0]
 
-    if not db_invoice_row:
-        return
 
-    ui_summary_pane.discount_amount = 0.00          
-    ui_summary_pane.invoice_amount = round(float(ui_summary_pane.net_amount), 0)
-    ui_summary_pane.paid_amount = ui_summary_pane.invoice_amount
-    db_invoice_row.discount_amount = ui_summary_pane.discount_amount
-    db_invoice_row.invoice_amount = ui_summary_pane.invoice_amount
-    db_invoice_row.paid_amount = ui_summary_pane.paid_amount   
+def generate_invoice_number():
     db_query = DbQuery(db_conn, 'SELECT nextval("INVOICE_NUMBER")')
     for db_row in db_query.result:
-        ui_header_pane.invoice_number = db_row[0]
-    db_invoice_row.invoice_number = ui_header_pane.invoice_number
-    db_invoice_table.update_row(db_invoice_row)
-    db_session.commit()
-    
+        ui_header_pane.invoice_number = db_row[0]    
     
 ######
 # Popup window for selecting Item
@@ -744,6 +796,7 @@ db_invoice_table = DbTable(db_conn, Invoice)
 db_invoice_item_table = DbTable(db_conn, InvoiceItem)
 db_estimate_table = DbTable(db_conn, Estimate)
 db_estimate_item_table = DbTable(db_conn, EstimateItem)
+db_exchange_adjustment_table = DbTable(db_conn, ExchangeAdjustment)
 
 main_window = MainWindow()
 ui_window = sg.Window('Invoice Entry', 
@@ -777,7 +830,6 @@ def main():
     initialize_header_pane()
     initialize_search_pane()
     initialize_action_pane('INVOICE')
-
 
     ui_window['_BARCODE_'].bind('<FocusIn>', '+CLICK+')
     ui_window['_ITEM_NAME_'].bind('<FocusIn>', '+CLICK+')
@@ -857,28 +909,34 @@ def main():
                 ui_search_pane.focus_barcode()
 
         if event in ('F2:113', 'F2'):
-            if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
-                idx = values['_ITEMS_LIST_'][0]
-                open_change_qty_popup(idx)
-                sum_item_list()
-                ui_detail_pane.focus_items_list_row(idx)             
+            if ui_header_pane.invoice_number == '':
+                if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
+                    idx = values['_ITEMS_LIST_'][0]
+                    open_change_qty_popup(idx)
+                    sum_item_list()
+                    ui_detail_pane.focus_items_list_row(idx)             
+                else:
+                    save_invoice()
+                    sg.popup('Estimate Saved', keep_on_top = True)                
+                    ui_search_pane.focus_barcode()
             else:
-                sg.popup_auto_close('Saving Invoice', button_type=5)                
-                save_invoice()
-                ui_search_pane.focus_barcode()
+                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
         if event in ('F3:114', 'F3'):
-            if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
-                idx = values['_ITEMS_LIST_'][0]
-                open_change_qty_popup(idx)
-                sum_item_list()
-                ui_detail_pane.focus_items_list_row(idx)
+            if ui_header_pane.invoice_number == '':        
+                if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
+                    idx = values['_ITEMS_LIST_'][0]
+                    open_change_qty_popup(idx)
+                    sum_item_list()
+                    ui_detail_pane.focus_items_list_row(idx)
+                else:
+                    if ui_header_pane.invoice_number == '':
+                        save_invoice()
+                        if not ui_header_pane.reference_number == '':
+                            open_payment_popup()
+                    ui_search_pane.focus_barcode()
             else:
-                if ui_header_pane.invoice_number == '':
-                    save_invoice()
-                    if not ui_header_pane.reference_number == '':
-                        open_payment_popup()
-                ui_search_pane.focus_barcode()
+                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
         if event in ('F4:115', 'F4'):
             if prev_event == '_ITEMS_LIST_':
@@ -887,31 +945,37 @@ def main():
                 ui_search_pane.focus_barcode()
 
         if event in ('F5:116', 'F5', 'Delete:46', 'Delete'):
-            if prev_event == '_ITEMS_LIST_':
-                if ui_header_pane.invoice_number == '':
+            if ui_header_pane.invoice_number == '':
+                if prev_event == '_ITEMS_LIST_':
                     idx = values['_ITEMS_LIST_'][0]
                     ui_detail_pane.delete_item_line(idx)
                     sum_item_list()
-                if len(ui_detail_pane.items_list) == idx:
-                    idx -= 1
-                if idx > -1:
-                    ui_detail_pane.focus_items_list_row(idx)
-                else:
-                    delete_invoice()
-                    clear_invoice()
-                    initialize_action_pane('INVOICE')        
-                    ui_search_pane.focus_barcode()     
-            else:
-                if len(ui_detail_pane.items_list) > 0 and ui_header_pane.invoice_number == '':
-                    confirm_delete = popup_message('OK_CANCEL', 'Invoice will be Deleted')
-                    if confirm_delete == 'Ok':       
+                    if len(ui_detail_pane.items_list) == idx:
+                        idx -= 1
+                    if idx > -1:
+                        ui_detail_pane.focus_items_list_row(idx)
+                    else:
                         delete_invoice()
                         clear_invoice()
-                ui_search_pane.focus_barcode()
+                        initialize_action_pane('INVOICE')        
+                        ui_search_pane.focus_barcode()
+                else:
+                    if len(ui_detail_pane.items_list) > 0 and ui_header_pane.invoice_number == '':
+                        confirm_delete = popup_message('OK_CANCEL', 'Invoice will be Deleted')
+                        if confirm_delete == 'Ok':       
+                            delete_invoice()
+                            #clear_invoice()
+                            goto_previous_invoice()
+                            ui_search_pane.focus_barcode()
+            else:
+                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
             
         if event in ('F11:122', 'F11', '_QUICK_ITEMS_'):
-            process_carry_bag()
-            ui_search_pane.focus_barcode()
+            if ui_header_pane.invoice_number == '':        
+                process_carry_bag()
+                ui_search_pane.focus_barcode()
+            else:
+                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
         if event in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T0') and focus == '_BARCODE_':
             inp_val = ui_search_pane.barcode

@@ -48,15 +48,19 @@ CREATE TABLE `tabInvoice` (
 	`invoice_number` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`posting_date` DATETIME(6) NULL DEFAULT NULL,
 	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`total_amount` DECIMAL(18,6) NULL DEFAULT NULL,
-	`discount_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`cgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`total_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`discount_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`invoice_amount` DECIMAL(18,6) NULL DEFAULT NULL,
-	`credit_note_amount` DECIMAL(18,6) NULL DEFAULT NULL,
-	`credit_note_reference` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`loyalty_points_redeemed` INT(6) NULL DEFAULT NULL,
-	`loyalty_redeemed_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`exchange_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`exchange_reference` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`redeemed_points` INT(6) NULL DEFAULT NULL,
+	`redeemed_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`cash_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`card_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`card_reference` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`cash_return` DECIMAL(18,6) NULL DEFAULT NULL,
 	`paid_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`home_delivery` INT(1) NULL DEFAULT NULL,
 	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
@@ -94,16 +98,18 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
-CREATE TABLE `tabInvoice Payment` (
+CREATE TABLE `tabExchange Adjustment` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`parent` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`mode_of_payment` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`payment_reference_no` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`payment_reference_date` DATE NULL DEFAULT NULL,
-	`received_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`invoice_number` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`exchange_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`creation` DATETIME(6) NULL DEFAULT NULL,
+	`modified` DATETIME(6) NULL DEFAULT NULL,
+	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	PRIMARY KEY (`name`) USING BTREE,
-	INDEX `FK_tabInvoice Payment_tabInvoice` (`parent`) USING BTREE,
-	CONSTRAINT `FK_tabInvoice Payment_tabInvoice` FOREIGN KEY (`parent`) REFERENCES `alignpos`.`tabInvoice` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
+	INDEX `FK_tabExchangeAdjustment_tabCustomer` (`customer`) USING BTREE,
+	CONSTRAINT `FK_tabExchange_tabCustomer` FOREIGN KEY (`customer`) REFERENCES `alignpos`.`tabCustomer` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB

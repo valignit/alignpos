@@ -9,39 +9,28 @@ with open('./alignpos.json') as file_config:
 
 
 ###
-# tabCustomer Table Layout
+# Table Layouts
 class Customer(object):
     pass
 
-
-###
-# tabItem Table Layout
 class Item(object):
     pass    
 
-
-###
-# tabInvoice Table Layout
 class Invoice(object):
     pass    
 
-
-###
-# tabInvoice Item - Table Layout   
 class InvoiceItem(object):
     pass    
 
-
-###
-# tabInvoice Table Layout
 class Estimate(object):
     pass    
 
-
-###
-# tabInvoice Item - Table Layout   
 class EstimateItem(object):
     pass    
+
+class ExchangeAdjustment(object):
+    pass    
+
 
 ###
 # Database Connection object for alignpos
@@ -77,10 +66,9 @@ class ConnAlignPos():
         db_item_tab = Table('tabItem', db_table_meta, autoload=True)   
         db_invoice_tab = Table('tabInvoice', db_table_meta, autoload=True)   
         db_invoice_item_tab = Table('tabInvoice Item', db_table_meta, autoload=True)   
-        #db_estimate_tab = Table('tabEstimate', db_table_meta, autoload=True)   
-        #db_estimate_item_tab = Table('tabEstimate Item', db_table_meta, autoload=True)   
         db_estimate_tab = Table('tabInvoice', db_table_meta, autoload=True)   
         db_estimate_item_tab = Table('tabInvoice Item', db_table_meta, autoload=True)   
+        db_exchange_adjustment_tab = Table('tabExchange Adjustment', db_table_meta, autoload=True)   
 
         # Table mappers - add additional tables as required
         mapper(Customer, db_customer_tab)
@@ -89,6 +77,7 @@ class ConnAlignPos():
         mapper(InvoiceItem, db_invoice_item_tab)
         mapper(Estimate, db_estimate_tab)
         mapper(EstimateItem, db_estimate_item_tab)
+        mapper(ExchangeAdjustment, db_exchange_adjustment_tab)
         
         db_session = sessionmaker(bind=self.__engine)
         self.__session = db_session()
@@ -167,6 +156,7 @@ class DbTable():
                 sys.exit(1)
 
     def list(self, filter):
+        print(filter)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=exc.SAWarning)
             try:

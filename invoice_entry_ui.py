@@ -26,6 +26,12 @@ class MainWindow:
                         'button_color': (config["ui_nav_button_color"])
                     }
 
+    nav_button_wide:  dict = {
+                        'size':(13, 2), 
+                        'font':('Calibri 11 bold'), 
+                        'button_color': (config["ui_nav_button_color"])
+                    }
+                    
     action_button:  dict = {
                         'size':(13, 2), 
                         'font':('Calibri 12 bold'), 
@@ -98,7 +104,7 @@ class MainWindow:
                         font=("Helvetica", 12),
                         size=(13,1)
                     ),
-                    sg.Button(key='_FIND_', button_text='FIND\nF10', **nav_button, pad = ((12,13),(0,0))),
+                    sg.Button(key='_FIND_', button_text='Find Invoice\nF10', **nav_button_wide, pad = ((10,10),(0,0))),
                     sg.Button(key='_BEGIN_', button_text='BEGN\nPgUp',**nav_button, pad = ((5,0),(0,0))),
                     sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **nav_button, pad = ((5,0),(0,0))),
                     sg.Button(key='_NEXT_', button_text='NEXT\n→', **nav_button, pad = ((5,0),(0,0))),
@@ -131,7 +137,7 @@ class MainWindow:
                         size=(13, 1), 
                         font='Calibri 11 bold', 
                         key='_QUICK_ITEMS_', 
-                        pad = ((107,0),(0,0)),                                           
+                        pad = ((152,0),(0,0)),                                           
                         button_color = config["ui_function_button_color"]
                     ),                        
                 ]
@@ -170,7 +176,7 @@ class MainWindow:
                     sg.Button(key='F3',  button_text='\nF3', **action_button),
                     sg.Button(key='F4',  button_text='\nF4', **action_button),
                     sg.Button(key='F5',  button_text='\nF5', **action_button),
-                    sg.Button(key='ESC', button_text='Exit\nEsc', **action_button),
+                    sg.Button(key='ESC', button_text='Exit\nEsc', **action_button, pad = ((237,0),(0,0))),
                 ]               
             ])    
         ]
@@ -274,8 +280,8 @@ class MainWindow:
                     sg.Input(key='_INVOICE_AMOUNT_', 
                         readonly=True, 
                         justification="right", 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"], 
+                        disabled_readonly_text_color="White", 
+                        disabled_readonly_background_color=config["ui_readonly_text_color"], 
                         default_text='0.00',
                         font=("Helvetica 14 bold"),
                         pad=((0,0),(0,0)),                        
@@ -287,8 +293,8 @@ class MainWindow:
                     sg.Input(key='_PAID_AMOUNT_', 
                         readonly=True, 
                         justification="right", 
-                        disabled_readonly_text_color='Blue', 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"], 
+                        disabled_readonly_text_color="White", 
+                        disabled_readonly_background_color='Blue', 
                         default_text='0.00' , 
                         font=("Helvetica 14 bold"),
                         pad=((0,0),(7,0)),
@@ -755,6 +761,14 @@ class UiSummaryPane:
         self.__roundoff_amount = float(0.00)
         self.__invoice_amount = float(0.00)
         self.__paid_amount = float(0.00)
+        self.__cash_amount = float(0.00)
+        self.__card_amount = float(0.00)
+        self.__card_reference = ""
+        self.__cash_return = float(0.00)
+        self.__exchange_voucher = ""
+        self.__exchange_adjustment = float(0.00)
+        self.__redeem_points = int(0)
+        self.__redeem_adjustment = float(0.00)
 
         self.__window['_LINE_ITEMS_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_AMOUNT_'].Widget.config(takefocus=0)
@@ -841,7 +855,55 @@ class UiSummaryPane:
     def get_paid_amount(self):
         self.__paid_amount = self.__window.Element('_PAID_AMOUNT_').get()        
         return self.__paid_amount
+        
+    def set_redeem_points(self, redeem_points):
+        self.__redeem_points = redeem_points
 
+    def set_redeem_adjustment(self, redeem_adjustment):
+        self.__redeem_adjustment = redeem_adjustment
+
+    def set_exchange_voucher(self, exchange_voucher):
+        self.__exchange_voucher = exchange_voucher
+
+    def set_exchange_adjustment(self, exchange_adjustment):
+        self.__exchange_adjustment = exchange_adjustment
+
+    def set_cash_amount(self, cash_amount):
+        self.__cash_amount = cash_amount
+
+    def set_card_amount(self, card_amount):
+        self.__card_amount = card_amount
+
+    def set_card_reference(self, card_reference):
+        self.__card_reference = card_reference
+
+    def set_cash_return(self, cash_return):
+        self.__cash_return = cash_return        
+
+    def get_cash_amount(self):
+        return self.__cash_amount
+
+    def get_card_amount(self):
+        return self.__card_amount
+
+    def get_card_reference(self):
+        return self.__card_reference
+
+    def get_cash_return(self):
+        return self.__cash_return
+
+    def get_exchange_voucher(self):
+        return self.__exchange_voucher
+
+    def get_exchange_adjustment(self):
+        return self.__exchange_adjustment
+
+    def get_redeem_points(self):
+        return self.__redeem_points
+
+    def get_redeem_adjustment(self):
+        return self.__redeem_adjustment
+        
     line_items = property(get_line_items, set_line_items)
     total_amount = property(get_total_amount, set_total_amount)
     total_tax_amount = property(get_total_tax_amount, set_total_tax_amount)
@@ -852,6 +914,15 @@ class UiSummaryPane:
     roundoff_amount = property(get_roundoff_amount, set_roundoff_amount)
     invoice_amount = property(get_invoice_amount, set_invoice_amount)
     paid_amount = property(get_paid_amount, set_paid_amount)
+    redeem_points = property(get_redeem_points, set_redeem_points)
+    redeem_adjustment = property(get_redeem_adjustment, set_redeem_adjustment)
+    exchange_voucher = property(get_exchange_voucher, set_exchange_voucher)
+    exchange_adjustment = property(get_exchange_adjustment, set_exchange_adjustment)
+    cash_amount = property(get_cash_amount, set_cash_amount)
+    card_amount = property(get_card_amount, set_card_amount)
+    card_reference = property(get_card_reference, set_card_reference)
+    cash_return = property(get_cash_return, set_cash_return)
+
 
 
 ###
@@ -1224,10 +1295,10 @@ class PaymentPopup:
             [
                 sg.Text('Voucher:', size=(10,1),  font=("Helvetica", 11)),     
                 sg.Combo(key='_EXCHANGE_VOUCHER_',
-                    values=['xxx','yyy'],
-                    default_value='xxx',
+                    values=['None'],
+                    default_value='None',
                     background_color='white',
-                    font=("Helvetica", 11),size=(15,1),
+                    font=("Helvetica", 11),size=(20,2),
                     enable_events=True,                                
                 )
             ],
@@ -1239,7 +1310,7 @@ class PaymentPopup:
                     disabled_readonly_background_color=config["ui_readonly_background_color"],                     
                     font=("Helvetica", 11),
                     size=(15,1),
-                    justification = 'left'
+                    justification = 'right'
                 )
             ],
         ]
@@ -1415,7 +1486,7 @@ class UiPaymentPopup:
 		self.__card_amount = float(0.00)
 		self.__card_reference = ""
 		self.__cash_return = float(0.00)
-		self.__exchange_voucher = ""
+		self.__exchange_voucher = ['None']
 		self.__exchange_adjustment = float(0.00)
 		self.__discount_amount = float(0.00)
 		self.__discount_pin = ""
@@ -1533,7 +1604,7 @@ class UiPaymentPopup:
 
 	def set_exchange_voucher(self, exchange_voucher):
 		self.__exchange_voucher = exchange_voucher
-		self.__popup.Element("_EXCHANGE_VOUCHER_").update(value = self.__exchange_voucher)
+		self.__popup.Element("_EXCHANGE_VOUCHER_").update(values = self.__exchange_voucher)
 
 	def set_exchange_adjustment(self, exchange_adjustment):
 		self.__exchange_adjustment = exchange_adjustment
@@ -1688,6 +1759,7 @@ class UiPaymentPopup:
 		self.__total_received_amount = self.__popup.Element("_TOTAL_RECEIVED_AMOUNT_").get()
 		return self.__total_received_amount
 
+	#utilities
 	def focus_mobile_number(self):
 		self.__popup.Element('_MOBILE_NUMBER_').SetFocus() 
 		self.__popup.Element('_MOBILE_NUMBER_').update(select=True)        
@@ -1695,6 +1767,10 @@ class UiPaymentPopup:
 	def focus_cash_amount(self):
 		self.__popup.Element('_CASH_AMOUNT_').SetFocus()
 		self.__popup.Element('_CASH_AMOUNT_').update(select=True)        
+    
+	def focus_card_reference(self):
+		self.__popup.Element('_CARD_REFERENCE_').SetFocus()
+		self.__popup.Element('_CARD_REFERENCE_').update(select=True)        
 
 	#property
 	mobile_number = property(get_mobile_number, set_mobile_number)

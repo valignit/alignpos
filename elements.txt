@@ -23,3 +23,15 @@ redeem_pin
 mobile_number_header
 customer_name_header
 balance_amount
+
+
+roundoff_adjustment ***
+discount_amount ***
+cash_amount ***
+card_amount ***
+card_reference ***
+cash_return ***
+exchange_voucher ***
+exchange_adjustment ***
+redeem_points ***
+redeem_adjustment ***
