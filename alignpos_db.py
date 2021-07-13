@@ -1,7 +1,7 @@
 import json
 import sys
 from sqlalchemy.orm import sessionmaker, mapper
-from sqlalchemy import create_engine, MetaData, Table, exc, text
+from sqlalchemy import create_engine, MetaData, Table, exc, text, func
 import warnings
 
 with open('./alignpos.json') as file_config:
@@ -110,6 +110,7 @@ class DbTable():
         self.__table = table        
         self.__list = None        
         self.__row = None
+        self.__count = 0
                 
     def new_row(self):
         self.__row = self.__table() 
@@ -155,6 +156,11 @@ class DbTable():
                 print("Database error 204 while delete_row() in {self.__table.name}\nProcess Terminated\n{db_err}")
                 sys.exit(1)
 
+    def count(self, filter):
+        self.__list = self.list(filter)
+        self.__count = len(self.__list)                
+        return(self.__count)
+   
     def list(self, filter):
         print(filter)
         with warnings.catch_warnings():
@@ -180,8 +186,7 @@ class DbTable():
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=exc.SAWarning)
             try:
-                self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by(self.__table.name.desc()).first()
-        
+                self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by(self.__table.name.desc()).first()       
             except exc.SQLAlchemyError as db_err:
                 print(f"Database error 207 while last() in {self.__table.name}\nProcess Terminated\n{db_err}")
                 sys.exit(1)    

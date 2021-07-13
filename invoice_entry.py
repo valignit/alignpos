@@ -1,8 +1,11 @@
 import PySimpleGUI as sg
+import os
 import datetime
 import json
 import sys
 import platform
+import pdfkit
+import webbrowser
 from pynput.keyboard import Key, Controller
 from invoice_entry_ui import MainWindow, UiTitlePane, UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiSummaryPane, UiKeypadPane, \
                              ChangeQtyPopup, UiChangeQtyPopup, ItemNamePopup, UiItemNamePopup,\
@@ -67,17 +70,17 @@ def initialize_summary_pane():
 
 def initialize_action_pane(context):
     if context == 'INVOICE':
-        ui_window.Element('F1').update(text='New Invoice\nF1')
-        ui_window.Element('F2').update(text='Save Invoice\nF2')
+        ui_window.Element('F1').update(text='New\nF1')
+        ui_window.Element('F2').update(text='Save\nF2')
         ui_window.Element('F3').update(text='Payment\nF3')
-        ui_window.Element('F4').update(text='Print Invoice\nF4')
-        ui_window.Element('F5').update(text='Delete Invoice\nF5')
+        ui_window.Element('F4').update(text='Print\nF4')
+        ui_window.Element('F5').update(text='Delete\nF5')
     else:
-        ui_window.Element('F1').update(text='Item Details\nF1')
+        ui_window.Element('F1').update(text='Details\nF1')
         ui_window.Element('F2').update(text='Change Qty\nF2')
         ui_window.Element('F3').update(text='Change Price\nF3')
         ui_window.Element('F4').update(text='Get Weight\nF4')
-        ui_window.Element('F5').update(text='Delete Item\nF5')
+        ui_window.Element('F5').update(text='Delete\nF5')
        
 
 def move_db_item_to_ui_detail_pane(db_item_row):
@@ -91,7 +94,8 @@ def move_db_item_to_ui_detail_pane(db_item_row):
     ui_detail_pane.sgst_tax_rate = db_item_row.sgst_tax_rate
     ui_detail_pane.selling_amount = float(ui_detail_pane.qty) * float(ui_detail_pane.selling_price)
     ui_detail_pane.tax_rate = float(ui_detail_pane.cgst_tax_rate) + float(ui_detail_pane.sgst_tax_rate)
-    ui_detail_pane.tax_amount = float(ui_detail_pane.selling_amount) * float(ui_detail_pane.tax_rate) / 100
+    tax_amount = float(ui_detail_pane.selling_amount) * float(ui_detail_pane.tax_rate) / 100
+    ui_detail_pane.tax_amount = round(tax_amount, 2)
     ui_detail_pane.net_amount = float(ui_detail_pane.selling_amount) + float(ui_detail_pane.tax_amount)
     
     ui_detail_pane.add_item_line()    
@@ -173,12 +177,18 @@ def sum_item_list():
     net_amount = 0.00
    
     for item_line in ui_detail_pane.items_list:
+        ui_detail_pane.item_line_to_elements(line_items)
+        total_amount += float(ui_detail_pane.selling_amount)
+        total_tax_amount += float(ui_detail_pane.tax_amount)
+        net_amount += float(ui_detail_pane.net_amount)
+        cgst_rate = float(ui_detail_pane.cgst_tax_rate)
+        sgst_rate = float(ui_detail_pane.sgst_tax_rate)
+        cgst_amount = float(ui_detail_pane.selling_amount) * cgst_rate / 100
+        sgst_amount = float(ui_detail_pane.selling_amount) * sgst_rate / 100       
+        total_cgst_amount += cgst_amount
+        total_sgst_amount += sgst_amount
+        print('sum:',cgst_rate, cgst_amount, sgst_rate, sgst_amount)
         line_items += 1
-        total_amount += float(item_line[6])
-        total_tax_amount += float(item_line[8])
-        net_amount += float(item_line[9])
-        total_cgst_amount += float(item_line[10])
-        total_sgst_amount += float(item_line[11])
 
     ui_summary_pane.line_items = line_items
     ui_summary_pane.total_amount = total_amount
@@ -209,8 +219,7 @@ def insert_invoice():
     if len(ui_detail_pane.items_list) == 0:
         return
 
-    db_query = DbQuery(db_conn, 'SELECT nextval("REFERENCE_NUMBER")')
-    db_query = DbQuery(db_conn, 'SELECT nextval("ESTIMATE_NUMBER")')
+    db_query = DbQuery(db_conn, 'SELECT nextval("ORDER_NUMBER")')
     for db_row in db_query.result:
         ui_header_pane.reference_number = db_row[0]
 
@@ -742,6 +751,112 @@ def open_item_name_popup(item_name):
     ui_popup.close() 
 
 ######
+def print_invoice():
+    config = pdfkit.configuration(wkhtmltopdf = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
+    options = {
+        'page-height': '120mm',
+        'page-width': '60mm',
+        'margin-top': '3mm',
+        'margin-bottom': '3mm',
+        'margin-right': '3mm',
+        'margin-left': '3mm',
+        'enable-local-file-access': None,
+        'quiet': None
+    } 
+
+    print_str = """
+                <table style="width:100%">
+                    <tr>
+                        <td>
+                            <img src="c:\\python-tkinter\\al-fareeda-logo.png" alt="al-fareeda" width="100" height="48">
+                        </td>
+                        <td>
+                            &nbsp
+                        </td>
+                        <td padding: 10px;>
+                            <p style="font-size:9px; font-family:Courier; text-align:left">
+                                13/2947,<br>
+                                Pattinamkathaan&nbspbus&nbspstop,<br>
+                                Ramanathapuram, Tamil&nbspNadu<br>                        
+                                GSTIN: 33ABMFA2300A12E<br>
+                            </p>
+                        </td>
+                    </tr>
+                </table>                       
+                <p style="font-size:18px; font-weight: bold; font-family:Courier; text-align:center">
+                    Tax Invoice
+                </p>            
+            """    
+
+    print_str += """
+            <p  style="font-size:14px; font-weight: bold; font-family:Courier">Invoice No: {}<br>
+                Date: {}<br>
+            </p>            
+            """.format( ui_header_pane.invoice_number, 
+                        ui_title_pane.current_date
+                )    
+
+    print_str += """
+            <p style="font-size:12px; font-family:Courier; margin: 0px;">
+                Code&nbspItem&nbspName&nbsp&nbsp&nbsp&nbsp&nbspQty&nbsp&nbsp&nbsp&nbspAmount
+            </p>
+            <hr style="width:95%;text-align:left;margin-left:0">
+        """
+        
+####
+    for idx in range(len(ui_detail_pane.items_list)): 
+        ui_detail_pane.item_line_to_elements(idx)        
+        print_str += """
+            <p style="font-size:12px; font-family:Courier; margin: 0px;";>
+                {:^4s}&nbsp{:^10s}&nbsp&nbsp{}&nbsp&nbsp{}
+            </p>
+            """.format( ui_detail_pane.item_code[5:], 
+                        ui_detail_pane.item_name[0:10].ljust(10, ' ').replace(' ', ''),
+                        str(ui_detail_pane.qty).rjust(5,'*').replace('*', '&nbsp'), 
+                        str(ui_detail_pane.net_amount).rjust(8,'*').replace('*', '&nbsp')
+                )
+ 
+    print_str += """
+        <hr style="width:95%;text-align:left;margin-left:0">
+        """
+ 
+    print_str += """
+        <p style="font-size:12px; font-family:Courier; margin: 0px;">
+            &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+        </p>
+        <hr style="width:95%;text-align:left;margin-left:0">
+        <p style="font-size:12px; font-family:Courier; margin: 0px;">
+            &nbsp&nbsp&nbsp&nbsp&nbspCost&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+            &nbsp&nbsp&nbsp&nbsp&nbspCGS&nbspTax&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+            &nbsp&nbsp&nbsp&nbsp&nbspSGS&nbspTax&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+        </p>
+        <hr style="width:95%;text-align:left;margin-left:0">
+        <p style="font-size:12px; font-family:Courier; margin: 0px;">                    
+            &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br><br>
+            &nbspDiscount&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+            &nbspRoundoff&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>                    
+        </p>
+        <hr style="width:95%;text-align:left;margin-left:0">
+        """.format(str(ui_summary_pane.net_amount).rjust(12,'*').replace('*', '&nbsp'), 
+                    str(ui_summary_pane.total_amount).rjust(12,'*').replace('*', '&nbsp'), 
+                    str(ui_summary_pane.total_cgst_amount).rjust(12,'*').replace('*', '&nbsp'), 
+                    str(ui_summary_pane.total_sgst_amount).rjust(12,'*').replace('*', '&nbsp'),
+                    str(ui_summary_pane.net_amount).rjust(12,'*').replace('*', '&nbsp'),                            
+                    str(ui_summary_pane.discount_amount).rjust(12,'*').replace('*', '&nbsp'),                            
+                    str(ui_summary_pane.roundoff_amount).rjust(12,'*').replace('*', '&nbsp')                           
+            )
+    print_str += """
+        <p style="font-size:15px; font-family:Courier; font-weight: bold">
+            Net&nbspAmt&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
+        </p>
+        """.format(ui_summary_pane.invoice_amount.rjust(10,'*').replace('*', '&nbsp'))
+        
+    pdfkit.from_string(print_str, 'micro.pdf', options=options)
+    
+    os.startfile('micro.pdf')
+    
+
+######
 # Popup windows for message
 def popup_message(type, message):
     ui_message_layout = [
@@ -834,6 +949,8 @@ def main():
     ui_window['_BARCODE_'].bind('<FocusIn>', '+CLICK+')
     ui_window['_ITEM_NAME_'].bind('<FocusIn>', '+CLICK+')
     
+    goto_last_invoice()
+    
     prev_event = '' 
     focus = None    
     while True:
@@ -904,8 +1021,12 @@ def main():
             if prev_event == '_ITEMS_LIST_':
                 ui_detail_pane.focus_items_list()                
             else:
-                save_invoice()
-                clear_invoice()
+                filter = "invoice_number IS NULL OR invoice_number = ''"
+                if db_invoice_table.count(filter) > 2:
+                    sg.popup('Cannot create Sales Order', keep_on_top = True)                
+                else:
+                    save_invoice()
+                    clear_invoice()
                 ui_search_pane.focus_barcode()
 
         if event in ('F2:113', 'F2'):
@@ -917,7 +1038,7 @@ def main():
                     ui_detail_pane.focus_items_list_row(idx)             
                 else:
                     save_invoice()
-                    sg.popup('Estimate Saved', keep_on_top = True)                
+                    sg.popup('Sales Order Saved', keep_on_top = True)                
                     ui_search_pane.focus_barcode()
             else:
                 sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
@@ -942,6 +1063,7 @@ def main():
             if prev_event == '_ITEMS_LIST_':
                 ui_detail_pane.focus_items_list()                
             else:
+                print_invoice()
                 ui_search_pane.focus_barcode()
 
         if event in ('F5:116', 'F5', 'Delete:46', 'Delete'):
@@ -961,10 +1083,10 @@ def main():
                         ui_search_pane.focus_barcode()
                 else:
                     if len(ui_detail_pane.items_list) > 0 and ui_header_pane.invoice_number == '':
-                        confirm_delete = popup_message('OK_CANCEL', 'Invoice will be Deleted')
+                        confirm_delete = popup_message('OK_CANCEL', 'Confirm Deletion')
                         if confirm_delete == 'Ok':       
                             delete_invoice()
-                            #clear_invoice()
+                            clear_invoice()
                             goto_previous_invoice()
                             ui_search_pane.focus_barcode()
             else:
@@ -999,9 +1121,10 @@ def main():
             initialize_search_pane()
             
         if event.isalnum() and focus == '_ITEM_NAME_':
-            if len(ui_search_pane.item_name) > 2:
-                open_item_name_popup(ui_search_pane.item_name)
-                initialize_search_pane()            
+            if ui_header_pane.invoice_number == '':        
+                if len(ui_search_pane.item_name) > 2:            
+                    open_item_name_popup(ui_search_pane.item_name)
+                    initialize_search_pane()            
             
         if event in ('Prior:33', '_BEGIN_'):
             #save_invoice()

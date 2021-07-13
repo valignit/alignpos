@@ -79,14 +79,14 @@ class MainWindow:
             sg.Column(
             [
                 [
-                    sg.Text('Invoice No:', size=(8,1),  font=("Helvetica", 12)),
+                    sg.Text('Invoice:', size=(6,1),  font=("Helvetica", 12)),
                     sg.Input(key='_INVOICE_NUMBER_',
                         readonly=True, 
                         disabled_readonly_text_color=config["ui_readonly_text_color"], 
                         disabled_readonly_background_color=config["ui_readonly_background_color"] ,
                         default_text='' ,font=("Helvetica", 12),size=(10,1)
                     ),
-                    sg.Text('Estimate No:', size=(10,1),font=("Helvetica", 12)),
+                    sg.Text('Order:', size=(6,1),font=("Helvetica", 12)),
                     sg.Input(key='_REFERENCE_NUMBER_',
                         readonly=True, 
                         disabled_readonly_text_color=config["ui_readonly_text_color"], 
@@ -95,16 +95,25 @@ class MainWindow:
                         font=("Helvetica", 12),
                         size=(10,1)
                     ),
-                    sg.Text('Mobile No:', size=(8,1), font=("Helvetica", 12)),
+                    sg.Text('Mobile:', size=(6,1), font=("Helvetica", 12)),
                     sg.Input(key='_MOBILE_NUMBER_',
                         readonly=True, 
                         disabled_readonly_text_color=config["ui_readonly_text_color"], 
                         disabled_readonly_background_color=config["ui_readonly_background_color"],
                         default_text='',
                         font=("Helvetica", 12),
-                        size=(13,1)
+                        size=(10,1)
                     ),
-                    sg.Button(key='_FIND_', button_text='Find Invoice\nF10', **nav_button_wide, pad = ((10,10),(0,0))),
+                    sg.Text('Show:', size=(5,1), font=("Helvetica", 12)),
+                    sg.Combo(key='_LIST_OPTION_',
+                        values=['All', 'Unpaid', 'Paid'],
+                        default_value='All',
+                        background_color='white',
+                        font=("Helvetica", 11),size=(7,3),
+                        enable_events=True,                                
+                    ),
+                    
+                    sg.Button(key='_FIND_', button_text='FIND\nF10', **nav_button, pad = ((10,10),(0,0))),
                     sg.Button(key='_BEGIN_', button_text='BEGN\nPgUp',**nav_button, pad = ((5,0),(0,0))),
                     sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **nav_button, pad = ((5,0),(0,0))),
                     sg.Button(key='_NEXT_', button_text='NEXT\n→', **nav_button, pad = ((5,0),(0,0))),
@@ -804,13 +813,13 @@ class UiSummaryPane:
         return self.__total_tax_amount
 
     def set_total_cgst_amount(self, total_cgst_amount):
-        self.__total_cgst_amount = total_cgst_amount
+        self.__total_cgst_amount = "{:.2f}".format(total_cgst_amount)
         
     def get_total_cgst_amount(self):
         return self.__total_cgst_amount
 
     def set_total_sgst_amount(self, total_sgst_amount):
-        self.__total_sgst_amount = total_sgst_amount
+        self.__total_sgst_amount = "{:.2f}".format(total_sgst_amount)
         
     def get_total_sgst_amount(self):
         return self.__total_sgst_amount
