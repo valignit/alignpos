@@ -10,65 +10,113 @@ with open('./alignpos.json') as file_config:
 ###
 # Main Window Layout
 
+sg.theme(config["ui_theme"])
+w, h = sg.Window.get_screen_size()
+lw = w*78/100
+rw = w*22/100
+
 pad_button:  dict = {
                     'size':(4, 2), 
                     'font':('Calibri 11 bold'), 
                     'button_color': (config["ui_pad_button_color"])
                 }
 
+nav_button:  dict = {
+                    'size':(5, 2), 
+                    'font':('Calibri 11 bold'), 
+                    'button_color': (config["ui_nav_button_color"])
+                }
+
+nav_button_wide:  dict = {
+                    'size':(13, 2), 
+                    'font':('Calibri 11 bold'), 
+                    'button_color': (config["ui_nav_button_color"])
+                }
+                
+action_button:  dict = {
+                    'size':(11, 1), 
+                    'font':('Calibri 12 bold'), 
+                    'button_color': (config["ui_function_button_color"]),
+                    'disabled_button_color': ('gray99', 'gray99'),
+                    'use_ttk_buttons': True
+                }
+
+summary_text:  dict = {           
+                    'font':("Helvetica 11"),
+                    'size':(10,1)                        
+                }
+                
+summary_text_bold:  dict = {           
+                    'font':("Helvetica 13 bold"),
+                    'text_color': "blue",
+                    'size':(10,1)                        
+                }
+summary_input:  dict = {           
+                    'readonly':True, 
+                    'justification':'right', 
+                    'disabled_readonly_text_color':(config["ui_readonly_text_color"]), 
+                    'disabled_readonly_background_color':(config["ui_readonly_background_color"]), 
+                    'default_text':'0.00' , 
+                    'font':("Helvetica", 10),
+                    'size':(11,1)                        
+                }
+
+summary_input_bold:  dict = {           
+                    'readonly':True, 
+                    'justification':'right', 
+                    'disabled_readonly_text_color':"white", 
+                    'disabled_readonly_background_color':"blue", 
+                    'default_text':'0.00' , 
+                    'font':("Helvetica 14 bold"),
+                    'size':(8,1)                        
+                }
+
+header_text:  dict = {           
+                    'font':("Helvetica 12"),
+                    'size':(9,1),
+                    'justification': 'right'
+                }    
+
+header_input:  dict = {           
+                    'readonly':True, 
+                    'justification':'right', 
+                    'disabled_readonly_text_color':(config["ui_readonly_text_color"]), 
+                    'disabled_readonly_background_color':(config["ui_readonly_background_color"]), 
+                    'default_text':'0.00' , 
+                    'font':("Helvetica", 11),
+                    'size':(11,1)                        
+                }
+
+search_text:  dict = {           
+                    'font':("Helvetica 12"),
+                    'size':(9,1),
+                    'justification': 'right'
+                }    
+
+search_input:  dict = {           
+                    'readonly':True, 
+                    'justification':'right', 
+                    'disabled_readonly_text_color':(config["ui_readonly_text_color"]), 
+                    'disabled_readonly_background_color':(config["ui_readonly_background_color"]), 
+                    'default_text':'0.00' , 
+                    'font':("Helvetica", 12),
+                    'size':(10,1)                        
+                }
+                
 class MainWindow:
              
-    sg.theme(config["ui_theme"])
-
-    nav_button:  dict = {
-                        'size':(5, 2), 
-                        'font':('Calibri 11 bold'), 
-                        'button_color': (config["ui_nav_button_color"])
-                    }
-
-    nav_button_wide:  dict = {
-                        'size':(13, 2), 
-                        'font':('Calibri 11 bold'), 
-                        'button_color': (config["ui_nav_button_color"])
-                    }
-                    
-    action_button:  dict = {
-                        'size':(13, 2), 
-                        'font':('Calibri 12 bold'), 
-                        'button_color': (config["ui_function_button_color"])
-                    }
-
-
     ui_title_pane_layout = [
         [
             sg.Column(
             [
                 [
-                    sg.Text('Invoice Entry', size=(36,1) ,font=("Helvetica", 18)),
-                    sg.Text('User:', font=("Helvetica", 10)),
-                    sg.Input(key='_USER_ID_', 
-                        font=("Helvetica", 10),
-                        size=(15,1),
-                        readonly=True, 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"]
-                    ),
-                    sg.Text('Terminal:',font=("Helvetica", 10)),
-                    sg.Input(key='_TERMINAL_ID_', 
-                        font=("Helvetica", 10),
-                        size=(4,1),
-                        readonly=True, 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"]
-                    ),
-                    sg.Text('Date:',font=("Helvetica", 10)),
-                    sg.Input(key='_CURRENT_DATE_', 
-                        font=("Helvetica", 10),
-                        size=(10,1),
-                        readonly=True, 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"]
-                    ),
+                    sg.Text('Invoice Entry', size=(27,1) ,font=("Helvetica", 18)),
+                    sg.Text('User:', **header_text),
+                    sg.Input(key='_USER_ID_', **header_input),
+                    sg.Text('Terminal:', **header_text),
+                    sg.Input(key='_TERMINAL_ID_', **header_input),
+                    sg.Text('Date:', **header_text),
+                    sg.Input(key='_CURRENT_DATE_', **header_input)
                 ]
             ])
         ]
@@ -79,40 +127,12 @@ class MainWindow:
             sg.Column(
             [
                 [
-                    sg.Text('Invoice:', size=(6,1),  font=("Helvetica", 12)),
-                    sg.Input(key='_INVOICE_NUMBER_',
-                        readonly=True, 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"] ,
-                        default_text='' ,font=("Helvetica", 12),size=(10,1)
-                    ),
-                    sg.Text('Order:', size=(6,1),font=("Helvetica", 12)),
-                    sg.Input(key='_REFERENCE_NUMBER_',
-                        readonly=True, 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"] ,
-                        default_text='' ,
-                        font=("Helvetica", 12),
-                        size=(10,1)
-                    ),
-                    sg.Text('Mobile:', size=(6,1), font=("Helvetica", 12)),
-                    sg.Input(key='_MOBILE_NUMBER_',
-                        readonly=True, 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"],
-                        default_text='',
-                        font=("Helvetica", 12),
-                        size=(10,1)
-                    ),
-                    sg.Text('Show:', size=(5,1), font=("Helvetica", 12)),
-                    sg.Combo(key='_LIST_OPTION_',
-                        values=['All', 'Unpaid', 'Paid'],
-                        default_value='All',
-                        background_color='white',
-                        font=("Helvetica", 11),size=(7,3),
-                        enable_events=True,                                
-                    ),
-                    
+                    sg.Text('Invoice:', **header_text),
+                    sg.Input(key='_INVOICE_NUMBER_', **header_input),
+                    sg.Text('Order:', **header_text),
+                    sg.Input(key='_REFERENCE_NUMBER_', **header_input),
+                    sg.Text('Mobile:', **header_text),
+                    sg.Input(key='_MOBILE_NUMBER_', **header_input),
                     sg.Button(key='_FIND_', button_text='FIND\nF10', **nav_button, pad = ((10,10),(0,0))),
                     sg.Button(key='_BEGIN_', button_text='BEGN\nPgUp',**nav_button, pad = ((5,0),(0,0))),
                     sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **nav_button, pad = ((5,0),(0,0))),
@@ -128,14 +148,14 @@ class MainWindow:
             sg.Column(
             [
                 [
-                    sg.Text('Barcode:', size=(8,1),  font=("Helvetica", 12)),
+                    sg.Text('Barcode:', **search_text),
                     sg.Input(key='_BARCODE_',
                         background_color='White',
                         font=("Helvetica", 12),
                         size=(15,1), 
                         enable_events = True
                     ),
-                    sg.Text('Item Name:', size=(9,1), font=("Helvetica", 12), pad=((20,0),(0,0))),
+                    sg.Text('Item Name:', **search_text, pad=((20,0),(0,0))),
                     sg.Input(key='_ITEM_NAME_',
                         background_color='White',
                         font=("Helvetica", 12),
@@ -168,7 +188,7 @@ class MainWindow:
                          alternating_row_color='MistyRose2',
                          num_rows=15,
                          display_row_numbers=True,
-                         col_widths=[10, 13, 20, 5, 5, 8, 10, 8, 10, 10]
+                         col_widths=[10, 13, 23, 5, 5, 8, 10, 8, 10, 10]
                     )            
                 ]        
             ])    
@@ -185,7 +205,10 @@ class MainWindow:
                     sg.Button(key='F3',  button_text='\nF3', **action_button),
                     sg.Button(key='F4',  button_text='\nF4', **action_button),
                     sg.Button(key='F5',  button_text='\nF5', **action_button),
-                    sg.Button(key='ESC', button_text='Exit\nEsc', **action_button, pad = ((237,0),(0,0))),
+                    sg.Button(key='F6',  button_text='\nF6', **action_button),
+                    sg.Button(key='F7',  button_text='\nF7', **action_button),
+                    sg.Button(key='F8',  button_text='\nF8', **action_button),
+                    sg.Button(key='ESC', button_text='Exit\nEsc', **action_button),
                 ]               
             ])    
         ]
@@ -198,7 +221,7 @@ class MainWindow:
                 [
                     sg.Image(filename = 'al_fareeda_logo.PNG', background_color = 'white')
                 ]
-            ], vertical_alignment = 'top', pad=(45,5), background_color = 'white')
+            ], vertical_alignment = 'top', pad=(45,0), background_color = 'white')
         ]
     ]
     
@@ -207,108 +230,36 @@ class MainWindow:
             sg.Column(
             [
                 [
-                    sg.Text('Line Items:',  font=("Helvetica", 10) , justification="right", size=(10,1)),
-                    sg.Input(key='_LINE_ITEMS_', 
-                        readonly=True, 
-                        justification="right", 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"], 
-                        default_text='0' ,
-                        font=("Helvetica", 10), 
-                        pad=((0,0),(0,0)),                        
-                        size=(11,1)
-                    )          
+                    sg.Text('Line Items:', **summary_text),
+                    sg.Input(key='_LINE_ITEMS_', **summary_input)          
                 ],
                 [
-                    sg.Text('Total Amount:',  font=("Helvetica", 10),justification="right", size=(10,1)),
-                    sg.Input(key='_TOTAL_AMOUNT_', 
-                        readonly=True, 
-                        justification="right", 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"], 
-                        default_text='0.00',
-                        font=("Helvetica", 10),
-                        pad=((0,0),(0,0)),                        
-                        size=(11,1)
-                    ),
+                    sg.Text('Total Amount:', **summary_text),
+                    sg.Input(key='_TOTAL_AMOUNT_', **summary_input),
                 ],
                 [
-                    sg.Text('Tax:', font=("Helvetica", 10),justification="right",size=(10,1)),
-                    sg.Input(key='_TOTAL_TAX_AMOUNT_', 
-                        readonly=True, 
-                        justification="right", 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"], 
-                        default_text='0.00' , 
-                        font=("Helvetica", 10), 
-                        pad=((0,0),(0,0)),                        
-                        size=(11,1)
-                    ),
+                    sg.Text('Tax:', **summary_text),
+                    sg.Input(key='_TOTAL_TAX_AMOUNT_', **summary_input),
                 ],
                 [
-                    sg.Text('Net Amount:', font=("Helvetica", 10),justification="right",size=(10,1)),
-                    sg.Input(key='_NET_AMOUNT_', 
-                        readonly=True, 
-                        justification="right", 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"], 
-                        default_text='0.00', 
-                        font=("Helvetica", 10), 
-                        pad=((0,0),(0,0)),                        
-                        size=(11,1)
-                    ),
+                    sg.Text('Net Amount:', **summary_text),
+                    sg.Input(key='_NET_AMOUNT_', **summary_input),
                 ],
                 [
-                    sg.Text('Discount:', font=("Helvetica", 10),justification="right",size=(10,1)),
-                    sg.Input(key='_DISCOUNT_AMOUNT_', 
-                        readonly=True, 
-                        justification="right", 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"], 
-                        default_text='0.00' , 
-                        font=("Helvetica", 10), 
-                        pad=((0,0),(0,0)),                        
-                        size=(11,1)
-                    ),
+                    sg.Text('Discount:', **summary_text),
+                    sg.Input(key='_DISCOUNT_AMOUNT_', **summary_input),
                 ],
                 [
-                    sg.Text('Roundoff:', font=("Helvetica", 10),justification="right",size=(10,1)),
-                    sg.Input(key='_ROUNDOFF_AMOUNT_', 
-                        readonly=True, 
-                        justification="right", 
-                        disabled_readonly_text_color=config["ui_readonly_text_color"], 
-                        disabled_readonly_background_color=config["ui_readonly_background_color"], 
-                        default_text='0.00' , 
-                        font=("Helvetica", 10), 
-                        pad=((0,0),(0,0)),                        
-                        size=(11,1)
-                    ),
+                    sg.Text('Roundoff:', **summary_text),
+                    sg.Input(key='_ROUNDOFF_AMOUNT_', **summary_input),
                 ],
                 [
-                    sg.Text('Invoice Amt:', font=("Helvetica 12 bold"),justification="right",size=(10,1),pad=((0,0),(5,0))),
-                    sg.Input(key='_INVOICE_AMOUNT_', 
-                        readonly=True, 
-                        justification="right", 
-                        disabled_readonly_text_color="White", 
-                        disabled_readonly_background_color=config["ui_readonly_text_color"], 
-                        default_text='0.00',
-                        font=("Helvetica 14 bold"),
-                        pad=((0,0),(0,0)),                        
-                        size=(8,1)
-                    ),
+                    sg.Text('Invoiced:', **summary_text_bold, pad=((5,0),(5,0))),
+                    sg.Input(key='_INVOICE_AMOUNT_', **summary_input_bold, pad=((0,0),(0,0))),
                 ],
                 [
-                    sg.Text('Paid Amt:', font=("Helvetica 12 bold"),justification="right",size=(9,1), text_color='Blue',pad=((0,11),(5,0))),
-                    sg.Input(key='_PAID_AMOUNT_', 
-                        readonly=True, 
-                        justification="right", 
-                        disabled_readonly_text_color="White", 
-                        disabled_readonly_background_color='Blue', 
-                        default_text='0.00' , 
-                        font=("Helvetica 14 bold"),
-                        pad=((0,0),(7,0)),
-                        size=(8,1)
-                    )
+                    sg.Text('Paid:', **summary_text_bold ,pad=((5,0),(5,0))),
+                    sg.Input(key='_PAID_AMOUNT_', **summary_input_bold, pad=((0,0),(7,0)))
                 ]            
                 
             ], vertical_alignment = 'top', pad = (18,0))           
@@ -366,41 +317,41 @@ class MainWindow:
     
     ui_left_panes_layout = [
         [
-            sg.Column(ui_title_pane_layout, size = (990,42), vertical_alignment = 'top', pad = None)     
+            sg.Column(ui_title_pane_layout, size = (lw, h*7/100), vertical_alignment = 'top', pad = ((0,5),(5,5)))     
         ],
         [
-            sg.Column(ui_header_pane_layout, size = (990,60), vertical_alignment = 'top', pad = None)     
+            sg.Column(ui_header_pane_layout, size = (lw,h*8/100), vertical_alignment = 'top', pad = ((0,5),(5,5)))     
         ],
         [
-            sg.Column(ui_search_pane_layout, size = (990,38), vertical_alignment = 'top', pad = None)     
+            sg.Column(ui_search_pane_layout, size = (lw,h*6/100), vertical_alignment = 'top', pad = ((0,5),(5,5)))     
         ],
         [
-            sg.Column(ui_detail_pane_layout, size = (990,375), vertical_alignment = 'top', pad = None)     
+            sg.Column(ui_detail_pane_layout, size = (lw,h*57/100), vertical_alignment = 'top', pad = ((0,5),(5,5)))     
         ],
         [
-            sg.Column(ui_action_pane_layout, size = (990,120), vertical_alignment = 'top', pad = None)     
+            sg.Column(ui_action_pane_layout, size = (lw,h*9/100), vertical_alignment = 'top', pad = ((0,5),(5,5)))     
         ]         
     ]
 
     ui_right_panes_layout = [
         [
-            sg.Column(ui_company_pane_layout, size = (530,75), vertical_alignment = 'top', pad = ((0,0),(0,0)), background_color='White')     
+            sg.Column(ui_company_pane_layout, size = (rw,h*10/100), vertical_alignment = 'top', pad = ((0,5),(5,5)), background_color='White')     
         ],
         [
-            sg.Column(ui_summary_pane_layout, size = (530,230), vertical_alignment = 'top', pad = ((3,0),(10,0)), background_color=None)     
+            sg.Column(ui_summary_pane_layout, size = (rw,h*33/100), vertical_alignment = 'top', pad = ((0,5),(5,5)), background_color=None)     
         ],
         [
-            sg.Column(ui_keypad_pane_layout, size = (530,270), vertical_alignment = 'top', pad = ((12,12),(0,0)), background_color=None)     
+            sg.Column(ui_keypad_pane_layout, size = (rw,h*39/100), vertical_alignment = 'top', pad = ((0,5),(5,5)), background_color=None)     
         ],
         [
-            sg.Column(ui_logo_pane_layout, size = (530,40), vertical_alignment = 'top', pad = ((0,0),(10,0)), background_color='White')     
+            sg.Column(ui_logo_pane_layout, size = (rw,h*5/100), vertical_alignment = 'top', pad = ((0,5),(5,5)), background_color='White')     
         ]        
     ]
 
     layout = [
         [
-            sg.Column(ui_left_panes_layout, size = (990,700), vertical_alignment = 'top', pad = (0,0), background_color='White'),
-            sg.Column(ui_right_panes_layout, size = (530,700), vertical_alignment = 'top', pad = None, background_color=None)   
+            sg.Column(ui_left_panes_layout, size = (lw,h), vertical_alignment = 'top', pad = None, background_color='White'),
+            sg.Column(ui_right_panes_layout, size = (rw,h), vertical_alignment = 'top', pad = None, background_color='White')   
         ]      
     ]
 
@@ -751,6 +702,9 @@ class UiActionPane:
         self.__window['F3'].Widget.config(takefocus=0)
         self.__window['F4'].Widget.config(takefocus=0)
         self.__window['F5'].Widget.config(takefocus=0)        
+        self.__window['F6'].Widget.config(takefocus=0)        
+        self.__window['F7'].Widget.config(takefocus=0)        
+        self.__window['F8'].Widget.config(takefocus=0)        
         self.__window['ESC'].Widget.config(takefocus=0)    
 
 
