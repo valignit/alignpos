@@ -117,10 +117,12 @@ ENGINE=InnoDB
 
 CREATE TABLE `tabEstimate` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',	
 	`cgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`total_amount` DECIMAL(18,6) NULL DEFAULT NULL,
-	`invoice_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`estimate_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`discount_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`creation` DATETIME(6) NULL DEFAULT NULL,
@@ -128,6 +130,7 @@ CREATE TABLE `tabEstimate` (
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	PRIMARY KEY (`name`) USING BTREE,
+	INDEX `FK_tabEstimate_tabCustomer` (`customer`) USING BTREE	
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB

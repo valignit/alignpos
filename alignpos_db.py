@@ -66,8 +66,8 @@ class ConnAlignPos():
         mapper(Item, Table('tabItem', db_table_meta, autoload=True))
         mapper(Invoice, Table('tabInvoice', db_table_meta, autoload=True))
         mapper(InvoiceItem, Table('tabInvoice Item', db_table_meta, autoload=True))
-        mapper(Estimate, Table('tabInvoice', db_table_meta, autoload=True))
-        mapper(EstimateItem, Table('tabInvoice Item', db_table_meta, autoload=True))
+        mapper(Estimate, Table('tabEstimate', db_table_meta, autoload=True))
+        mapper(EstimateItem, Table('tabEstimate Item', db_table_meta, autoload=True))
         mapper(ExchangeAdjustment, Table('tabExchange Adjustment', db_table_meta, autoload=True))
         
         db_session = sessionmaker(bind=self.__engine)

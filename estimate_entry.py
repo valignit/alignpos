@@ -8,10 +8,10 @@ import platform
 import pdfkit
 import webbrowser
 from pynput.keyboard import Key, Controller
-from invoice_entry_ui import MainWindow, UiTitlePane, UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiSummaryPane, UiKeypadPane, \
+from estimate_entry_ui import MainWindow, UiTitlePane, UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiSummaryPane, UiKeypadPane, \
                              ChangeQtyPopup, UiChangeQtyPopup, ItemNamePopup, UiItemNamePopup,\
                              PaymentPopup, UiPaymentPopup
-from alignpos_db import ConnAlignPos, DbTable, DbQuery, Customer, Item, Invoice, InvoiceItem, Estimate, EstimateItem, ExchangeAdjustment
+from alignpos_db import ConnAlignPos, DbTable, DbQuery, Customer, Item, Estimate, EstimateItem
 
 ######
 def initialize_title_pane():
@@ -21,8 +21,7 @@ def initialize_title_pane():
 
 
 def initialize_header_pane():
-    ui_header_pane.reference_number = ''
-    ui_header_pane.invoice_number = ''
+    ui_header_pane.estimate_number = ''
     ui_header_pane.payment_status = ''
     ui_header_pane.mobile_number = '0000000000'
     ui_header_pane.customer_number = ''
@@ -64,19 +63,19 @@ def initialize_summary_pane():
     ui_summary_pane.total_tax_amount = 0.00
     ui_summary_pane.discount_amount = 0.00          
     ui_summary_pane.roundoff_amount = 0.00          
-    ui_summary_pane.invoice_amount = 0.00
-    ui_summary_pane.paid_amount = 0.00
+    ui_summary_pane.estimate_amount = 0.00
 
 
 def initialize_action_pane(context):
     ui_window.Element('F1').update(text='New\nF1')    
     ui_window.Element('F2').update(text='Specs\nF2')
     ui_window.Element('F3').update(text='Quantity\nF3')
-    ui_window.Element('F4').update(text='Price\nF4')
-    ui_window.Element('F5').update(text='Save\nF5')
-    ui_window.Element('F6').update(text='Delete\nF6')
-    ui_window.Element('F7').update(text='Payment\nF7')
-    ui_window.Element('F8').update(text='Print\nF8')
+    ui_window.Element('F4').update(text='Weight\nF4')
+    ui_window.Element('F5').update(text='Price\nF5')
+    ui_window.Element('F6').update(text='Save\nF6')
+    ui_window.Element('F7').update(text='Delete\nF7')
+    ui_window.Element('F8').update(text='Payment\nF8')
+    ui_window.Element('F9').update(text='Print\nF9')
        
 
 def move_db_item_to_ui_detail_pane(db_item_row):
@@ -97,19 +96,19 @@ def move_db_item_to_ui_detail_pane(db_item_row):
     ui_detail_pane.add_item_line()    
 
 
-def move_db_invoice_item_to_ui_detail_pane(db_invoice_item_row):
-    ui_detail_pane.item_code = db_invoice_item_row.item
+def move_db_estimate_item_to_ui_detail_pane(db_estimate_item_row):
+    ui_detail_pane.item_code = db_estimate_item_row.item
     
-    db_item_row = db_item_table.get_row(db_invoice_item_row.item)
+    db_item_row = db_item_table.get_row(db_estimate_item_row.item)
     if db_item_row:
         ui_detail_pane.barcode = db_item_row.barcode
         ui_detail_pane.item_name = db_item_row.item_name
         ui_detail_pane.uom = db_item_row.uom
         ui_detail_pane.selling_price = db_item_row.selling_price
 
-    ui_detail_pane.qty = db_invoice_item_row.qty
-    ui_detail_pane.cgst_tax_rate = db_invoice_item_row.cgst_tax_rate
-    ui_detail_pane.sgst_tax_rate = db_invoice_item_row.sgst_tax_rate
+    ui_detail_pane.qty = db_estimate_item_row.qty
+    ui_detail_pane.cgst_tax_rate = db_estimate_item_row.cgst_tax_rate
+    ui_detail_pane.sgst_tax_rate = db_estimate_item_row.sgst_tax_rate
     ui_detail_pane.selling_amount = float(ui_detail_pane.qty) * float(ui_detail_pane.selling_price)
     ui_detail_pane.tax_rate = float(ui_detail_pane.cgst_tax_rate) + float(ui_detail_pane.sgst_tax_rate)
     ui_detail_pane.tax_amount = float(ui_detail_pane.selling_amount) * float(ui_detail_pane.tax_rate) / 100
@@ -128,9 +127,6 @@ def process_carry_bag():
 def process_barcode(barcode):
     if not barcode:
         return
-    if not ui_header_pane.invoice_number == '':
-        sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
-        return
          
     if (ui_search_pane.barcode[0].isnumeric() and len(ui_search_pane.barcode) > 12):
         filter = "barcode='{}'"
@@ -142,12 +138,6 @@ def process_barcode(barcode):
         db_item_row = db_item_table.first(filter.format(barcode))
         if db_item_row:
             move_db_item_to_ui_detail_pane(db_item_row)
-    elif (ui_search_pane.barcode[0] == 'E' and len(ui_search_pane.barcode) > 8):
-        filter = "parent='{}'"   
-        db_estimate_item_cursor = db_estimate_item_table.list(filter.format(barcode))
-        for db_estimate_item_row in db_estimate_item_cursor:
-            print(db_estimate_item_row.name)
-            move_db_invoice_item_to_ui_detail_pane(db_estimate_item_row)
     else:
         return
         
@@ -160,7 +150,7 @@ def process_item_name(item_code):
     db_item_row = db_item_table.first(filter.format(item_code))
     if db_item_row:
         move_db_item_to_ui_detail_pane(db_item_row)
-        sum_item_list()  
+        sum_item_list()
 
         
 def sum_item_list():
@@ -190,29 +180,29 @@ def sum_item_list():
     ui_summary_pane.net_amount = net_amount
     ui_summary_pane.total_cgst_amount = total_cgst_amount
     ui_summary_pane.total_sgst_amount = total_sgst_amount
-    invoice_actual_amount = net_amount - float(ui_summary_pane.discount_amount)
-    invoice_rounded_amount = round(invoice_actual_amount, 0)
-    ui_summary_pane.invoice_amount = invoice_rounded_amount
-    ui_summary_pane.roundoff_amount = invoice_rounded_amount - invoice_actual_amount    
+    estimate_actual_amount = net_amount - float(ui_summary_pane.discount_amount)
+    estimate_rounded_amount = round(estimate_actual_amount, 0)
+    ui_summary_pane.estimate_amount = estimate_rounded_amount
+    ui_summary_pane.roundoff_amount = estimate_rounded_amount - estimate_actual_amount    
 
 
-def save_invoice():
+def save_estimate():
     if not len(ui_detail_pane.items_list) > 0:
         return    
 
-    if ui_header_pane.reference_number == '':
-        insert_invoice()
+    if ui_header_pane.estimate_number == '':
+        insert_estimate()
     else:
-        update_invoice()
+        update_estimate()
 
 
-def insert_invoice():
+def insert_estimate():
     if len(ui_detail_pane.items_list) == 0:
         return
 
-    db_query = DbQuery(db_conn, 'SELECT nextval("ORDER_NUMBER")')
+    db_query = DbQuery(db_conn, 'SELECT nextval("ESTIMATE_NUMBER")')
     for db_row in db_query.result:
-        ui_header_pane.reference_number = db_row[0]
+        ui_header_pane.estimate_number = db_row[0]
 
     customer_number = walk_in_customer
     db_customer_row = db_customer_table.get_row(customer_number)
@@ -222,115 +212,111 @@ def insert_invoice():
         ui_header_pane.customer_name = db_customer_row.customer_name
         ui_header_pane.customer_address = db_customer_row.address
 
-    db_invoice_row = db_invoice_table.new_row()
+    db_estimate_row = db_estimate_table.new_row()
 
-    db_invoice_row.name = ui_header_pane.reference_number
-    db_invoice_row.customer = customer_number
-    db_invoice_row.posting_date = ui_title_pane.current_date    
-    db_invoice_row.total_amount = ui_summary_pane.total_amount
-    db_invoice_row.net_amount = ui_summary_pane.net_amount
-    db_invoice_row.invoice_amount = ui_summary_pane.invoice_amount
-    db_invoice_row.cgst_tax_amount = ui_summary_pane.total_cgst_amount
-    db_invoice_row.sgst_tax_amount = ui_summary_pane.total_sgst_amount
-    db_invoice_row.paid_amount = ui_summary_pane.paid_amount   
-    db_invoice_row.terminal_id = ui_title_pane.terminal_id  
+    db_estimate_row.name = ui_header_pane.estimate_number
+    db_estimate_row.customer = customer_number
+    db_estimate_row.posting_date = ui_title_pane.current_date    
+    db_estimate_row.total_amount = ui_summary_pane.total_amount
+    db_estimate_row.net_amount = ui_summary_pane.net_amount
+    db_estimate_row.estimate_amount = ui_summary_pane.estimate_amount
+    db_estimate_row.cgst_tax_amount = ui_summary_pane.total_cgst_amount
+    db_estimate_row.sgst_tax_amount = ui_summary_pane.total_sgst_amount
+    db_estimate_row.terminal_id = ui_title_pane.terminal_id  
 
-    db_invoice_table.create_row(db_invoice_row)
+    db_estimate_table.create_row(db_estimate_row)
    
     for idx in range(len(ui_detail_pane.items_list)): 
         ui_detail_pane.item_line_to_elements(idx)
         
-        db_invoice_item_row = db_invoice_item_table.new_row()
+        db_estimate_item_row = db_estimate_item_table.new_row()
         
-        db_invoice_item_row.name = ui_header_pane.reference_number + f"{idx:04d}"
-        db_invoice_item_row.parent = ui_header_pane.reference_number
-        db_invoice_item_row.item = ui_detail_pane.item_code
-        db_invoice_item_row.qty = ui_detail_pane.qty
-        db_invoice_item_row.standard_selling_price = ui_detail_pane.selling_price
-        db_invoice_item_row.applied_selling_price = ui_detail_pane.selling_price
-        db_invoice_item_row.cgst_tax_rate = ui_detail_pane.cgst_tax_rate
-        db_invoice_item_row.sgst_tax_rate = ui_detail_pane.sgst_tax_rate
+        db_estimate_item_row.name = ui_header_pane.estimate_number + f"{idx:04d}"
+        db_estimate_item_row.parent = ui_header_pane.estimate_number
+        db_estimate_item_row.item = ui_detail_pane.item_code
+        db_estimate_item_row.qty = ui_detail_pane.qty
+        db_estimate_item_row.standard_selling_price = ui_detail_pane.selling_price
+        db_estimate_item_row.applied_selling_price = ui_detail_pane.selling_price
+        db_estimate_item_row.cgst_tax_rate = ui_detail_pane.cgst_tax_rate
+        db_estimate_item_row.sgst_tax_rate = ui_detail_pane.sgst_tax_rate
       
-        db_invoice_item_table.create_row(db_invoice_item_row)
+        db_estimate_item_table.create_row(db_estimate_item_row)
 
     db_session.commit()
     
 
-def update_invoice():
-    db_invoice_row = db_invoice_table.get_row(ui_header_pane.reference_number)
+def update_estimate():
+    db_estimate_row = db_estimate_table.get_row(ui_header_pane.estimate_number)
 
-    if not db_invoice_row:
+    if not db_estimate_row:
         return
-    db_invoice_row.invoice_number = ui_header_pane.invoice_number
-    db_invoice_row.customer = ui_header_pane.customer_number
-    db_invoice_row.total_amount = ui_summary_pane.total_amount
-    db_invoice_row.net_amount = ui_summary_pane.net_amount
-    db_invoice_row.invoice_amount = ui_summary_pane.invoice_amount
-    db_invoice_row.cgst_tax_amount = ui_summary_pane.total_cgst_amount
-    db_invoice_row.sgst_tax_amount = ui_summary_pane.total_sgst_amount
-    db_invoice_row.paid_amount = ui_summary_pane.paid_amount   
-    db_invoice_row.terminal_id = ui_title_pane.terminal_id  
+    db_estimate_row.customer = ui_header_pane.customer_number
+    db_estimate_row.total_amount = ui_summary_pane.total_amount
+    db_estimate_row.net_amount = ui_summary_pane.net_amount
+    db_estimate_row.estimate_amount = ui_summary_pane.estimate_amount
+    db_estimate_row.cgst_tax_amount = ui_summary_pane.total_cgst_amount
+    db_estimate_row.sgst_tax_amount = ui_summary_pane.total_sgst_amount
+    db_estimate_row.terminal_id = ui_title_pane.terminal_id  
 
     filter = "parent='{}'"
-    db_invoice_item_cursor = db_invoice_item_table.list(filter.format(ui_header_pane.reference_number))
-    for db_invoice_item_row in db_invoice_item_cursor:
-        db_invoice_item_table.delete_row(db_invoice_item_row)
+    db_estimate_item_cursor = db_estimate_item_table.list(filter.format(ui_header_pane.estimate_number))
+    for db_estimate_item_row in db_estimate_item_cursor:
+        db_estimate_item_table.delete_row(db_estimate_item_row)
 
     db_session.flush()
     
     for idx in range(len(ui_detail_pane.items_list)): 
         ui_detail_pane.item_line_to_elements(idx)
         
-        db_invoice_item_row = db_invoice_item_table.new_row()
+        db_estimate_item_row = db_estimate_item_table.new_row()
         
-        db_invoice_item_row.name = ui_header_pane.reference_number + f"{idx:04d}"
-        db_invoice_item_row.parent = ui_header_pane.reference_number
-        db_invoice_item_row.item = ui_detail_pane.item_code
-        db_invoice_item_row.qty = ui_detail_pane.qty
-        db_invoice_item_row.standard_selling_price = ui_detail_pane.selling_price
-        db_invoice_item_row.applied_selling_price = ui_detail_pane.selling_price
-        db_invoice_item_row.cgst_tax_rate = ui_detail_pane.cgst_tax_rate
-        db_invoice_item_row.sgst_tax_rate = ui_detail_pane.sgst_tax_rate
+        db_estimate_item_row.name = ui_header_pane.estimate_number + f"{idx:04d}"
+        db_estimate_item_row.parent = ui_header_pane.estimate_number
+        db_estimate_item_row.item = ui_detail_pane.item_code
+        db_estimate_item_row.qty = ui_detail_pane.qty
+        db_estimate_item_row.standard_selling_price = ui_detail_pane.selling_price
+        db_estimate_item_row.applied_selling_price = ui_detail_pane.selling_price
+        db_estimate_item_row.cgst_tax_rate = ui_detail_pane.cgst_tax_rate
+        db_estimate_item_row.sgst_tax_rate = ui_detail_pane.sgst_tax_rate
       
-        db_invoice_item_table.create_row(db_invoice_item_row)
+        db_estimate_item_table.create_row(db_estimate_item_row)
 
     db_session.commit()
 
 
-def delete_invoice():
-    if not ui_header_pane.reference_number or ui_header_pane.reference_number == '':
+def delete_estimate():
+    if not ui_header_pane.estimate_number or ui_header_pane.estimate_number == '':
         return
 
     filter = "parent='{}'"
-    db_invoice_item_cursor = db_invoice_item_table.list(filter.format(ui_header_pane.reference_number))
-    for db_invoice_item_row in db_invoice_item_cursor:
-        print(db_invoice_item_row.name)
-        db_invoice_item_table.delete_row(db_invoice_item_row)
+    db_estimate_item_cursor = db_estimate_item_table.list(filter.format(ui_header_pane.estimate_number))
+    for db_estimate_item_row in db_estimate_item_cursor:
+        print(db_estimate_item_row.name)
+        db_estimate_item_table.delete_row(db_estimate_item_row)
 
     db_session.flush()
     
-    db_invoice_row = db_invoice_table.get_row(ui_header_pane.reference_number)
-    if db_invoice_row:
-        db_invoice_table.delete_row(db_invoice_row)
+    db_estimate_row = db_estimate_table.get_row(ui_header_pane.estimate_number)
+    if db_estimate_row:
+        db_estimate_table.delete_row(db_estimate_row)
     
     db_session.commit()
     
 
-def clear_invoice():
+def clear_estimate():
     initialize_header_pane()
     initialize_search_pane()    
     initialize_detail_pane()
     initialize_summary_pane()
     
 
-def show_invoice(db_invoice_row):
-    if not db_invoice_row:
+def show_estimate(db_estimate_row):
+    if not db_estimate_row:
         return
         
-    ui_header_pane.reference_number = db_invoice_row.name
-    ui_header_pane.invoice_number = db_invoice_row.invoice_number
+    ui_header_pane.estimate_number = db_estimate_row.name
 
-    customer_number = db_invoice_row.customer
+    customer_number = db_estimate_row.customer
     db_customer_row = db_customer_table.get_row(customer_number)
     if db_customer_row:
         ui_header_pane.mobile_number = db_customer_row.mobile_number
@@ -340,50 +326,49 @@ def show_invoice(db_invoice_row):
 
     ui_detail_pane.item_line = []
     filter = "parent='{}'"
-    db_invoice_item_cursor = db_invoice_item_table.list(filter.format(ui_header_pane.reference_number))    
-    for db_invoice_item_row in db_invoice_item_cursor:
-        move_db_invoice_item_to_ui_detail_pane(db_invoice_item_row)
+    db_estimate_item_cursor = db_estimate_item_table.list(filter.format(ui_header_pane.estimate_number))    
+    for db_estimate_item_row in db_estimate_item_cursor:
+        move_db_estimate_item_to_ui_detail_pane(db_estimate_item_row)
     sum_item_list()
-    if (db_invoice_row.discount_amount):
-        ui_summary_pane.discount_amount = db_invoice_row.discount_amount
+    if (db_estimate_row.discount_amount):
+        ui_summary_pane.discount_amount = db_estimate_row.discount_amount
     else:
         ui_summary_pane.discount_amount = 0.00       
-    ui_summary_pane.invoice_amount = db_invoice_row.invoice_amount
-    ui_summary_pane.paid_amount = db_invoice_row.paid_amount
+    ui_summary_pane.estimate_amount = db_estimate_row.estimate_amount
     
 
-def goto_first_invoice():
-    db_invoice_row = db_invoice_table.first('')
-    if db_invoice_row:
-        clear_invoice()    
-        show_invoice(db_invoice_row)
+def goto_first_estimate():
+    db_estimate_row = db_estimate_table.first('')
+    if db_estimate_row:
+        clear_estimate()    
+        show_estimate(db_estimate_row)
 
 
-def goto_previous_invoice():
-    if ui_header_pane.reference_number:
-        name = ui_header_pane.reference_number
+def goto_previous_estimate():
+    if ui_header_pane.estimate_number:
+        name = ui_header_pane.estimate_number
         filter = "name < '{}'"
-        db_invoice_row = db_invoice_table.last(filter.format(name))
-        if db_invoice_row:
-            clear_invoice()    
-            show_invoice(db_invoice_row)
+        db_estimate_row = db_estimate_table.last(filter.format(name))
+        if db_estimate_row:
+            clear_estimate()    
+            show_estimate(db_estimate_row)
 
 
-def goto_next_invoice():
-    if ui_header_pane.reference_number:
-        name = ui_header_pane.reference_number
+def goto_next_estimate():
+    if ui_header_pane.estimate_number:
+        name = ui_header_pane.estimate_number
         filter = "name > '{}'"
-        db_invoice_row = db_invoice_table.first(filter.format(name))
-        if db_invoice_row:
-            clear_invoice()    
-            show_invoice(db_invoice_row)
+        db_estimate_row = db_estimate_table.first(filter.format(name))
+        if db_estimate_row:
+            clear_estimate()    
+            show_estimate(db_estimate_row)
 
 
-def goto_last_invoice():
-    db_invoice_row = db_invoice_table.last('')
-    if db_invoice_row:
-        clear_invoice()    
-        show_invoice(db_invoice_row)
+def goto_last_estimate():
+    db_estimate_row = db_estimate_table.last('')
+    if db_estimate_row:
+        clear_estimate()    
+        show_estimate(db_estimate_row)
 
 
     
@@ -405,7 +390,7 @@ def open_change_qty_popup(row_item):
                 )
 
     ui_change_qty_popup = UiChangeQtyPopup(ui_popup)
-    
+        
     ui_change_qty_popup.item_name = ui_detail_pane.item_name
     ui_change_qty_popup.existing_qty = ui_detail_pane.qty
     ui_change_qty_popup.new_qty_f = 0.00
@@ -448,7 +433,7 @@ def open_change_qty_popup(row_item):
             if focus == '_NEW_QTY_':     
                 ui_change_qty_popup.new_qty_f = ui_change_qty_popup.new_qty
                 ui_change_qty_popup.focus_new_qty()       
-         
+
         if event in ('_CHANGE_QTY_OK_', 'F12:123', '\r'):
             if not ui_change_qty_popup.new_qty:
                 break;
@@ -487,7 +472,7 @@ def open_payment_popup():
 
     initialize_payment_popup_elements(ui_payment_popup)
     
-    ui_payment_popup.focus_cash_amount()
+    #ui_payment_popup.focus_cash_amount()
     
     prev_event = ''   
     while True:
@@ -500,71 +485,22 @@ def open_payment_popup():
 
         if event == '_MOBILE_NUMBER_' and len(ui_payment_popup.mobile_number) > 9:
             process_mobile_number(ui_payment_popup)
-
-        if event == '_EXCHANGE_VOUCHER_':
-            exchange_voucher = ui_payment_popup.exchange_voucher.partition(' | ')
-            ui_payment_popup.exchange_adjustment_hd = exchange_voucher[2]
-            ui_payment_popup.exchange_adjustment = float(exchange_voucher[2])
-            ui_payment_popup.cash_amount = 0
-            ui_payment_popup.cash_return = 0
-            set_payment_popup_elements(ui_payment_popup)
-
-        if event in ('\t', 'TAB') and prev_event == '_CASH_AMOUNT_':
-            if not ui_payment_popup.cash_amount:
-                ui_payment_popup.cash_amount = 0
-            ui_payment_popup.cash_amount = ui_payment_popup.cash_amount
-            ui_payment_popup.cash_return = 0
-            set_payment_popup_elements(ui_payment_popup)
-            
-        if event in ('\t', 'TAB') and prev_event == '_CARD_AMOUNT_':
-            if not ui_payment_popup.card_amount:
-                ui_payment_popup.card_amount = 0
-            ui_payment_popup.card_amount = ui_payment_popup.card_amount 
-            ui_payment_popup.cash_return = 0            
-            set_payment_popup_elements(ui_payment_popup)
-            
+           
         if event in ('\t', 'TAB') and prev_event == '_DISCOUNT_AMOUNT_':
             ui_payment_popup.discount_amount = ui_payment_popup.discount_amount       
             ui_payment_popup.discount_amount_hd = ui_payment_popup.discount_amount
-            ui_payment_popup.cash_amount = 0
-            ui_payment_popup.cash_return = 0            
             set_payment_popup_elements(ui_payment_popup)
-            
-        if event in ('\t', 'TAB') and prev_event == '_REDEEM_POINTS_':
-            if ui_payment_popup.redeem_points in ('', '0'):
-                continue
-            if int(ui_payment_popup.redeem_points) > int(ui_payment_popup.available_points):
-                ui_payment_popup.redeem_points = 0
-                popup_message('OK', 'Redeem points are more than available points')                
-                continue
-            ui_payment_popup.redeem_adjustment = int(ui_payment_popup.redeem_points) * 0.10
-            ui_payment_popup.redeem_adjustment_hd = ui_payment_popup.redeem_adjustment          
-            set_payment_popup_elements(ui_payment_popup)
-            
+                       
         if event in ("Exit", '_PAYMENT_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
             ui_popup.close()
             break
             
         if event == "_PAYMENT_OK_" or event == "F12:123":
             set_payment_popup_elements(ui_payment_popup)
-            if float(ui_payment_popup.balance_amount) == 0:
-                if float(ui_payment_popup.card_amount) > 0 and ui_payment_popup.card_reference == '':
-                    sg.popup('Enter Card Reference',keep_on_top = True)
-                    ui_payment_popup.focus_card_reference()                    
-                else:
-                    if float(ui_payment_popup.cash_return) > 0:
-                        msg = 'Please return back ' + ui_payment_popup.cash_return + ' cash to customer'
-                        sg.popup(msg, keep_on_top = True)
-                    move_payment_popup_to_summary_pane(ui_payment_popup)
-                    generate_invoice_number()
-                    update_invoice()
-                    sg.popup('Invoice generated', keep_on_top = True)
-                    ui_popup.close()
-                    print_invoice()
-                    break
-            else:
-                sg.popup('Settle Balance amount',keep_on_top = True)
-                ui_payment_popup.focus_cash_amount()
+            move_payment_popup_to_summary_pane(ui_payment_popup)
+            ui_popup.close()
+            print_estimate()
+            break
                             
         prev_event = event
             
@@ -581,22 +517,11 @@ def process_mobile_number(ui_payment_popup):
         ui_payment_popup.customer_address = db_customer_row.address
         ui_payment_popup.mobile_number_header = db_customer_row.mobile_number
         ui_payment_popup.customer_name_header = db_customer_row.customer_name
-        ui_payment_popup.available_points = db_customer_row.loyalty_points
-        ui_payment_popup.available_balance = db_customer_row.loyalty_points *  0.10     
         ui_header_pane.mobile_number = db_customer_row.mobile_number
         ui_header_pane.customer_number = db_customer_row.name
         ui_header_pane.mobile_number = db_customer_row.mobile_number
         ui_header_pane.customer_name = db_customer_row.customer_name
         ui_header_pane.customer_address = db_customer_row.address
-        filter = "customer='{}' and invoice_number is NULL"
-        exchange_voucher_list = []
-        exchange_voucher_list.append('None | 0.00')
-        db_exchange_adjustment_cursor = db_exchange_adjustment_table.list(filter.format(ui_payment_popup.customer_number))
-        if db_exchange_adjustment_cursor:
-            for db_exchange_adjustment_row in db_exchange_adjustment_cursor:
-                exchange_voucher = db_exchange_adjustment_row.name + " | {:.2f}".format(db_exchange_adjustment_row.exchange_amount)
-                exchange_voucher_list.append(exchange_voucher)
-        ui_payment_popup.set_exchange_voucher(exchange_voucher_list)
 
 def initialize_payment_popup_elements(ui_payment_popup):
     ui_payment_popup.mobile_number = ui_header_pane.mobile_number
@@ -607,102 +532,43 @@ def initialize_payment_popup_elements(ui_payment_popup):
     ui_payment_popup.customer_address = ui_header_pane.customer_address
     ui_payment_popup.net_amount = ui_summary_pane.net_amount
     ui_payment_popup.discount_amount = 0
-    invoice_actual_amount = float(ui_payment_popup.net_amount) - float(ui_payment_popup.discount_amount)
-    invoice_rounded_amount = round(invoice_actual_amount, 0)
-    ui_payment_popup.invoice_amount = invoice_rounded_amount
-    ui_payment_popup.roundoff_adjustment = invoice_rounded_amount - invoice_actual_amount
-    ui_payment_popup.cash_amount = invoice_rounded_amount
-    ui_payment_popup.total_received_amount = float(ui_payment_popup.cash_amount) + \
-                            float(ui_payment_popup.card_amount) + \
-                            float(ui_payment_popup.exchange_adjustment) + \
-                            float(ui_payment_popup.redeem_adjustment)
-    ui_payment_popup.cash_return = 0.00
-    
-    filter = "customer='{}' and invoice_number is NULL"
-    exchange_voucher_list = []
-    exchange_voucher_list.append('None | 0.00')
-    db_exchange_adjustment_cursor = db_exchange_adjustment_table.list(filter.format(ui_payment_popup.customer_number))
-    if db_exchange_adjustment_cursor:
-        for db_exchange_adjustment_row in db_exchange_adjustment_cursor:
-            exchange_voucher = db_exchange_adjustment_row.name + " | {:.2f}".format(db_exchange_adjustment_row.exchange_amount)
-            exchange_voucher_list.append(exchange_voucher)
-    ui_payment_popup.set_exchange_voucher(exchange_voucher_list)
+    estimate_actual_amount = float(ui_payment_popup.net_amount) - float(ui_payment_popup.discount_amount)
+    estimate_rounded_amount = round(estimate_actual_amount, 0)
+    ui_payment_popup.estimate_amount = estimate_rounded_amount
+    ui_payment_popup.roundoff_adjustment = estimate_rounded_amount - estimate_actual_amount
 
 
 def set_payment_popup_elements(ui_payment_popup):
-    if not ui_payment_popup.cash_amount or ui_payment_popup.cash_amount == '':
-       ui_payment_popup.cash_amount = 0
-    if not ui_payment_popup.card_amount or ui_payment_popup.card_amount == '':
-       ui_payment_popup.card_amount = 0
-    if not ui_payment_popup.exchange_adjustment or ui_payment_popup.exchange_adjustment == '':
-       ui_payment_popup.exchange_adjustment = 0
     if not ui_payment_popup.discount_amount or ui_payment_popup.discount_amount == '':
        ui_payment_popup.discount_amount = 0
  
     ui_summary_pane.discount_amount = float(ui_payment_popup.discount_amount)
  
-    invoice_actual_amount = float(ui_payment_popup.net_amount) - float(ui_payment_popup.discount_amount)
-    invoice_rounded_amount = round(invoice_actual_amount, 0)
-    ui_payment_popup.invoice_amount = invoice_rounded_amount
-    ui_payment_popup.roundoff_adjustment = invoice_rounded_amount - invoice_actual_amount
-
-    ui_payment_popup.total_received_amount = float(ui_payment_popup.cash_amount) + \
-                            float(ui_payment_popup.card_amount) + \
-                            float(ui_payment_popup.exchange_adjustment) + \
-                            float(ui_payment_popup.redeem_adjustment)
-
-    if float(ui_payment_popup.total_received_amount) > float(ui_payment_popup.invoice_amount):
-        ui_payment_popup.cash_return = min(float(ui_payment_popup.total_received_amount) - float(ui_payment_popup.invoice_amount),\
-                                                float(ui_payment_popup.cash_amount))
-
-    ui_payment_popup.balance_amount =   float(ui_payment_popup.total_received_amount) - \
-                                        float(ui_payment_popup.invoice_amount) - \
-                                        float(ui_payment_popup.cash_return)
+    estimate_actual_amount = float(ui_payment_popup.net_amount) - float(ui_payment_popup.discount_amount)
+    estimate_rounded_amount = round(estimate_actual_amount, 0)
+    ui_payment_popup.estimate_amount = estimate_rounded_amount
+    ui_payment_popup.roundoff_adjustment = estimate_rounded_amount - estimate_actual_amount
 
 
 def move_payment_popup_to_summary_pane(ui_payment_popup):
     ui_summary_pane.discount_amount = float(ui_payment_popup.discount_amount)
-    ui_summary_pane.invoice_amount = float(ui_payment_popup.invoice_amount)
+    ui_summary_pane.estimate_amount = float(ui_payment_popup.estimate_amount)
     ui_summary_pane.roundoff_amount = float(ui_payment_popup.roundoff_adjustment)
-    ui_summary_pane.cash_amount = float(ui_payment_popup.cash_amount)
-    ui_summary_pane.card_amount = float(ui_payment_popup.card_amount)
-    ui_summary_pane.card_reference = ui_payment_popup.card_reference
-    ui_summary_pane.cash_return = float(ui_payment_popup.cash_return)
-    ui_summary_pane.exchange_amount = float(ui_payment_popup.exchange_adjustment)
-    ui_summary_pane.redeem_points = ui_payment_popup.redeem_points
-    ui_summary_pane.redeem_amount = float(ui_payment_popup.redeem_adjustment)
-    ui_summary_pane.paid_amount = float(ui_payment_popup.invoice_amount)
-    exchange_voucher = ui_payment_popup.exchange_voucher.partition(' | ')
-    ui_summary_pane.exchange_voucher = exchange_voucher[0]
-
-
-def generate_invoice_number():
-    db_query = DbQuery(db_conn, 'SELECT nextval("INVOICE_NUMBER")')
-    for db_row in db_query.result:
-        ui_header_pane.invoice_number = db_row[0]    
 
     
 ######
 # Popup window for selecting Item
-def open_item_name_popup(item_name):
-    if not item_name:
-        return
-
-    if not len(ui_search_pane.item_name) > 2:
-        return
-
-    filter = "upper(item_name) like upper('%{}%')"       
-    db_item_cursor = db_item_table.list(filter.format(item_name))
+def open_item_name_popup(filter, lin, col):
+    db_item_cursor = db_item_table.list(filter)
     if not db_item_cursor:
         return
         
     item_name_popup = ItemNamePopup()
-    
     ui_popup = sg.Window("Item Name", 
                     item_name_popup.layout, 
-                    location=(385,202), 
+                    location=(lin,col), 
                     size=(348,129), 
-                    modal=True, 
+                    modal=False, 
                     finalize=True,
                     return_keyboard_events=True, 
                     no_titlebar = True, 
@@ -711,7 +577,9 @@ def open_item_name_popup(item_name):
                     keep_on_top = True,                    
                     margins=(0,0)
                 )
-
+    ui_popup.bind('<FocusIn>', '+FOCUS IN+')
+    ui_popup.bind('<FocusOut>', '+FOCUS OUT+')
+    
     ui_item_name_popup = UiItemNamePopup(ui_popup)
     ui_item_name_popup.focus_item_list
 
@@ -730,20 +598,19 @@ def open_item_name_popup(item_name):
             ui_item_name_popup.next_item_line()
         if event == 'Up:38':
             ui_item_name_popup.prev_item_line()            
-        if event in ("Exit", '_ITEM_NAME_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
+        if event in ("Exit", '_ITEM_NAME_ESC_', 'Escape:27', '+FOCUS OUT+') or event == sg.WIN_CLOSED:
             break        
         if event == '\r':
             sel_item_code =  values['_ITEM_NAME_LIST_'][0][0]
             process_item_name(sel_item_code)
             break
         prev_event = event
-        
-    ui_popup.close() 
+    ui_popup.close()
 
 
 ######
-# Print Invoice into PDF file
-def print_invoice():
+# Print Estimate into PDF file
+def print_estimate():
     config = pdfkit.configuration(wkhtmltopdf = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
     options = {
         'page-height': '120mm',
@@ -776,15 +643,15 @@ def print_invoice():
                     </tr>
                 </table>                       
                 <p style="font-size:18px; font-weight: bold; font-family:Courier; text-align:center">
-                    Tax Invoice
+                    Estimate
                 </p>            
             """    
 
     print_str += """
-            <p  style="font-size:14px; font-weight: bold; font-family:Courier">Invoice No: {}<br>
+            <p  style="font-size:14px; font-weight: bold; font-family:Courier">Estimate No: {}<br>
                 Date: {}<br>
             </p>            
-            """.format( ui_header_pane.invoice_number, 
+            """.format( ui_header_pane.estimate_number, 
                         ui_title_pane.current_date
                 )    
 
@@ -840,11 +707,13 @@ def print_invoice():
         <p style="font-size:15px; font-family:Courier; font-weight: bold">
             Net&nbspAmt&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
         </p>
-        """.format(ui_summary_pane.invoice_amount.rjust(10,'*').replace('*', '&nbsp'))
-        
-    pdfkit.from_string(print_str, 'micro.pdf', options=options)
+        """.format(ui_summary_pane.estimate_amount.rjust(10,'*').replace('*', '&nbsp'))
     
-    os.startfile('micro.pdf')
+    try:    
+        pdfkit.from_string(print_str, 'micro.pdf', options=options)   
+        os.startfile('micro.pdf')
+    except:
+        pass
 
     
 ######
@@ -859,10 +728,13 @@ def popup_message(type, message):
                     layout=ui_message_layout, 
                     keep_on_top = True, 
                     return_keyboard_events = True, 
-                    modal=True, 
+                    modal=False, 
                     finalize=True
                 )
 
+    ui_popup.bind('<FocusIn>', '+FOCUS IN+')
+    ui_popup.bind('<FocusOut>', '+FOCUS OUT+')
+    
     ui_popup["_OK_"].Widget.config(takefocus=0) 
     ui_popup["_CANCEL_"].Widget.config(takefocus=0) 
 
@@ -874,12 +746,12 @@ def popup_message(type, message):
     while True:
         event, values = ui_popup.read()
         print('message_popup:', event)
-        if event in ('Escape:27', '_OK_', '_CANCEL_', 'F12:123', 'F12', '\r'):
+        if event in ('Escape:27', '_OK_', '_CANCEL_', 'F12:123', 'F12', '\r', '+FOCUS OUT+'):
             break
         if event == sg.WIN_CLOSED:
             return 'Cancel'
     ui_popup.close()
-    if event in ('Escape:27', '_CANCEL_'):
+    if event in ('Escape:27', '_CANCEL_', '+FOCUS OUT+'):
         return 'Cancel'
     else:
         return 'Ok'
@@ -898,6 +770,20 @@ def execute_download_process():
 def execute_upload_process():
     print('To be implemented')
 
+
+def process_weight(idx):
+    ui_detail_pane.item_line_to_elements(idx)
+    if ui_detail_pane.uom == 'Kg':            
+        ui_detail_pane.qty = 0.35
+        ui_detail_pane.selling_amount = float(ui_detail_pane.qty) * float(ui_detail_pane.selling_price)
+        ui_detail_pane.tax_rate = float(ui_detail_pane.cgst_tax_rate) + float(ui_detail_pane.sgst_tax_rate)
+        ui_detail_pane.tax_amount = float(ui_detail_pane.selling_amount) * float(ui_detail_pane.tax_rate) / 100
+        ui_detail_pane.net_amount = float(ui_detail_pane.selling_amount) + float(ui_detail_pane.tax_amount)
+        ui_detail_pane.update_item_line(idx)
+        sum_item_list()
+    else:
+        sg.popup('Not applicable to this UOM', keep_on_top = True)                
+
     
 ######
 # Global variables
@@ -912,17 +798,14 @@ db_session = db_conn.session
 
 db_customer_table = DbTable(db_conn, Customer)
 db_item_table = DbTable(db_conn, Item)
-db_invoice_table = DbTable(db_conn, Invoice)
-db_invoice_item_table = DbTable(db_conn, InvoiceItem)
 db_estimate_table = DbTable(db_conn, Estimate)
 db_estimate_item_table = DbTable(db_conn, EstimateItem)
-db_exchange_adjustment_table = DbTable(db_conn, ExchangeAdjustment)
 
 execute_download_process()
 
 w, h = sg.Window.get_screen_size()
 main_window = MainWindow()
-ui_window = sg.Window('Invoice Entry', 
+ui_window = sg.Window('Estimate Entry', 
                 main_window.layout, 
                 background_color='White',
                 font='Helvetica 11', 
@@ -954,12 +837,12 @@ def main():
     initialize_title_pane()
     initialize_header_pane()
     initialize_search_pane()
-    initialize_action_pane('INVOICE')
+    initialize_action_pane('ESTIMATE')
 
     ui_window['_BARCODE_'].bind('<FocusIn>', '+CLICK+')
     ui_window['_ITEM_NAME_'].bind('<FocusIn>', '+CLICK+')
     
-    goto_last_invoice()
+    goto_last_estimate()
     
     prev_event = '' 
     focus = None    
@@ -1014,7 +897,7 @@ def main():
             kb.release(Key.backspace)
 
         if event == '+CLICK+':
-            initialize_action_pane('INVOICE')
+            initialize_action_pane('ESTIMATE')
         else:
             initialize_action_pane('ITEM')        
         
@@ -1024,109 +907,84 @@ def main():
             else:
                 ui_search_pane.focus_barcode()        
         else:
-            initialize_action_pane('INVOICE')
+            initialize_action_pane('ESTIMATE')
             ui_detail_pane.items_list = ui_detail_pane.items_list
 
         if event in ('F1:112', 'F1'):
-                filter = "invoice_number IS NULL OR invoice_number = ''"
-                if db_invoice_table.count(filter) > 2:
-                    sg.popup('Cannot hold more than 3 entries', keep_on_top = True)                
-                else:
-                    save_invoice()
-                    clear_invoice()
-                    execute_download_process()
-                ui_search_pane.focus_barcode()
+            save_estimate()
+            clear_estimate()
+            execute_download_process()
+            ui_search_pane.focus_barcode()
 
         if event in ('F2:113', 'F2'):
-            if ui_header_pane.invoice_number == '':
-                if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
-                    sg.popup('Specs feature not yet implemented', keep_on_top = True)                
-                    ui_detail_pane.focus_items_list()                
-                else:
-                    ui_search_pane.focus_barcode()
+            if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
+                sg.popup('Specs feature not yet implemented', keep_on_top = True)                
+                ui_detail_pane.focus_items_list()                
             else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
-
+                ui_search_pane.focus_barcode()
+              
         if event in ('F3:114', 'F3'):
-            if ui_header_pane.invoice_number == '':
-                if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
-                    idx = values['_ITEMS_LIST_'][0]
-                    open_change_qty_popup(idx)
-                    sum_item_list()
-                    ui_detail_pane.focus_items_list_row(idx)   
-                else:
-                    ui_search_pane.focus_barcode()
+            if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
+                idx = values['_ITEMS_LIST_'][0]
+                open_change_qty_popup(idx)
+                sum_item_list()
+                ui_detail_pane.focus_items_list_row(idx)   
             else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
-
+                sg.popup('Select an item', keep_on_top = True)                
+                ui_search_pane.focus_barcode()
+            
         if event in ('F4:115', 'F4'):
-            if ui_header_pane.invoice_number == '':
-                if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
-                    sg.popup('Weight feature not yet implemented', keep_on_top = True)                
-                    ui_detail_pane.focus_items_list()                
-                else:
-                    ui_search_pane.focus_barcode()
-            else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
+            idx = values['_ITEMS_LIST_'][0]
+            process_weight(idx)
+            ui_search_pane.focus_barcode()
 
         if event in ('F5:116', 'F5'):
-            if ui_header_pane.invoice_number == '':
-                if len(ui_detail_pane.items_list) > 0:
-                    save_invoice()
-                    sg.popup('Invoice Entry Saved', keep_on_top = True)                
-                    ui_search_pane.focus_barcode()
+            if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
+                sg.popup('Weight feature not yet implemented', keep_on_top = True)                
+                ui_detail_pane.focus_items_list()                
             else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
+                ui_search_pane.focus_barcode()
 
         if event in ('F6:117', 'F6'):
-            if ui_header_pane.invoice_number == '':
-                if len(ui_detail_pane.items_list) > 0:
-                    confirm_delete = popup_message('OK_CANCEL', 'Invoice Entry will be deleted')
-                    if confirm_delete == 'Ok':       
-                        delete_invoice()
-                        clear_invoice()
-                        goto_previous_invoice()
-                        ui_search_pane.focus_barcode()
-            else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
+            if len(ui_detail_pane.items_list) > 0:
+                save_estimate()
+                sg.popup('Estimate Entry Saved', keep_on_top = True)                
+                ui_search_pane.focus_barcode()
 
         if event in ('F7:118', 'F7'):
-            if ui_header_pane.invoice_number == '':        
-                save_invoice()
-                if not ui_header_pane.reference_number == '':
-                    open_payment_popup()
-                    execute_upload_process()                 
+            if len(ui_detail_pane.items_list) > 0:
+                confirm_delete = popup_message('OK_CANCEL', 'Estimate Entry will be deleted')
+                if confirm_delete == 'Ok':       
+                    delete_estimate()
+                    clear_estimate()
+                    goto_previous_estimate()
                     ui_search_pane.focus_barcode()
-            else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
         if event in ('F8:119', 'F8'):
-            if ui_header_pane.invoice_number == '':        
-                sg.popup('Operation not permitted for Unpaid Invoice', keep_on_top = True)                
-            else:
-                print_invoice()
+            save_estimate()
+            if not ui_header_pane.estimate_number == '':
+                open_payment_popup()
+                execute_upload_process()                 
                 ui_search_pane.focus_barcode()
-       
-        if event in ('Delete:46', 'Delete'):        
-            if ui_header_pane.invoice_number == '':
-                if prev_event == '_ITEMS_LIST_':
-                    idx = values['_ITEMS_LIST_'][0]
-                    ui_detail_pane.delete_item_line(idx)
-                    sum_item_list()
-                    if len(ui_detail_pane.items_list) == idx:
-                        idx -= 1
-                    if idx > -1:
-                        ui_detail_pane.focus_items_list_row(idx)
-            else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
-            
+        if event in ('F9:120', 'F9'):
+            print_estimate()
+            ui_search_pane.focus_barcode()
+                  
+        if event in ('Delete:46', 'Delete'):        
+            if prev_event == '_ITEMS_LIST_':
+                idx = values['_ITEMS_LIST_'][0]
+                ui_detail_pane.delete_item_line(idx)
+                sum_item_list()
+                if len(ui_detail_pane.items_list) == idx:
+                    idx -= 1
+                if idx > -1:
+                    ui_detail_pane.focus_items_list_row(idx)
+           
         if event in ('F11:122', 'F11', '_ADDON_'):
-            if ui_header_pane.invoice_number == '':        
-                process_carry_bag()
-                ui_search_pane.focus_barcode()
-            else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
+            filter = "upper(item_code) like upper('ITEM-9%')"
+            open_item_name_popup(filter, 535, 202)
+            initialize_search_pane()            
 
         if event in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T0') and focus == '_BARCODE_':
             inp_val = ui_search_pane.barcode
@@ -1151,24 +1009,28 @@ def main():
             initialize_search_pane()
             
         if event.isalnum() and focus == '_ITEM_NAME_':
-            if ui_header_pane.invoice_number == '':        
-                if len(ui_search_pane.item_name) > 2:            
-                    open_item_name_popup(ui_search_pane.item_name)
-                    initialize_search_pane()            
-            else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
+            if len(ui_search_pane.item_name) > 2:
+                filter = "upper(item_name) like upper('%{}%')".format(ui_search_pane.item_name)
+                open_item_name_popup(filter, 385, 202)
+                initialize_search_pane()
+                for idx in range(2):
+                    kb.press(Key.tab)
+                    kb.release(Key.tab)
+                for idx in range(len(ui_detail_pane.items_list)-1):
+                    kb.press(Key.down)
+                    kb.release(Key.down)
             
         if event in ('Prior:33', '_BEGIN_'):
-            goto_first_invoice()
+            goto_first_estimate()
             
         if event in ('Left:37', '_PREVIOUS_'):
-            goto_previous_invoice()
+            goto_previous_estimate()
             
         if event in ('Right:39', '_NEXT_'):
-            goto_next_invoice()
+            goto_next_estimate()
             
         if event in ('Next:34', '_END_'):
-            goto_last_invoice()
+            goto_last_estimate()
         
         if event in ('\t') and prev_event == '_ITEM_NAME_':
             ui_detail_pane.focus_items_list()
