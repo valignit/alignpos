@@ -18,33 +18,33 @@ rw = w*22/100
 pad_button:  dict = {
                     'size':(4, 2), 
                     'font':('Calibri 11 bold'), 
-                    'button_color': ('grey20','grey80'),
-             }
+                    'button_color': (config["ui_pad_button_color"])
+                }
 
 pad_button_wide:  dict = {
                     'size':(10, 2), 
                     'font':('Calibri 11 bold'), 
-                    'button_color': ('grey20','grey80'),
-                  }
+                    'button_color': (config["ui_pad_button_color"])
+                }
 
 nav_button:  dict = {
                     'size':(5, 1), 
                     'font':('Calibri 11 bold'), 
                     'button_color': ('grey20','grey80'),
                     'use_ttk_buttons': True
-             }
+                }
 
 nav_button_wide:  dict = {
                     'size':(8, 1), 
                     'font':('Calibri 11 bold'), 
                     'button_color': ('grey20','grey80'),
                     'use_ttk_buttons': True
-                  }
+                }
                 
 action_button:  dict = {
                     'size':(10, 1), 
-                    'font':('Calibri 11 bold'), 
-                    'button_color': ('grey20', 'skyblue1'),
+                    'font':('Calibri 12 bold'), 
+                    'button_color': (config["ui_function_button_color"]),
                     'use_ttk_buttons': True
                 }
 
@@ -55,10 +55,9 @@ summary_text:  dict = {
                 
 summary_text_bold:  dict = {           
                     'font':("Helvetica 13 bold"),
-                    'text_color': "navyblue",
+                    'text_color': "blue",
                     'size':(10,1)                        
-                    }
-                    
+                }
 summary_input:  dict = {           
                     'readonly':True, 
                     'justification':'right', 
@@ -70,14 +69,14 @@ summary_input:  dict = {
                 }
 
 summary_input_bold:  dict = {           
-                        'readonly':True, 
-                        'justification':'right', 
-                        'disabled_readonly_text_color':"white", 
-                        'disabled_readonly_background_color':"navyblue", 
-                        'default_text':'0.00' , 
-                        'font':("Helvetica 14 bold"),
-                        'size':(8,1)                        
-                    }
+                    'readonly':True, 
+                    'justification':'right', 
+                    'disabled_readonly_text_color':"white", 
+                    'disabled_readonly_background_color':"blue", 
+                    'default_text':'0.00' , 
+                    'font':("Helvetica 14 bold"),
+                    'size':(8,1)                        
+                }
 
 title_text:  dict = {           
                     'font':("Helvetica 10"),
@@ -126,7 +125,7 @@ search_input:  dict = {
 search_button:  dict = {
                     'size':(15, 1), 
                     'font':('Calibri 11 bold'),
-                    'button_color':('grey20','chocolate2'),
+                    'button_color':('grey20','skyblue1'),
                     'use_ttk_buttons': True
                 }
 
@@ -161,6 +160,8 @@ class MainWindow:
                     sg.Input(key='_REFERENCE_NUMBER_', **header_input),
                     sg.Text('Mobile:', **header_text),
                     sg.Input(key='_MOBILE_NUMBER_', **header_input),
+                    sg.Button(key='_RECALL_', button_text='PAID\nF9', **nav_button_wide, pad = ((14,0),(0,0))),
+                    sg.Button(key='_FIND_', button_text='UNPAID\nF10', **nav_button_wide, pad = ((5,13),(0,0))),
                     sg.Button(key='_BEGIN_', button_text='BEGN\nPgUp',**nav_button, pad = ((5,0),(0,0))),
                     sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **nav_button, pad = ((5,0),(0,0))),
                     sg.Button(key='_NEXT_', button_text='NEXT\n→', **nav_button, pad = ((5,0),(0,0))),
@@ -220,7 +221,6 @@ class MainWindow:
                     sg.Button(key='F6',  button_text='\nF6', **action_button),
                     sg.Button(key='F7',  button_text='\nF7', **action_button),
                     sg.Button(key='F8',  button_text='\nF8', **action_button),
-                    sg.Button(key='F9',  button_text='\nF9', **action_button),
                     sg.Button(key='ESC', button_text='Exit\nEsc', **action_button, pad=((65,0),(0,0))),
                 ]               
             ])    
@@ -305,7 +305,7 @@ class MainWindow:
                 [
                     sg.Button(key='LEFT', button_text='←', **pad_button),
                     sg.Button(key='T0', button_text='0', **pad_button),
-                    sg.Button(key='ENTER',button_text='ENTER', **pad_button_wide),
+                    sg.Button(key='ENTER',button_text='ENT', **pad_button_wide),
                 ],            
                 [
                     sg.Button(key='BACKSPACE', button_text='\u232B', **pad_button),
@@ -313,7 +313,7 @@ class MainWindow:
                     sg.Button(key='DEL', button_text='DEL', **pad_button),                    
                     sg.Button(key='TAB', button_text='TAB', **pad_button),                    
                 ],            
-            ], vertical_alignment = 'top', pad = (20,0))    
+            ], vertical_alignment = 'top', pad = (9,0))    
         ]
     ]        
 
@@ -428,6 +428,7 @@ class UiHeaderPane:
         self.__window['_REFERENCE_NUMBER_'].Widget.config(takefocus=0)
         self.__window['_INVOICE_NUMBER_'].Widget.config(takefocus=0)
         self.__window['_MOBILE_NUMBER_'].Widget.config(takefocus=0)
+        self.__window['_FIND_'].Widget.config(takefocus=0)
         self.__window['_BEGIN_'].Widget.config(takefocus=0)
         self.__window['_PREVIOUS_'].Widget.config(takefocus=0)
         self.__window['_NEXT_'].Widget.config(takefocus=0)
@@ -475,7 +476,7 @@ class UiHeaderPane:
         
     def get_customer_address(self):
         return self.__customer_address
-        
+
     reference_number = property(get_reference_number, set_reference_number) 
     invoice_number = property(get_invoice_number, set_invoice_number) 
     mobile_number = property(get_mobile_number, set_mobile_number) 
@@ -717,7 +718,6 @@ class UiActionPane:
         self.__window['F6'].Widget.config(takefocus=0)        
         self.__window['F7'].Widget.config(takefocus=0)        
         self.__window['F8'].Widget.config(takefocus=0)        
-        self.__window['F9'].Widget.config(takefocus=0)        
         self.__window['ESC'].Widget.config(takefocus=0)    
 
 
@@ -817,6 +817,7 @@ class UiSummaryPane:
 
     def set_invoice_amount(self, invoice_amount):
         self.__invoice_amount = invoice_amount
+        print('here5', self.__invoice_amount)
         self.__window.Element('_INVOICE_AMOUNT_').update(value = "{:.2f}".format(self.__invoice_amount))
         
     def get_invoice_amount(self):
@@ -952,6 +953,8 @@ class ChangeQtyPopup:
                 enable_events=True,
                 justification = 'right'
             )],
+            [sg.Button(key='_GET_WEIGHT_', button_text='Get Weight-F10', **search_button)
+            ],
             [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(50,10)))],                        
             [sg.Button('Ok-F12', 
                 size=(8, 1), 
@@ -987,10 +990,10 @@ class ChangeQtyPopup:
             [
                 sg.Button(key='LEFT', button_text='←', **pad_button),
                 sg.Button(key='T0', button_text='0', **pad_button),
-                sg.Button(key='ENTER', button_text='ENT', **pad_button_wide),
+                sg.Button('ENT', size=(10, 2), font='Calibri 11 bold', key='ENTER', button_color = config["ui_pad_button_color"]),
             ],            
             [
-                sg.Button(key='BACKSPACE', button_text='\u232B', **pad_button),
+                sg.Button(key='BACKSPACE', button_text='\u232B', size=(4, 2), font='Calibri 11 bold', button_color = config["ui_pad_button_color"]),
                 sg.Button(key='FULL_STOP', button_text='.', **pad_button),                    
                 sg.Button(key='DEL', button_text='DEL', **pad_button),                    
                 sg.Button(key='TAB', button_text='TAB', **pad_button),                    
@@ -1835,8 +1838,7 @@ class UiItemNamePopup:
 
     def elements_to_item_line(self):
         self.__item_line.append(self.__item_code)
-        self.__item_line.append('|')
-        self.__item_line.append(self.__item_name.replace(' ', '-')) #otherwise item name will be embedded with {}
+        self.__item_line.append(self.__item_name)        
        
     def item_line_to_elements(self, idx):
         self.__item_line = self.__items_list[idx]
@@ -1845,7 +1847,7 @@ class UiItemNamePopup:
         
     def add_item_line(self):
         self.__item_line = []
-        self.elements_to_item_line()
+        self.elements_to_item_line()    
         self.__item_list.append(self.__item_line)
         self.__popup.Element('_ITEM_NAME_LIST_').update(values = self.__item_list)
 

@@ -11,7 +11,8 @@
 	
     "ui_theme": "DefaultNoMoreNagging",
     "ui_pad_button_color": "light slate gray",
-    "ui_nav_button_color": "NavyBlue",
+    "ui_nav_button_color": "RoyalBlue",
+    "ui_search_button_color": "grey50",
     "ui_function_button_color": "RoyalBlue",
     "ui_readonly_text_color": "grey32",
     "ui_readonly_background_color": "grey89",

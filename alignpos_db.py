@@ -61,23 +61,14 @@ class ConnAlignPos():
             print(f"Database error 101 while connecting {db_pos_name}\nProcess Terminated\n{db_err}")
             sys.exit(1)    
 
-        # Table layouts - add additional tables as required
-        db_customer_tab = Table('tabCustomer', db_table_meta, autoload=True)
-        db_item_tab = Table('tabItem', db_table_meta, autoload=True)   
-        db_invoice_tab = Table('tabInvoice', db_table_meta, autoload=True)   
-        db_invoice_item_tab = Table('tabInvoice Item', db_table_meta, autoload=True)   
-        db_estimate_tab = Table('tabInvoice', db_table_meta, autoload=True)   
-        db_estimate_item_tab = Table('tabInvoice Item', db_table_meta, autoload=True)   
-        db_exchange_adjustment_tab = Table('tabExchange Adjustment', db_table_meta, autoload=True)   
-
         # Table mappers - add additional tables as required
-        mapper(Customer, db_customer_tab)
-        mapper(Item, db_item_tab)
-        mapper(Invoice, db_invoice_tab)
-        mapper(InvoiceItem, db_invoice_item_tab)
-        mapper(Estimate, db_estimate_tab)
-        mapper(EstimateItem, db_estimate_item_tab)
-        mapper(ExchangeAdjustment, db_exchange_adjustment_tab)
+        mapper(Customer, Table('tabCustomer', db_table_meta, autoload=True))
+        mapper(Item, Table('tabItem', db_table_meta, autoload=True))
+        mapper(Invoice, Table('tabInvoice', db_table_meta, autoload=True))
+        mapper(InvoiceItem, Table('tabInvoice Item', db_table_meta, autoload=True))
+        mapper(Estimate, Table('tabInvoice', db_table_meta, autoload=True))
+        mapper(EstimateItem, Table('tabInvoice Item', db_table_meta, autoload=True))
+        mapper(ExchangeAdjustment, Table('tabExchange Adjustment', db_table_meta, autoload=True))
         
         db_session = sessionmaker(bind=self.__engine)
         self.__session = db_session()

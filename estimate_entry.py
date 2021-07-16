@@ -72,12 +72,11 @@ def initialize_action_pane(context):
     ui_window.Element('F1').update(text='New\nF1')    
     ui_window.Element('F2').update(text='Specs\nF2')
     ui_window.Element('F3').update(text='Quantity\nF3')
-    ui_window.Element('F4').update(text='Weight\nF4')
-    ui_window.Element('F5').update(text='Price\nF5')
-    ui_window.Element('F6').update(text='Save\nF6')
-    ui_window.Element('F7').update(text='Delete\nF7')
-    ui_window.Element('F8').update(text='Payment\nF8')
-    ui_window.Element('F9').update(text='Print\nF9')
+    ui_window.Element('F4').update(text='Price\nF4')
+    ui_window.Element('F5').update(text='Save\nF5')
+    ui_window.Element('F6').update(text='Delete\nF6')
+    ui_window.Element('F7').update(text='Payment\nF7')
+    ui_window.Element('F8').update(text='Print\nF8')
        
 
 def move_db_item_to_ui_detail_pane(db_item_row):
@@ -161,7 +160,7 @@ def process_item_name(item_code):
     db_item_row = db_item_table.first(filter.format(item_code))
     if db_item_row:
         move_db_item_to_ui_detail_pane(db_item_row)
-        sum_item_list()
+        sum_item_list()  
 
         
 def sum_item_list():
@@ -406,7 +405,7 @@ def open_change_qty_popup(row_item):
                 )
 
     ui_change_qty_popup = UiChangeQtyPopup(ui_popup)
-        
+    
     ui_change_qty_popup.item_name = ui_detail_pane.item_name
     ui_change_qty_popup.existing_qty = ui_detail_pane.qty
     ui_change_qty_popup.new_qty_f = 0.00
@@ -449,7 +448,7 @@ def open_change_qty_popup(row_item):
             if focus == '_NEW_QTY_':     
                 ui_change_qty_popup.new_qty_f = ui_change_qty_popup.new_qty
                 ui_change_qty_popup.focus_new_qty()       
-
+         
         if event in ('_CHANGE_QTY_OK_', 'F12:123', '\r'):
             if not ui_change_qty_popup.new_qty:
                 break;
@@ -685,17 +684,25 @@ def generate_invoice_number():
     
 ######
 # Popup window for selecting Item
-def open_item_name_popup(filter, lin, col):
-    db_item_cursor = db_item_table.list(filter)
+def open_item_name_popup(item_name):
+    if not item_name:
+        return
+
+    if not len(ui_search_pane.item_name) > 2:
+        return
+
+    filter = "upper(item_name) like upper('%{}%')"       
+    db_item_cursor = db_item_table.list(filter.format(item_name))
     if not db_item_cursor:
         return
         
     item_name_popup = ItemNamePopup()
+    
     ui_popup = sg.Window("Item Name", 
                     item_name_popup.layout, 
-                    location=(lin,col), 
+                    location=(385,202), 
                     size=(348,129), 
-                    modal=False, 
+                    modal=True, 
                     finalize=True,
                     return_keyboard_events=True, 
                     no_titlebar = True, 
@@ -704,9 +711,7 @@ def open_item_name_popup(filter, lin, col):
                     keep_on_top = True,                    
                     margins=(0,0)
                 )
-    ui_popup.bind('<FocusIn>', '+FOCUS IN+')
-    ui_popup.bind('<FocusOut>', '+FOCUS OUT+')
-    
+
     ui_item_name_popup = UiItemNamePopup(ui_popup)
     ui_item_name_popup.focus_item_list
 
@@ -725,14 +730,15 @@ def open_item_name_popup(filter, lin, col):
             ui_item_name_popup.next_item_line()
         if event == 'Up:38':
             ui_item_name_popup.prev_item_line()            
-        if event in ("Exit", '_ITEM_NAME_ESC_', 'Escape:27', '+FOCUS OUT+') or event == sg.WIN_CLOSED:
+        if event in ("Exit", '_ITEM_NAME_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
             break        
         if event == '\r':
             sel_item_code =  values['_ITEM_NAME_LIST_'][0][0]
             process_item_name(sel_item_code)
             break
         prev_event = event
-    ui_popup.close()
+        
+    ui_popup.close() 
 
 
 ######
@@ -835,12 +841,10 @@ def print_invoice():
             Net&nbspAmt&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
         </p>
         """.format(ui_summary_pane.invoice_amount.rjust(10,'*').replace('*', '&nbsp'))
+        
+    pdfkit.from_string(print_str, 'micro.pdf', options=options)
     
-    try:    
-        pdfkit.from_string(print_str, 'micro.pdf', options=options)   
-        os.startfile('micro.pdf')
-    except:
-        pass
+    os.startfile('micro.pdf')
 
     
 ######
@@ -855,13 +859,10 @@ def popup_message(type, message):
                     layout=ui_message_layout, 
                     keep_on_top = True, 
                     return_keyboard_events = True, 
-                    modal=False, 
+                    modal=True, 
                     finalize=True
                 )
 
-    ui_popup.bind('<FocusIn>', '+FOCUS IN+')
-    ui_popup.bind('<FocusOut>', '+FOCUS OUT+')
-    
     ui_popup["_OK_"].Widget.config(takefocus=0) 
     ui_popup["_CANCEL_"].Widget.config(takefocus=0) 
 
@@ -873,12 +874,12 @@ def popup_message(type, message):
     while True:
         event, values = ui_popup.read()
         print('message_popup:', event)
-        if event in ('Escape:27', '_OK_', '_CANCEL_', 'F12:123', 'F12', '\r', '+FOCUS OUT+'):
+        if event in ('Escape:27', '_OK_', '_CANCEL_', 'F12:123', 'F12', '\r'):
             break
         if event == sg.WIN_CLOSED:
             return 'Cancel'
     ui_popup.close()
-    if event in ('Escape:27', '_CANCEL_', '+FOCUS OUT+'):
+    if event in ('Escape:27', '_CANCEL_'):
         return 'Cancel'
     else:
         return 'Ok'
@@ -896,20 +897,6 @@ def execute_download_process():
 # Upload details to ERPNext
 def execute_upload_process():
     print('To be implemented')
-
-
-def process_weight(idx):
-    ui_detail_pane.item_line_to_elements(idx)
-    if ui_detail_pane.uom == 'Kg':            
-        ui_detail_pane.qty = 0.35
-        ui_detail_pane.selling_amount = float(ui_detail_pane.qty) * float(ui_detail_pane.selling_price)
-        ui_detail_pane.tax_rate = float(ui_detail_pane.cgst_tax_rate) + float(ui_detail_pane.sgst_tax_rate)
-        ui_detail_pane.tax_amount = float(ui_detail_pane.selling_amount) * float(ui_detail_pane.tax_rate) / 100
-        ui_detail_pane.net_amount = float(ui_detail_pane.selling_amount) + float(ui_detail_pane.tax_amount)
-        ui_detail_pane.update_item_line(idx)
-        sum_item_list()
-    else:
-        sg.popup('Not applicable to this UOM', keep_on_top = True)                
 
     
 ######
@@ -1068,20 +1055,11 @@ def main():
                     sum_item_list()
                     ui_detail_pane.focus_items_list_row(idx)   
                 else:
-                    sg.popup('Select an item', keep_on_top = True)                
                     ui_search_pane.focus_barcode()
             else:
                 sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
         if event in ('F4:115', 'F4'):
-            if ui_header_pane.invoice_number == '':
-                idx = values['_ITEMS_LIST_'][0]
-                process_weight(idx)
-                ui_search_pane.focus_barcode()
-            else:
-                sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
-
-        if event in ('F5:116', 'F5'):
             if ui_header_pane.invoice_number == '':
                 if prev_event in ('_ITEMS_LIST_', '_ITEM_NAME_'):
                     sg.popup('Weight feature not yet implemented', keep_on_top = True)                
@@ -1091,7 +1069,7 @@ def main():
             else:
                 sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
-        if event in ('F6:117', 'F6'):
+        if event in ('F5:116', 'F5'):
             if ui_header_pane.invoice_number == '':
                 if len(ui_detail_pane.items_list) > 0:
                     save_invoice()
@@ -1100,7 +1078,7 @@ def main():
             else:
                 sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
-        if event in ('F7:118', 'F7'):
+        if event in ('F6:117', 'F6'):
             if ui_header_pane.invoice_number == '':
                 if len(ui_detail_pane.items_list) > 0:
                     confirm_delete = popup_message('OK_CANCEL', 'Invoice Entry will be deleted')
@@ -1112,7 +1090,7 @@ def main():
             else:
                 sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
-        if event in ('F8:119', 'F8'):
+        if event in ('F7:118', 'F7'):
             if ui_header_pane.invoice_number == '':        
                 save_invoice()
                 if not ui_header_pane.reference_number == '':
@@ -1122,13 +1100,13 @@ def main():
             else:
                 sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
-        if event in ('F9:120', 'F9'):
+        if event in ('F8:119', 'F8'):
             if ui_header_pane.invoice_number == '':        
                 sg.popup('Operation not permitted for Unpaid Invoice', keep_on_top = True)                
             else:
                 print_invoice()
                 ui_search_pane.focus_barcode()
-                  
+       
         if event in ('Delete:46', 'Delete'):        
             if ui_header_pane.invoice_number == '':
                 if prev_event == '_ITEMS_LIST_':
@@ -1141,12 +1119,12 @@ def main():
                         ui_detail_pane.focus_items_list_row(idx)
             else:
                 sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
-           
+
+            
         if event in ('F11:122', 'F11', '_ADDON_'):
             if ui_header_pane.invoice_number == '':        
-                filter = "upper(item_code) like upper('ITEM-9%')"
-                open_item_name_popup(filter, 535, 202)
-                initialize_search_pane()            
+                process_carry_bag()
+                ui_search_pane.focus_barcode()
             else:
                 sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
 
@@ -1174,16 +1152,9 @@ def main():
             
         if event.isalnum() and focus == '_ITEM_NAME_':
             if ui_header_pane.invoice_number == '':        
-                if len(ui_search_pane.item_name) > 2:
-                    filter = "upper(item_name) like upper('%{}%')".format(ui_search_pane.item_name)
-                    open_item_name_popup(filter, 385, 202)
-                    initialize_search_pane()
-                    for idx in range(2):
-                        kb.press(Key.tab)
-                        kb.release(Key.tab)
-                    for idx in range(len(ui_detail_pane.items_list)-1):
-                        kb.press(Key.down)
-                        kb.release(Key.down)
+                if len(ui_search_pane.item_name) > 2:            
+                    open_item_name_popup(ui_search_pane.item_name)
+                    initialize_search_pane()            
             else:
                 sg.popup('Operation not permitted for Paid Invoice', keep_on_top = True)                
             

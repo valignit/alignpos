@@ -115,6 +115,45 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
+CREATE TABLE `tabEstimate` (
+	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`cgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`sgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`total_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`invoice_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`creation` DATETIME(6) NULL DEFAULT NULL,
+	`modified` DATETIME(6) NULL DEFAULT NULL,
+	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`name`) USING BTREE,
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+CREATE TABLE `tabEstimate Item` (
+	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`parent` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`item` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`qty` DECIMAL(18,6) NULL DEFAULT NULL,
+	`standard_selling_price` DECIMAL(18,6) NULL DEFAULT NULL,
+	`applied_selling_price` DECIMAL(18,6) NULL DEFAULT NULL,
+	`selling_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`cgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
+	`sgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
+	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`name`) USING BTREE,
+	INDEX `FK_tabEstimate Item_tabItem` (`item`) USING BTREE,
+	INDEX `FK_tabEstimate Item_tabEstimate` (`parent`) USING BTREE,
+	CONSTRAINT `FK_tabEstimate Item_tabEstimate` FOREIGN KEY (`parent`) REFERENCES `alignpos`.`tabEstimate` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT `FK_tabEstimate Item_tabItem` FOREIGN KEY (`item`) REFERENCES `alignpos`.`tabItem` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
 CREATE TABLE `tabSequence` (
 	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
 	`increment` INT(11) NOT NULL DEFAULT '1',
