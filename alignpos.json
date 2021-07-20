@@ -5,7 +5,7 @@
 	
 	"db_pos_host" : "localhost",
 	"db_pos_port" : 3306,
-	"db_pos_name" : "alignpos",
+	"db_pos_database" : "alignpos",
 	"db_pos_user" : "alignpos",
 	"db_pos_passwd" : "alignpos123",
 	
@@ -22,6 +22,5 @@
 	"log_folder_path": "logs/",
 	
 	"terminal_id" : "01",
-	"walk_in_customer" : "CUST-00000",
-	"carry_bag_item": "ITEM-9001"
+	"walk_in_customer" : "CUST-00000"
 }

@@ -11,7 +11,8 @@ from pynput.keyboard import Key, Controller
 from estimate_entry_ui import MainWindow, UiTitlePane, UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiSummaryPane, UiKeypadPane, \
                              ChangeQtyPopup, UiChangeQtyPopup, ItemNamePopup, UiItemNamePopup,\
                              PaymentPopup, UiPaymentPopup
-from alignpos_db import ConnAlignPos, DbTable, DbQuery, Customer, Item, Estimate, EstimateItem
+#from alignpos_db import ConnAlignPos, DbTable, DbQuery, Customer, Item, Estimate, EstimateItem
+from testsql_db import DbConn, DbTable, DbQuery
 
 ######
 def initialize_title_pane():
@@ -74,7 +75,7 @@ def initialize_action_pane(context):
     ui_window.Element('F5').update(text='Price\nF5')
     ui_window.Element('F6').update(text='Save\nF6')
     ui_window.Element('F7').update(text='Delete\nF7')
-    ui_window.Element('F8').update(text='Payment\nF8')
+    ui_window.Element('F8').update(text='Submit\nF8')
     ui_window.Element('F9').update(text='Print\nF9')
        
 
@@ -228,7 +229,7 @@ def insert_estimate():
    
     for idx in range(len(ui_detail_pane.items_list)): 
         ui_detail_pane.item_line_to_elements(idx)
-        
+
         db_estimate_item_row = db_estimate_item_table.new_row()
         
         db_estimate_item_row.name = ui_header_pane.estimate_number + f"{idx:04d}"
@@ -400,7 +401,7 @@ def open_change_qty_popup(row_item):
     focus = None
     while True:
         event, values = ui_popup.read()
-        print('change_qty_popup=', event)
+        #print('change_qty_popup=', event)
         
         if ui_popup.FindElementWithFocus():
             focus = ui_popup.FindElementWithFocus().Key
@@ -461,7 +462,7 @@ def open_payment_popup():
     ui_popup = sg.Window("Payment", 
                     payment_popup.layout,
                     location=(400,40), 
-                    size=(500,510), 
+                    size=(410,290), 
                     modal=True, 
                     finalize=True,
                     keep_on_top = True,
@@ -477,7 +478,7 @@ def open_payment_popup():
     prev_event = ''   
     while True:
         event, values = ui_popup.read()
-        print('payment_popup=', event)
+        #print('payment_popup=', event)
         
         if event in ('\t', 'TAB') and prev_event == '_MOBILE_NUMBER_':
             if not ui_payment_popup.mobile_number == '':
@@ -593,7 +594,7 @@ def open_item_name_popup(filter, lin, col):
     prev_event = ''    
     while True:
         event, values = ui_popup.read()
-        print('item_name_popup=', event)
+        #print('item_name_popup=', event)
         if event == 'Down:40':
             ui_item_name_popup.next_item_line()
         if event == 'Up:38':
@@ -745,7 +746,7 @@ def popup_message(type, message):
     
     while True:
         event, values = ui_popup.read()
-        print('message_popup:', event)
+        #print('message_popup:', event)
         if event in ('Escape:27', '_OK_', '_CANCEL_', 'F12:123', 'F12', '\r', '+FOCUS OUT+'):
             break
         if event == sg.WIN_CLOSED:
@@ -793,13 +794,19 @@ with open('./alignpos.json') as file_config:
 walk_in_customer = config["walk_in_customer"]
 carry_bag_item = config["carry_bag_item"]
 
-db_conn = ConnAlignPos()
+db_pos_host = config["db_pos_host"]
+db_pos_port = config["db_pos_port"]
+db_pos_database = config["db_pos_database"]
+db_pos_user = config["db_pos_user"]
+db_pos_passwd = config["db_pos_passwd"] 
+
+db_conn = DbConn(db_pos_host, db_pos_port, db_pos_database, db_pos_user, db_pos_passwd)
 db_session = db_conn.session
 
-db_customer_table = DbTable(db_conn, Customer)
-db_item_table = DbTable(db_conn, Item)
-db_estimate_table = DbTable(db_conn, Estimate)
-db_estimate_item_table = DbTable(db_conn, EstimateItem)
+db_customer_table = DbTable(db_conn, 'tabCustomer')
+db_item_table = DbTable(db_conn, 'tabItem')
+db_estimate_table = DbTable(db_conn, 'tabEstimate')
+db_estimate_item_table = DbTable(db_conn, 'tabEstimate_Item')
 
 execute_download_process()
 
@@ -815,7 +822,8 @@ ui_window = sg.Window('Estimate Entry',
                 keep_on_top=False, 
                 resizable=False,
                 return_keyboard_events=True, 
-                use_default_focus=False
+                use_default_focus=False,
+                modal = True,                
          )
 #ui_window.maximize()
 
@@ -850,7 +858,7 @@ def main():
         event, values = ui_window.read()
         if ui_window.FindElementWithFocus():
             focus = ui_window.FindElementWithFocus().Key
-        print('window=', event, 'prev=', prev_event, 'focus=', focus)
+        #print('window=', event, 'prev=', prev_event, 'focus=', focus)
 
         if event == sg.WIN_CLOSED:
             ui_window.close()

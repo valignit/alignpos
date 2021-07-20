@@ -77,7 +77,7 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
-CREATE TABLE `tabInvoice Item` (
+CREATE TABLE `tabInvoice_Item` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`parent` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`item` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
@@ -89,16 +89,16 @@ CREATE TABLE `tabInvoice Item` (
 	`sgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	PRIMARY KEY (`name`) USING BTREE,
-	INDEX `FK_tabInvoice Item_tabItem` (`item`) USING BTREE,
-	INDEX `FK_tabInvoice Item_tabInvoice` (`parent`) USING BTREE,
-	CONSTRAINT `FK_tabInvoice Item_tabInvoice` FOREIGN KEY (`parent`) REFERENCES `alignpos`.`tabInvoice` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT,
-	CONSTRAINT `FK_tabInvoice Item_tabItem` FOREIGN KEY (`item`) REFERENCES `alignpos`.`tabItem` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
+	INDEX `FK_tabInvoice_Item_tabItem` (`item`) USING BTREE,
+	INDEX `FK_tabInvoice_Item_tabInvoice` (`parent`) USING BTREE,
+	CONSTRAINT `FK_tabInvoice_Item_tabInvoice` FOREIGN KEY (`parent`) REFERENCES `alignpos`.`tabInvoice` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT `FK_tabInvoice_Item_tabItem` FOREIGN KEY (`item`) REFERENCES `alignpos`.`tabItem` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
-CREATE TABLE `tabExchange Adjustment` (
+CREATE TABLE `tabExchange` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`invoice_number` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
@@ -108,7 +108,7 @@ CREATE TABLE `tabExchange Adjustment` (
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	PRIMARY KEY (`name`) USING BTREE,
-	INDEX `FK_tabExchangeAdjustment_tabCustomer` (`customer`) USING BTREE,
+	INDEX `FK_tabExchange_tabCustomer` (`customer`) USING BTREE,
 	CONSTRAINT `FK_tabExchange_tabCustomer` FOREIGN KEY (`customer`) REFERENCES `alignpos`.`tabCustomer` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
@@ -136,7 +136,7 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
-CREATE TABLE `tabEstimate Item` (
+CREATE TABLE `tabEstimate_Item` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`parent` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`item` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
@@ -148,10 +148,10 @@ CREATE TABLE `tabEstimate Item` (
 	`sgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	PRIMARY KEY (`name`) USING BTREE,
-	INDEX `FK_tabEstimate Item_tabItem` (`item`) USING BTREE,
-	INDEX `FK_tabEstimate Item_tabEstimate` (`parent`) USING BTREE,
-	CONSTRAINT `FK_tabEstimate Item_tabEstimate` FOREIGN KEY (`parent`) REFERENCES `alignpos`.`tabEstimate` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT,
-	CONSTRAINT `FK_tabEstimate Item_tabItem` FOREIGN KEY (`item`) REFERENCES `alignpos`.`tabItem` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
+	INDEX `FK_tabEstimate_Item_tabItem` (`item`) USING BTREE,
+	INDEX `FK_tabEstimate_Item_tabEstimate` (`parent`) USING BTREE,
+	CONSTRAINT `FK_tabEstimate_Item_tabEstimate` FOREIGN KEY (`parent`) REFERENCES `alignpos`.`tabEstimate` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT `FK_tabEstimate_Item_tabItem` FOREIGN KEY (`item`) REFERENCES `alignpos`.`tabItem` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB

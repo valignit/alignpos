@@ -74,7 +74,7 @@ except requests.exceptions.RequestException as ws_err:
 # Connect to POS database
 db_pos_host = config["db_pos_host"]
 db_pos_port = config["db_pos_port"]
-db_pos_name = config["db_pos_name"]
+db_pos_database = config["db_pos_database"]
 db_pos_user = config["db_pos_user"]
 db_pos_passwd = config["db_pos_passwd"]
 
@@ -84,7 +84,7 @@ try:
         password = db_pos_passwd,
         host = db_pos_host,
         port = db_pos_port,
-        database = db_pos_name
+        database = db_pos_database
     )
     print_log("POS database connected")
 
@@ -137,7 +137,7 @@ for ws_exchange_adjustment_row in ws_erp_resp_json["exchange_adjustments_list"]:
         last_sync = exchange_adjustment_modified
     
     db_pos_sql_stmt = (
-       "INSERT INTO `tabExchange Adjustment` (name, customer, exchange_amount, creation, owner)"
+       "INSERT INTO `tabExchange` (name, customer, exchange_amount, creation, owner)"
        "VALUES (%s, %s, %s, now(), %s)"
     )
     db_pos_sql_data = (exchange_adjustment_name, exchange_adjustment_customer, exchange_adjustment_amount, ws_erp_user)

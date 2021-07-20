@@ -131,8 +131,7 @@ search_button:  dict = {
                 }
 
                 
-class MainWindow:
-             
+class MainWindow:           
     ui_title_pane_layout = [
         [
             sg.Column(
@@ -1130,22 +1129,24 @@ class PaymentPopup:
                     disabled_readonly_background_color=config["ui_readonly_background_color"],                     
                     justification = 'left',
                     pad=((5,0),(10,5))            
-                ),    
+                ),
+            ],
+            [
                 sg.Input(key='_CUSTOMER_NAME_HEADER_',
                     readonly=True, 
                     font=("Helvetica", 11),
-                    size=(34,1),
+                    size=(36,1),
                     disabled_readonly_text_color=config["ui_readonly_text_color"], 
                     disabled_readonly_background_color=config["ui_readonly_background_color"],                     
                     justification = 'left', 
-                    pad=((5,0),(10,5))
+                    pad=((92,0),(10,5))
                 )
             ],
             [
                 sg.TabGroup(
                     [
                         [
-                            sg.Tab('Receive-F1', ui_receive_tab_layout, key='_RECEIVE_TAB_'),
+                            sg.Tab('Summary-F1', ui_receive_tab_layout, key='_RECEIVE_TAB_'),
                             sg.Tab('Discount-F4', ui_discount_tab_layout, key='_DISCOUNT_TAB_'),
                             sg.Tab('Customer-F5', ui_customer_tab_layout, key='_CUSTOMER_TAB_'),
                         ]
