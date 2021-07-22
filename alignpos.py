@@ -15,10 +15,14 @@ from estimate_layout import EstimateLayout
 from invoice_layout import InvoiceLayout
 from common_layout import ItemLookupLayout
 
-from estimate_ui import UiTitlePane, UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiSummaryPane
+from main_menu_ui import UiDetailPane, UiFooterPane, UiSummaryPane
+from estimate_ui import UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiFooterPane, UiSummaryPane
+from invoice_ui import UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiFooterPane, UiSummaryPane
 from common_ui import UiItemLookup
 
+from main_menu import MainMenu
 from estimate import Estimate
+from invoice import Invoice
 from common import ItemLookup
 
 
@@ -49,7 +53,7 @@ def item_lookup_popup(filter, lin, col):
                     item_lookup_layout.layout,
                     location=(lin,col), 
                     size=(348,129), 
-                    modal=False, 
+                    modal=True, 
                     finalize=True,
                     return_keyboard_events=True, 
                     no_titlebar = True, 
@@ -89,16 +93,20 @@ def estimate_window():
     estimate_layout = EstimateLayout(config, w, h)
     ui_window = sg.Window('Estimate', 
                     estimate_layout.layout,
-                    location=(-7,0),
                     font='Helvetica 11', 
                     finalize=True, 
+                    location=(0,0), 
+                    size=(w,h),
                     keep_on_top=False, 
-                    resizable=True,
+                    resizable=False,
                     return_keyboard_events=True, 
-                    use_default_focus=False
+                    use_default_focus=False,
+                    modal=True
                 )
              
-    #ui_window.maximize()
+    ui_window.maximize()
+    ui_window['_LEFT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+    ui_window['_RIGHT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
     estimate = Estimate(db_conn, ui_window)
        
     estimate.initialize_ui()
@@ -177,8 +185,7 @@ def estimate_window():
             estimate.initialize_ui_action_pane()
             estimate.ui_detail_pane.items_list = estimate.ui_detail_pane.items_list
 
-        if event in ('F1:112', 'F1'):
-        
+        if event in ('F1:112', 'F1'):        
             item_lookup_popup('', 100,100)
 
         if event == 'Exit':
@@ -205,6 +212,18 @@ def invoice_window():
                     modal=True
              )
     ui_window.maximize()
+    ui_window['_LEFT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+    ui_window['_RIGHT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+
+    invoice = Invoice(db_conn, ui_window)
+       
+    invoice.initialize_ui()
+    invoice.goto_last_row()
+    
+    ui_window['_BARCODE_'].bind('<FocusIn>', '+CLICK+')
+    ui_window['_ITEM_NAME_'].bind('<FocusIn>', '+CLICK+')
+    
+    invoice.ui_search_pane.focus_barcode()        
    
     prev_event = '' 
     focus = None    
@@ -259,8 +278,30 @@ def invoice_window():
             kb.press(Key.backspace)
             kb.release(Key.backspace)
                        
+        if event == '+CLICK+':
+            invoice.initialize_ui_action_pane()
+           
+        print(prev_event)
+        if event in ('\t') and prev_event == '_ITEM_NAME_':
+            invoice.ui_detail_pane.focus_items_list()
+
+        if focus == '_ITEMS_LIST_':
+            if len(invoice.ui_detail_pane.items_list) > 0:
+                invoice.initialize_ui_action_pane()
+            else:
+                invoice.ui_search_pane.focus_barcode()        
+        else:
+            invoice.initialize_ui_action_pane()
+            invoice.ui_detail_pane.items_list = invoice.ui_detail_pane.items_list
+
+        if event in ('F1:112', 'F1'):        
+            item_lookup_popup('', 100,100)
+
         if event == 'Exit':
             break
+
+        if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN', 'DEL', 'Delete:46', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'):
+            prev_event = event
 
     ui_window.close()
 
@@ -279,11 +320,19 @@ def main_menu():
                     use_default_focus=False,
              )
     ui_window.maximize()
+    ui_window['_LEFT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+    ui_window['_RIGHT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+
+    main_menu = MainMenu(db_conn, ui_window)
+       
+    main_menu.initialize_ui()
+    main_menu.ui_summary_pane.welcome_text = config["welcome_text"]
    
     prev_event = '' 
     focus = None    
     while True:
         event, values = ui_window.read()
+        print(event)
         if ui_window.FindElementWithFocus():
             focus = ui_window.FindElementWithFocus().Key
             
@@ -334,7 +383,9 @@ def main_menu():
             kb.release(Key.backspace)
             
         if event == 'Estimate':
+            #ui_window.hide()
             estimate_window()
+            #ui_window.un_hide()
 
         if event == 'Invoice':
             invoice_window()

@@ -3,6 +3,47 @@ import json
 import datetime
 
 
+class UiTitlePane:
+
+    def __init__(self, window):
+        self.__window = window
+        self.__user_id = ''
+        self.__terminal_id = ''
+        self.__current_date = datetime.datetime(1900, 1, 1)
+        
+        self.__window['_USER_ID_'].Widget.config(takefocus=0)
+        self.__window['_TERMINAL_ID_'].Widget.config(takefocus=0)
+        self.__window['_CURRENT_DATE_'].Widget.config(takefocus=0)
+                
+    def set_user_id(self, user_id):
+        self.__user_id = user_id
+        self.__window.Element('_USER_ID_').update(value = self.__user_id)
+        
+    def get_user_id(self):
+        self.__user_id = self.__window.Element('_USER_ID_').get()
+        return self.__user_id
+        
+    def set_terminal_id(self, terminal_id):
+        self.__terminal_id = terminal_id
+        self.__window.Element('_TERMINAL_ID_').update(value = self.__terminal_id)        
+        
+    def get_terminal_id(self):
+        self.__terminal_id = self.__window.Element('_TERMINAL_ID_').get()    
+        return self.__terminal_id
+        
+    def set_current_date(self, current_date):
+        self.__current_date = current_date
+        self.__window.Element('_CURRENT_DATE_').update(value = self.__current_date)        
+        
+    def get_current_date(self):
+        self.__current_date = self.__window.Element('_CURRENT_DATE_').get()        
+        return self.__current_date
+               
+    user_id = property(get_user_id, set_user_id) 
+    terminal_id = property(get_terminal_id, set_terminal_id)
+    current_date = property(get_current_date, set_current_date)
+
+
 class UiHeaderPane:
 
     def __init__(self, window):
@@ -13,7 +54,7 @@ class UiHeaderPane:
         self.__customer_name = str('')
         self.__customer_address = str('')
         
-        self.__window['_INVOICE_NUMBER_'].Widget.config(takefocus=0)
+        self.__window['_ESTIMATE_NUMBER_'].Widget.config(takefocus=0)
         self.__window['_MOBILE_NUMBER_'].Widget.config(takefocus=0)
         self.__window['_BEGIN_'].Widget.config(takefocus=0)
         self.__window['_PREVIOUS_'].Widget.config(takefocus=0)
@@ -21,13 +62,13 @@ class UiHeaderPane:
         self.__window['_END_'].Widget.config(takefocus=0)
 
 
-    def set_invoice_number(self, invoice_number):
-        self.__invoice_number = invoice_number
-        self.__window.Element('_INVOICE_NUMBER_').update(value = self.__invoice_number)
+    def set_estimate_number(self, estimate_number):
+        self.__estimate_number = estimate_number
+        self.__window.Element('_ESTIMATE_NUMBER_').update(value = self.__estimate_number)
         
-    def get_invoice_number(self):
-        self.__invoice_number = self.__window.Element('_INVOICE_NUMBER_').get()        
-        return self.__invoice_number
+    def get_estimate_number(self):
+        self.__estimate_number = self.__window.Element('_ESTIMATE_NUMBER_').get()        
+        return self.__estimate_number
         
     def set_mobile_number(self, mobile_number):
         self.__mobile_number = mobile_number
@@ -55,7 +96,7 @@ class UiHeaderPane:
     def get_customer_address(self):
         return self.__customer_address
         
-    invoice_number = property(get_invoice_number, set_invoice_number) 
+    estimate_number = property(get_estimate_number, set_estimate_number) 
     mobile_number = property(get_mobile_number, set_mobile_number) 
     customer_number = property(get_customer_number, set_customer_number) 
     customer_name = property(get_customer_name, set_customer_name) 
@@ -293,47 +334,6 @@ class UiActionPane:
         self.__window['ESC'].Widget.config(takefocus=0)    
 
 
-class UiFooterPane:
-
-    def __init__(self, window):
-        self.__window = window
-        self.__user_id = ''
-        self.__terminal_id = ''
-        self.__current_date = datetime.datetime(1900, 1, 1)
-
-        self.__window['_USER_ID_'].Widget.config(takefocus=0)
-        self.__window['_TERMINAL_ID_'].Widget.config(takefocus=0)
-        self.__window['_CURRENT_DATE_'].Widget.config(takefocus=0)
-
-    def set_user_id(self, user_id):
-        self.__user_id = user_id
-        self.__window.Element('_USER_ID_').update(value = self.__user_id)
-        
-    def get_user_id(self):
-        self.__user_id = self.__window.Element('_USER_ID_').get()
-        return self.__user_id
-        
-    def set_terminal_id(self, terminal_id):
-        self.__terminal_id = terminal_id
-        self.__window.Element('_TERMINAL_ID_').update(value = self.__terminal_id)        
-        
-    def get_terminal_id(self):
-        self.__terminal_id = self.__window.Element('_TERMINAL_ID_').get()    
-        return self.__terminal_id
-        
-    def set_current_date(self, current_date):
-        self.__current_date = current_date
-        self.__window.Element('_CURRENT_DATE_').update(value = self.__current_date)        
-        
-    def get_current_date(self):
-        self.__current_date = self.__window.Element('_CURRENT_DATE_').get()        
-        return self.__current_date
-               
-    user_id = property(get_user_id, set_user_id) 
-    terminal_id = property(get_terminal_id, set_terminal_id)
-    current_date = property(get_current_date, set_current_date)
-        
-
 class UiSummaryPane:
 
     def __init__(self, window):
@@ -346,7 +346,7 @@ class UiSummaryPane:
         self.__net_amount = float(0.00)
         self.__discount_amount = float(0.00)
         self.__roundoff_amount = float(0.00)
-        self.__invoice_amount = float(0.00)
+        self.__estimate_amount = float(0.00)
 
         self.__window['_LINE_ITEMS_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_AMOUNT_'].Widget.config(takefocus=0)
@@ -354,7 +354,7 @@ class UiSummaryPane:
         self.__window['_NET_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_DISCOUNT_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_ROUNDOFF_AMOUNT_'].Widget.config(takefocus=0)
-        self.__window['_INVOICE_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_ESTIMATE_AMOUNT_'].Widget.config(takefocus=0)
 
     def set_line_items(self, line_items):
         self.__line_items = line_items
@@ -416,13 +416,13 @@ class UiSummaryPane:
         self.__roundoff_amount = self.__window.Element('_ROUNDOFF_AMOUNT_').get()        
         return self.__roundoff_amount
 
-    def set_invoice_amount(self, invoice_amount):
-        self.__invoice_amount = invoice_amount
-        self.__window.Element('_INVOICE_AMOUNT_').update(value = "{:.2f}".format(self.__invoice_amount))
+    def set_estimate_amount(self, estimate_amount):
+        self.__estimate_amount = estimate_amount
+        self.__window.Element('_ESTIMATE_AMOUNT_').update(value = "{:.2f}".format(self.__estimate_amount))
         
-    def get_invoice_amount(self):
-        self.__invoice_amount = self.__window.Element('_INVOICE_AMOUNT_').get()        
-        return self.__invoice_amount
+    def get_estimate_amount(self):
+        self.__estimate_amount = self.__window.Element('_ESTIMATE_AMOUNT_').get()        
+        return self.__estimate_amount
         
     line_items = property(get_line_items, set_line_items)
     total_amount = property(get_total_amount, set_total_amount)
@@ -432,7 +432,7 @@ class UiSummaryPane:
     net_amount = property(get_net_amount, set_net_amount)
     discount_amount = property(get_discount_amount, set_discount_amount)
     roundoff_amount = property(get_roundoff_amount, set_roundoff_amount)
-    invoice_amount = property(get_invoice_amount, set_invoice_amount)
+    estimate_amount = property(get_estimate_amount, set_estimate_amount)
 
 
 class UiKeypadPane:

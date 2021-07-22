@@ -1,16 +1,16 @@
 from alignpos_db import DbConn, DbTable, DbQuery
-from estimate_ui import UiTitlePane, UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiSummaryPane, UiKeypadPane
+from estimate_ui import UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiFooterPane, UiSummaryPane, UiKeypadPane
 
 
 class Estimate():
     db_conn = None
     ui_window = None
     
-    ui_title_pane = None
     ui_header_pane = None
     ui_search_pane = None
     ui_detail_pane = None
     ui_action_pane = None
+    ui_footer_pane = None
     ui_summary_pane = None
     
     db_customer_table = None
@@ -23,11 +23,11 @@ class Estimate():
         estimate.db_conn = db_conn
         estimate.ui_window = ui_window
         
-        estimate.ui_title_pane = UiTitlePane(ui_window)
         estimate.ui_header_pane = UiHeaderPane(ui_window)
         estimate.ui_search_pane = UiSearchPane(ui_window)
         estimate.ui_detail_pane = UiDetailPane(ui_window)
         estimate.ui_action_pane = UiActionPane(ui_window)
+        estimate.ui_footer_pane = UiFooterPane(ui_window)
         estimate.ui_summary_pane = UiSummaryPane(ui_window)
         estimate.ui_keypad_pane = UiKeypadPane(ui_window)
         
@@ -37,12 +37,6 @@ class Estimate():
         estimate.db_estimate_item_table = DbTable(db_conn, 'tabEstimate_Item')
 
     
-    def initialize_ui_title_pane(estimate):
-        estimate.ui_title_pane.user_id = 'XXX'
-        estimate.ui_title_pane.terminal_id = '101'
-        estimate.ui_title_pane.current_date = '2021/06/13'
-
-
     def initialize_ui_header_pane(estimate):
         estimate.ui_header_pane.estimate_number = ''
         estimate.ui_header_pane.payment_status = ''
@@ -74,6 +68,24 @@ class Estimate():
         estimate.ui_detail_pane.item_line = [] 
 
 
+    def initialize_ui_action_pane(estimate):
+        estimate.ui_window.Element('F1').update(text='New\nF1')    
+        estimate.ui_window.Element('F2').update(text='Specs\nF2')
+        estimate.ui_window.Element('F3').update(text='Quantity\nF3')
+        estimate.ui_window.Element('F4').update(text='Weight\nF4')
+        estimate.ui_window.Element('F5').update(text='Price\nF5')
+        estimate.ui_window.Element('F6').update(text='Save\nF6')
+        estimate.ui_window.Element('F7').update(text='Delete\nF7')
+        estimate.ui_window.Element('F8').update(text='Submit\nF8')
+        estimate.ui_window.Element('F9').update(text='Print\nF9')
+
+
+    def initialize_ui_footer_pane(estimate):
+        estimate.ui_footer_pane.user_id = 'XXX'
+        estimate.ui_footer_pane.terminal_id = '101'
+        estimate.ui_footer_pane.current_date = '2021/06/13'
+
+
     def initialize_ui_summary_pane(estimate):
         estimate.ui_summary_pane.line_items = 0
         estimate.ui_summary_pane.total_amount = 0.00
@@ -87,25 +99,13 @@ class Estimate():
         estimate.ui_summary_pane.estimate_amount = 0.00
 
 
-    def initialize_ui_action_pane(estimate):
-        estimate.ui_window.Element('F1').update(text='New\nF1')    
-        estimate.ui_window.Element('F2').update(text='Specs\nF2')
-        estimate.ui_window.Element('F3').update(text='Quantity\nF3')
-        estimate.ui_window.Element('F4').update(text='Weight\nF4')
-        estimate.ui_window.Element('F5').update(text='Price\nF5')
-        estimate.ui_window.Element('F6').update(text='Save\nF6')
-        estimate.ui_window.Element('F7').update(text='Delete\nF7')
-        estimate.ui_window.Element('F8').update(text='Submit\nF8')
-        estimate.ui_window.Element('F9').update(text='Print\nF9')
-
-
     def initialize_ui(estimate):
-        estimate.initialize_ui_title_pane()
         estimate.initialize_ui_header_pane()
         estimate.initialize_ui_search_pane()
         estimate.initialize_ui_detail_pane()
-        estimate.initialize_ui_summary_pane()
         estimate.initialize_ui_action_pane()
+        estimate.initialize_ui_footer_pane()
+        estimate.initialize_ui_summary_pane()
 
 
     def clear_ui(estimate):

@@ -6,12 +6,10 @@ import PySimpleGUI as sg
 class ElementStyle:
 
     page_title:  dict = {           
-                        'font':("Helvetica 18 bold"),
-                        'size':(16,1),
+                        'font':("Calibri 18 bold"),
+                        'size':(10,1),
                         'text_color': 'grey30',
-                        'background_color': 'white'                        
                     }
-
 
     pad_button:  dict = {
                         'size':(4, 2), 
@@ -62,12 +60,14 @@ class ElementStyle:
 
     summary_text:  dict = {           
                         'font':("Helvetica 11"),
-                        'size':(10,1)                        
+                        'size':(10,1)  ,
+                        'background_color': 'White'
                     }
                     
     summary_text_bold:  dict = {           
                         'font':("Helvetica 13 bold"),
                         'text_color': "navyblue",
+                        'background_color': 'White',
                         'size':(10,1)                        
                         }
                         
@@ -95,7 +95,6 @@ class ElementStyle:
                         'font':("Helvetica 10"),
                         'size':(9,1),
                         'justification': 'right',
-                        'background_color': 'white'
                     }    
 
     title_input:  dict = {           
@@ -122,24 +121,46 @@ class ElementStyle:
                         'size':(11,1)                        
                     }
 
+    footer_text:  dict = {           
+                        'font':("Helvetica 8"),
+                        'size':(8,1),
+                        'justification': 'left'
+                    }    
+
+    footer_input:  dict = {           
+                        'readonly':True, 
+                        'justification':'right', 
+                        'disabled_readonly_text_color':'grey32', 
+                        'disabled_readonly_background_color':'grey89', 
+                        'font':("Helvetica", 8),
+                        'size':(10,1)                        
+                    }
+
     search_text:  dict = {           
-                        'font':("Helvetica 12"),
+                        'font':("Helvetica 11"),
                         'size':(9,1),
-                        'justification': 'right'
+                        'justification': 'left'
                     }    
 
     search_input:  dict = {           
                         'justification':'left', 
-                        'font':("Helvetica", 12),
+                        'font':("Helvetica", 10),
                         'enable_events':True                    
                     }
 
     search_button:  dict = {
-                        'size':(15, 1), 
+                        'size':(13, 1), 
                         'font':('Calibri 11 bold'),
                         'button_color':('grey20','chocolate2'),
                         'use_ttk_buttons': True
                     }
+
+    welcome_text:  dict = {           
+                        'font':("Calibri 13"),
+                        'size':(20,15)  ,
+                        'background_color': 'White'
+                    }
+                    
 
 
 class ItemLookupLayout:

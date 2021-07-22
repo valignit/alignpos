@@ -1,0 +1,6 @@
+                        sg.Text('USER:', **ap_style.title_text),
+                        sg.Input(key='_USER_ID_', **ap_style.title_input),
+                        sg.Text('COUNTER:', **ap_style.title_text),
+                        sg.Input(key='_TERMINAL_ID_', **ap_style.title_input),
+                        sg.Text('DATE:', **ap_style.title_text),
+                        sg.Input(key='_CURRENT_DATE_', **ap_style.title_input)
