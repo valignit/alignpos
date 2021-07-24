@@ -51,6 +51,17 @@ class ElementStyle:
                         'use_ttk_buttons': True
                     }
 
+    summary_text:  dict = {           
+                        'font':("Helvetica 11"),
+                        'size':(10,1)  ,
+                        'background_color': 'White'
+                    }
+                    
+    menu_text:  dict = {           
+                        'font':('Calibri 16'), 
+                        'size':(10,1),
+                    }
+                    
     menu_button:  dict = {
                         'size':(30, 1), 
                         'font':('Calibri 16'), 
@@ -157,13 +168,32 @@ class ElementStyle:
 
     welcome_text:  dict = {           
                         'font':("Calibri 13"),
-                        'size':(20,15)  ,
+                        'size':(20,15),
                         'background_color': 'White'
                     }
-                    
 
 
-class ItemLookupLayout:
+class ConfirmMessageCanvas:
+
+    def __init__(self):
+        self.__layout = [
+            [
+                sg.T(key='_MESSAGE_',size=(30,1))
+            ], 
+            [
+                sg.B(key='_OK_', button_text='Ok - F12'), 
+                sg.B(key='_CANCEL_', button_text='Cancel - Esc', visible=True)
+            ]
+        ]
+
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)      
+
+
+class ItemLookupCanvas:
     
     def __init__(self):
         self.__layout = [

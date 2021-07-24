@@ -10,13 +10,7 @@
 	"db_pos_passwd" : "alignpos123",
 	
     "ui_theme": "DefaultNoMoreNagging",
-    "ui_pad_button_color": "light slate gray",
-    "ui_nav_button_color": "RoyalBlue",
-    "ui_search_button_color": "grey50",
-    "ui_function_button_color": "RoyalBlue",
-    "ui_readonly_text_color": "grey32",
-    "ui_readonly_background_color": "grey89",
-
+    
 	"welcome_text": "Welcome to AlignPos - Point Of Sale client application.\n\nThis application facilitates preparing estimates and invoices.\n\nPlease choose the required option from the menu.\n\nPress Escape to terminate the application.",
 	"ui_f1_tooltip": "Click here to display the help document\nexplaining all the functions, actions\nand navigations",
 

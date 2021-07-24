@@ -15,7 +15,7 @@ class MainMenuLayout:
         menu_def = [
                 ['&File', ['E&xit']],      
                 ['&Operations', ['&Estimate', '&Invoice', '&Receipt', '&Cash']],      
-                ['&Synchronize', ['&Download Customers', '&Download Items', '&Download Exchanges', '---', '&Upload Invoices']],      
+                ['&Interface', ['&Download Customers', '&Download Items', '&Download Exchanges', '---', '&Upload Invoices']],      
                 ['&Reports', ['&Daily Sales', 'Cash &Position']],      
                 ['&Help', '&About'], 
         ]
@@ -31,6 +31,9 @@ class MainMenuLayout:
                 sg.Column(
                     [
                         [
+                            sg.Text('Operations',**ap_style.menu_text),
+                        ],
+                        [
                             sg.Button(key='_ESTIMATE_OPTION_', button_text='E̲stimate',**ap_style.menu_button),
                         ],
                         [
@@ -45,10 +48,13 @@ class MainMenuLayout:
                     ],
                     vertical_alignment = 'top', 
                     justification = 'left',
-                    pad = ((0,0),(100,0))
+                    pad = ((0,0),(50,0))
                 ),
                 sg.Column(
                     [
+                        [
+                            sg.Text('Interface',**ap_style.menu_text),
+                        ],
                         [
                             sg.Button(key='_DOWNLOAD_CUSTOMERS_', button_text='Download Cu̲stomers',**ap_style.menu_button),
                         ],
@@ -59,15 +65,18 @@ class MainMenuLayout:
                             sg.Button(key='_DOWNLOAD_EXCHANGES_', button_text='Download Exch̲anges',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_UPLOAD_INVOICES_', button_text='Inv̲oices',**ap_style.menu_button),
+                            sg.Button(key='_UPLOAD_INVOICES_', button_text='Upload Inv̲oices',**ap_style.menu_button),
                         ],
                     ],
                     vertical_alignment = 'top', 
                     justification = 'left',
-                    pad = ((0,0),(100,0))
+                    pad = ((0,0),(50,0))
                 ),
                 sg.Column(
                     [
+                        [
+                            sg.Text('Reports',**ap_style.menu_text),
+                        ],
                         [
                             sg.Button(key='_OPTION1_', button_text='Daily S̲ales',**ap_style.menu_button),
                         ],
@@ -77,7 +86,7 @@ class MainMenuLayout:
                     ],
                     vertical_alignment = 'top', 
                     justification = 'left',
-                    pad = ((0,0),(100,0))
+                    pad = ((0,0),(50,0))
                 ),
             ]
         ]
@@ -136,7 +145,7 @@ class MainMenuLayout:
                     ui_footer_pane_layout, 
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((5,0),(200,0)),
+                    pad = ((5,0),(320,0)),
                 )     
             ],
         ]

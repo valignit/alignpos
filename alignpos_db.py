@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.automap import automap_base
 import os
 import sys
+import json
 import warnings
 
 
@@ -10,18 +11,22 @@ import warnings
 # alignpos Database Connection
 class DbConn():
 
-    def __init__(self, host, port, database, user, passwd):
+    def __init__(self):
         self.__engine = None
         self.__session = None
         self.__table = None
         self.__table_name = ''
         self.__customer_table = None 
-        db_pos_host = host
-        db_pos_port = port
-        db_pos_database = database
-        db_pos_user = user
-        db_pos_passwd = passwd
         
+        with open('./alignpos.json') as file_config:
+          config = json.load(file_config)
+
+        db_pos_host = config["db_pos_host"]
+        db_pos_port = config["db_pos_port"]
+        db_pos_database = config["db_pos_database"]
+        db_pos_user = config["db_pos_user"]
+        db_pos_passwd = config["db_pos_passwd"]         
+       
         conn_str = 'mariadb+mariadbconnector://{}:{}@{}:{}/{}'.format(db_pos_user, db_pos_passwd, db_pos_host, db_pos_port, db_pos_database)
         self.__engine = create_engine(conn_str)
         self.__session = Session(self.__engine)

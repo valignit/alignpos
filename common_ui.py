@@ -5,7 +5,7 @@ import datetime
 
 ###
 # Item Name Popup Interface
-class UiItemLookup:
+class ItemLookupUi:
 
     def __init__(self, popup):
         self.__popup = popup

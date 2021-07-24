@@ -1,12 +1,20 @@
 import PySimpleGUI as sg
+import json
+
 from common_layout import ElementStyle as ap_style
 
 
 ###
 # Estimate Layout               
-class EstimateLayout:
-    def __init__(self, config, w, h):
-        sg.theme(config["ui_theme"])
+class EstimateCanvas:
+    def __init__(self):
+    
+        with open('./alignpos.json') as file_config:
+          config = json.load(file_config)
+        theme = config["ui_theme"]       
+        sg.theme(theme)
+
+        w, h = sg.Window.get_screen_size()        
         lw = w*78/100
         rw = w*25/100                
         lh = h
@@ -36,7 +44,7 @@ class EstimateLayout:
                 sg.Text('Barcode:', **ap_style.search_text),
                 sg.Input(key='_BARCODE_', size=(15,1), **ap_style.search_input),
                 sg.Text('Item Name:', **ap_style.search_text, pad=((20,0),(0,0))),
-                sg.Input(key='_ITEM_NAME_', size=(38,1), **ap_style.search_input),
+                sg.Input(key='_SEARCH_NAME_', size=(38,1), **ap_style.search_input),
                 sg.Button(key='_ADDON_', button_text='Addon-F11', **ap_style.search_button, pad = ((100,0),(0,0))),
                 sg.Button(key='_BUNDLE_', button_text='Bundle-F12', **ap_style.search_button, pad = ((5,3),(0,0)))                       
             ]
@@ -286,6 +294,86 @@ class EstimateLayout:
 
     layout = property(get_layout) 
 
+
+class ChangeQtyCanvas:
+    def __init__(self):
+    
+        left_pane_layout = [
+            [sg.Text('', key='_ITEM_NAME_', size=(25,2),  font=("Helvetica Bold", 14))],
+            [sg.Text('Existing Quantity:', size=(15,1),  font=("Helvetica", 11)),     
+             sg.Input(key='_EXISTING_QTY_',
+                readonly=True, 
+                font=("Helvetica", 11),
+                size=(15,1),
+                justification = 'right'
+            )],
+            [sg.Text('New Quantity:', size=(15,1),  font=("Helvetica", 11), pad=((5,5),(10,10))),             
+             sg.Input(key='_NEW_QTY_',
+                readonly=False, 
+                focus=True, 
+                background_color='white',
+                font=("Helvetica", 11),
+                size=(15,1), 
+                enable_events=True,
+                justification = 'right'
+            )],
+            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(50,10)))],                        
+            [sg.Button('Ok-F12', 
+                size=(8, 1), 
+                font='Calibri 12 bold', 
+                key='_CHANGE_QTY_OK_'), 
+             sg.Button('Exit-Esc', 
+                size=(8, 1), 
+                font='Calibri 12 bold', 
+                key='_CHANGE_QTY_ESC_'), 
+            ]           
+        ]
+        
+        right_pane_layout = [
+            [
+                sg.Button(key='UP', button_text='↑', **ap_style.pad_button),
+                sg.Button(key='T7', button_text='7', **ap_style.pad_button),
+                sg.Button(key='T8', button_text='8', **ap_style.pad_button),
+                sg.Button(key='T9', button_text='9', **ap_style.pad_button),                    
+            ],
+            [
+                sg.Button(key='DOWN', button_text='↓', **ap_style.pad_button),
+                sg.Button(key='T4', button_text='4', **ap_style.pad_button),
+                sg.Button(key='T5', button_text='5', **ap_style.pad_button),
+                sg.Button(key='T6', button_text='6', **ap_style.pad_button),                    
+            ],
+            [
+                sg.Button(key='RIGHT', button_text='→', **ap_style.pad_button),
+                sg.Button(key='T1', button_text='1', **ap_style.pad_button),
+                sg.Button(key='T2', button_text='2', **ap_style.pad_button),
+                sg.Button(key='T3', button_text='3', **ap_style.pad_button),                    
+                
+            ],
+            [
+                sg.Button(key='LEFT', button_text='←', **ap_style.pad_button),
+                sg.Button(key='T0', button_text='0', **ap_style.pad_button),
+                sg.Button(key='ENTER', button_text='ENT', **ap_style.pad_button_wide),
+            ],            
+            [
+                sg.Button(key='BACKSPACE', button_text='\u232B', **ap_style.pad_button),
+                sg.Button(key='FULL_STOP', button_text='.', **ap_style.pad_button),                    
+                sg.Button(key='DEL', button_text='DEL', **ap_style.pad_button),                    
+                sg.Button(key='TAB', button_text='TAB', **ap_style.pad_button),                    
+            ],            
+        
+        ]
+
+        self.__layout = [
+            [
+                sg.Column(left_pane_layout, vertical_alignment = 'top', pad = None),
+                sg.Column(right_pane_layout, vertical_alignment = 'center', pad = None)
+            ]
+        ]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)         
 
 ###
 if __name__ == "__main__":
