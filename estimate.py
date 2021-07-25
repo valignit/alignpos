@@ -5,7 +5,7 @@ from alignpos_db import DbConn, DbTable, DbQuery
 
 from estimate_layout import EstimateCanvas, ChangeQtyCanvas
 from estimate_ui import EstimateUi, ChangeQtyUi
-from common import ItemLookup, ConfirmMessage
+from common import ItemLookup, ConfirmMessage, Keypad
 
 
 class Estimate():
@@ -134,12 +134,16 @@ class Estimate():
             if event in ('Next:34', '_END_'):
                 self.goto_last_row()
 
+            if event == '_KEYPAD1_':        
+                result = self.keypad()
+                self.__ui.barcode = result
+
             if event in ('F1:112', 'F1'):  
                 self.new_estimate()
                 self.__ui.focus_barcode()
 
             if event in ('F2:113', 'F2'):        
-                confirm_test = confirm_message('OK_CANCEL', 'Called from Estimate F2 event')
+                confirm_test = ConfirmMessage('OK_CANCEL', 'Called from Estimate F2 event')
 
             if event in ('F3:114', 'F3'):
                 item_idx = values['_ITEMS_LIST_'][0]
@@ -234,6 +238,13 @@ class Estimate():
     def change_qty(self, item_line):
         change_qty = ChangeQty(item_line)
         return(change_qty.new_qty)
+
+
+    ######
+    # Wrapper function for Keypad
+    def keypad(self):
+        keypad = Keypad()
+        return(keypad.input_value)
 
 
     def initialize_header_pane(self):

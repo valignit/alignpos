@@ -43,6 +43,7 @@ class EstimateCanvas:
             [
                 sg.Text('Barcode:', **ap_style.search_text),
                 sg.Input(key='_BARCODE_', size=(15,1), **ap_style.search_input),
+                sg.Button(key='_KEYPAD1_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
                 sg.Text('Item Name:', **ap_style.search_text, pad=((20,0),(0,0))),
                 sg.Input(key='_SEARCH_NAME_', size=(38,1), **ap_style.search_input),
                 sg.Button(key='_ADDON_', button_text='Addon-F11', **ap_style.search_button, pad = ((100,0),(0,0))),

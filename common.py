@@ -1,8 +1,8 @@
 import PySimpleGUI as sg
 from alignpos_db import DbConn, DbTable, DbQuery
 
-from common_layout import ConfirmMessageCanvas, ItemLookupCanvas
-from common_ui import ItemLookupUi
+from common_layout import ConfirmMessageCanvas, ItemLookupCanvas, KeypadCanvas
+from common_ui import ItemLookupUi, KeypadUi
 
  
 class ConfirmMessage():
@@ -40,9 +40,11 @@ class ConfirmMessage():
         while True:
             event, values = self.__window.read()
             #print('message_popup:', event)
+            
             if event in ('_OK_', 'F12:123', 'F12', '\r'):
                 self.__ok = True
                 break
+            
             if event in ('Escape:27', '_CANCEL_', '+FOCUS OUT+', sg.WIN_CLOSED):
                 self.__ok = False
                 break
@@ -124,3 +126,53 @@ class ItemLookup():
         return self.__item_code
     
     item_code = property(get_item_code)         
+
+
+class Keypad():
+
+    def __init__(self):
+        self.__input_value = ''
+        self.__location = (100,100)
+        
+        self.__canvas = KeypadCanvas()
+    
+        self.__window = sg.Window("Keypad", 
+                        self.__canvas.layout,
+                        keep_on_top = True, 
+                        no_titlebar = True,                         
+                        return_keyboard_events = True, 
+                        modal=True, 
+                        finalize=True
+                    )
+        self.__ui = KeypadUi(self.__window)
+
+        self.handler()
+
+        
+    def handler(self):
+        while True:
+            event, values = self.__window.read()
+            print('keypad_popup=', event, values)
+            
+            if event in (sg.WIN_CLOSED, 'Escape:27', 'Escape', 'Exit', 'close'):
+                break
+                            
+            if event.isalnum():
+                inp_val = self.__ui.pad_input
+                inp_val += event[0]
+                self.__ui.pad_input = inp_val
+                
+            if event == '_PAD_OK_':
+                self.__input_value = self.__ui.pad_input
+                break
+                
+        self.__window.close()    
+        
+
+    def set_input_value(self, input_value):
+        self.__input_value = input_value
+
+    def get_input_value(self):
+        return self.__input_value
+    
+    input_value = property(get_input_value, set_input_value)         

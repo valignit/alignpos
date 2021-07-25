@@ -86,3 +86,23 @@ class ItemLookupUi:
     item_line = property(get_item_line, set_item_line)
     idx = property(get_item_idx, set_item_idx)
 
+
+###
+# Keypad Popup Interface
+class KeypadUi:
+
+    def __init__(self, popup):
+        self.__popup = popup
+        self.__pad_input = ''
+
+    def set_pad_input(self, pad_input):
+        self.__pad_input = pad_input
+        self.__popup.Element('_PAD_INPUT_').update(value = self.__pad_input)
+        
+    def get_pad_input(self):
+        self.__pad_input = self.__popup.Element('_PAD_INPUT_').get()        
+        return self.__pad_input
+        
+       
+    pad_input = property(get_pad_input, set_pad_input)     
+

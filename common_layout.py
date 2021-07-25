@@ -11,6 +11,12 @@ class ElementStyle:
                         'text_color': 'grey30',
                     }
 
+    pad_button_small:  dict = {
+                        'size':(3, 1), 
+                        'font':('Calibri 12 bold'), 
+                        'button_color': ('grey20','grey80'),
+                 }
+
     pad_button:  dict = {
                         'size':(4, 2), 
                         'font':('Calibri 11 bold'), 
@@ -210,4 +216,32 @@ class ItemLookupCanvas:
     def get_layout(self):
         return self.__layout
     
-    layout = property(get_layout)         
+    layout = property(get_layout)
+    
+    
+class KeypadCanvas:
+    
+    def __init__(self):
+        self.font=('Arial', 16)
+        numberRow = '1234567890'
+        topRow = 'QWERTYUIOP'
+        midRow = 'ASDFGHJKL'
+        bottomRow = 'ZXCVBNM'
+        
+        self.__layout = [
+            [sg.Input(key='_PAD_INPUT_', size=(30,1), **ElementStyle.search_input),
+             sg.Button(key='_PAD_OK_', button_text='Ok', **ElementStyle.search_button)],
+            [sg.Button(c, key=c, **ElementStyle.pad_button) for c in numberRow] + [
+             sg.Button('⌫', key='back', **ElementStyle.pad_button),
+             sg.Button('Esc', key='close', **ElementStyle.pad_button)],
+            [sg.Text(' ' * 4)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
+                               topRow] + [sg.Stretch()],
+            [sg.Text(' ' * 11)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
+                                midRow] + [sg.Stretch()],
+            [sg.Text(' ' * 18)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
+                                bottomRow] + [sg.Stretch()]]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)             

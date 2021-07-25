@@ -20,7 +20,7 @@ from invoice_ui import UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, U
 from main_menu import MainMenu
 from estimate import Estimate
 from invoice import Invoice
-from common import ItemLookup, ConfirmMessage as confirm_message
+from common import ItemLookup, ConfirmMessage
 
 
 ######
