@@ -27,7 +27,7 @@ class ConfirmMessage():
 
         self.__type = type
         self.__message = message
-        self.__result = ''
+        self.__ok = False
 
         self.handler()
 
@@ -40,23 +40,22 @@ class ConfirmMessage():
         while True:
             event, values = self.__window.read()
             #print('message_popup:', event)
-            if event in ('Escape:27', '_OK_', '_CANCEL_', 'F12:123', 'F12', '\r', '+FOCUS OUT+'):
+            if event in ('_OK_', 'F12:123', 'F12', '\r'):
+                self.__ok = True
                 break
-            if event == sg.WIN_CLOSED:
-                self.__result = 'Cancel'
-        if event in ('Escape:27', '_CANCEL_', '+FOCUS OUT+'):
-            self.__result = 'Cancel'
-        else:
-            self.__result = 'Ok'
+            if event in ('Escape:27', '_CANCEL_', '+FOCUS OUT+', sg.WIN_CLOSED):
+                self.__ok = False
+                break
+                
         self.__window.close()
 
-    def get_result(self):
-        return self.__result
+
+    def get_ok(self):
+        return self.__ok
     
-    result = property(get_result)         
+    ok = property(get_ok)         
 
-
-       
+    
 class ItemLookup():
 
     def __init__(self, filter, lin, col):
@@ -71,7 +70,8 @@ class ItemLookup():
                         return_keyboard_events=True, 
                         no_titlebar = True, 
                         element_padding=(0,0), 
-                        background_color = 'White', 
+                        background_color = 'White',
+                        border_depth= 1,
                         keep_on_top = True,                    
                         margins=(0,0)
                     )
@@ -90,6 +90,7 @@ class ItemLookup():
             self.__ui.item_name = db_item_row.item_name
             self.__ui.add_item_line()
 
+        self.__ui.idx = 0
         self.__ui.focus_item_list()
 
         self.handler()

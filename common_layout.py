@@ -199,9 +199,10 @@ class ItemLookupCanvas:
         self.__layout = [
             [sg.Listbox(values=[], 
                 key='_ITEM_NAME_LIST_', 
-                size=(60,6),  font=("Helvetica Bold", 11), 
+                size=(60,6),  
+                font=("Helvetica Bold", 11), 
                 select_mode='LISTBOX_SELECT_MODE_SINGLE', 
-                enable_events=True, 
+                enable_events=True,
                 bind_return_key=True)
             ]
         ]

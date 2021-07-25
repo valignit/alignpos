@@ -5,7 +5,7 @@ from alignpos_db import DbConn, DbTable, DbQuery
 
 from estimate_layout import EstimateCanvas, ChangeQtyCanvas
 from estimate_ui import EstimateUi, ChangeQtyUi
-from common import ItemLookup, ConfirmMessage as confirm_message
+from common import ItemLookup, ConfirmMessage
 
 
 class Estimate():
@@ -41,6 +41,7 @@ class Estimate():
         self.__ui = EstimateUi(self.__window)
 
         self.__db_conn = DbConn()
+        self.__db_session = self.__db_conn.session
         self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
         self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
         self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
@@ -67,10 +68,7 @@ class Estimate():
                 
             #print('window=', event, 'prev=', prev_event, 'focus=', focus)
 
-            if event == sg.WIN_CLOSED:
-                break
-
-            if event == 'Escape:27':
+            if event in (sg.WIN_CLOSED, 'Escape:27', 'Escape', 'Exit'):
                 break
 
             if event == 'ENTER':        
@@ -136,8 +134,9 @@ class Estimate():
             if event in ('Next:34', '_END_'):
                 self.goto_last_row()
 
-            if event in ('F1:112', 'F1'):        
-                confirm_test = confirm_message('OK_CANCEL', self.item_lookup('', 100,100))
+            if event in ('F1:112', 'F1'):  
+                self.new_estimate()
+                self.__ui.focus_barcode()
 
             if event in ('F2:113', 'F2'):        
                 confirm_test = confirm_message('OK_CANCEL', 'Called from Estimate F2 event')
@@ -154,9 +153,41 @@ class Estimate():
                 self.sum_item_list()
                 self.__ui.focus_barcode()        
 
+            if event in ('F6:117', 'F6'):
+                if len(self.__ui.items_list) > 0:
+                    self.save_estimate()
+                    self.__ui.focus_barcode()
+
+            if event in ('F7:118', 'F7', 'Delete:46', 'Delete'):
+                if prev_event == '_ITEMS_LIST_':
+                    idx = values['_ITEMS_LIST_'][0]
+                    self.delete_item(idx)
+                else:
+                    estimate_number = self.__ui.estimate_number
+                    self.delete_estimate()
+                    self.clear_ui()
+                    self.__ui.estimate_number = estimate_number
+                    self.goto_previous_row()
+                    if self.__ui.estimate_number == estimate_number:
+                        self.__ui.estimate_number = ''
+                    self.__ui.focus_barcode()
+               
+            if event in ('F11:122', 'F11', '_ADDON_'):
+                filter = "upper(item_code) like upper('ITEM-9%')"
+                item_code = self.item_lookup(filter, 385, 202)
+                self.process_item_name(item_code)
+                self.initialize_search_pane()
+
             if event == 'v:86' and focus == '_BARCODE_':
                 self.process_barcode(self.__ui.barcode)
                 self.initialize_search_pane()
+
+            if event == 'v:86' and focus == '_SEARCH_NAME_':
+                if len(self.__ui.search_name) > 2:
+                    filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
+                    item_code = self.item_lookup(filter, 385, 202)
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()
 
             if event in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T0') and focus == '_BARCODE_':
                 inp_val = self.__ui.barcode
@@ -177,15 +208,12 @@ class Estimate():
                         self.initialize_search_pane()
 
             if event.isalnum() and focus == '_SEARCH_NAME_':
-                print(self.__ui.search_name, len(self.__ui.search_name))
                 if len(self.__ui.search_name) > 2:
                     filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
                     item_code = self.item_lookup(filter, 385, 202)
+                    self.process_item_name(item_code)
                     self.initialize_search_pane()
                 
-            if event == 'Exit':
-                break
-
             if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN', 'DEL', 'Delete:46', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'):
                 prev_event = event
 
@@ -219,7 +247,7 @@ class Estimate():
  
     def initialize_search_pane(self):
         self.__ui.barcode = ''
-        self.__ui.item_name = ''
+        self.__ui.search_name = ''
 
 
     def initialize_detail_pane(self):
@@ -301,6 +329,8 @@ class Estimate():
             if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
+        else:
+            goto_last_row()
 
 
     def goto_next_row(self):
@@ -311,6 +341,8 @@ class Estimate():
             if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
+        else:
+            goto_last_row()
 
 
     def goto_last_row(self):
@@ -467,6 +499,154 @@ class Estimate():
         self.sum_item_list()
 
 
+    def process_item_name(self, item_code):
+        filter = "item_code='{}'"   
+        
+        db_item_row = self.__db_item_table.first(filter.format(item_code))
+        if db_item_row:
+            self.move_db_item_to_ui_detail_pane(db_item_row)
+            self.sum_item_list()
+
+
+    def new_estimate(self):
+        if not len(self.__ui.items_list) > 0:
+            return
+            
+        confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+        if confirm_save.ok:
+            self.save_estimate()
+            
+        self.clear_ui()
+        
+
+    def save_estimate(self):
+        if not len(self.__ui.items_list) > 0:
+            return    
+
+        if self.__ui.estimate_number == '':
+            self.insert_estimate()        
+        else:
+            self.update_estimate()
+
+
+    def insert_estimate(self):
+        db_query = DbQuery(self.__db_conn, 'SELECT nextval("ESTIMATE_NUMBER")')
+        for db_row in db_query.result:
+            self.__ui.estimate_number = db_row[0]
+
+        customer_number = 'CUST-00000'
+        db_customer_row = self.__db_customer_table.get_row(customer_number)
+        if db_customer_row:
+            self.__ui.mobile_number = db_customer_row.mobile_number
+            self.__ui.customer_number = db_customer_row.name
+            self.__ui.customer_name = db_customer_row.customer_name
+            self.__ui.customer_address = db_customer_row.address
+
+        db_estimate_row = self.__db_estimate_table.new_row()
+
+        db_estimate_row.name = self.__ui.estimate_number
+        db_estimate_row.customer = customer_number
+        db_estimate_row.posting_date = self.__ui.current_date    
+        db_estimate_row.total_amount = self.__ui.total_amount
+        db_estimate_row.net_amount = self.__ui.net_amount
+        db_estimate_row.estimate_amount = self.__ui.estimate_amount
+        db_estimate_row.cgst_tax_amount = self.__ui.total_cgst_amount
+        db_estimate_row.sgst_tax_amount = self.__ui.total_sgst_amount
+        db_estimate_row.terminal_id = self.__ui.terminal_id  
+
+        self.__db_estimate_table.create_row(db_estimate_row)
+        
+        for idx in range(len(self.__ui.items_list)): 
+            self.__ui.item_line_to_elements(idx)
+
+            db_estimate_item_row = self.__db_estimate_item_table.new_row()
+            
+            db_estimate_item_row.name = self.__ui.estimate_number + f"{idx:04d}"
+            db_estimate_item_row.parent = self.__ui.estimate_number
+            db_estimate_item_row.item = self.__ui.item_code
+            db_estimate_item_row.qty = self.__ui.qty
+            db_estimate_item_row.standard_selling_price = self.__ui.selling_price
+            db_estimate_item_row.applied_selling_price = self.__ui.selling_price
+            db_estimate_item_row.cgst_tax_rate = self.__ui.cgst_tax_rate
+            db_estimate_item_row.sgst_tax_rate = self.__ui.sgst_tax_rate
+          
+            self.__db_estimate_item_table.create_row(db_estimate_item_row)
+
+        self.__db_session.commit()
+        
+
+    def update_estimate(self):
+        db_estimate_row = self.__db_estimate_table.get_row(self.__ui.estimate_number)
+
+        if not db_estimate_row:
+            return
+        db_estimate_row.posting_date = self.__ui.current_date    
+        db_estimate_row.customer = self.__ui.customer_number
+        db_estimate_row.total_amount = self.__ui.total_amount
+        db_estimate_row.net_amount = self.__ui.net_amount
+        db_estimate_row.estimate_amount = self.__ui.estimate_amount
+        db_estimate_row.cgst_tax_amount = self.__ui.total_cgst_amount
+        db_estimate_row.sgst_tax_amount = self.__ui.total_sgst_amount
+        db_estimate_row.terminal_id = self.__ui.terminal_id  
+
+        filter = "parent='{}'"
+        db_estimate_item_cursor = self.__db_estimate_item_table.list(filter.format(self.__ui.estimate_number))
+        for db_estimate_item_row in db_estimate_item_cursor:
+            self.__db_estimate_item_table.delete_row(db_estimate_item_row)
+
+        self.__db_session.flush()
+        
+        for idx in range(len(self.__ui.items_list)): 
+            self.__ui.item_line_to_elements(idx)
+            
+            db_estimate_item_row = self.__db_estimate_item_table.new_row()
+            
+            db_estimate_item_row.name = self.__ui.estimate_number + f"{idx:04d}"
+            db_estimate_item_row.parent = self.__ui.estimate_number
+            db_estimate_item_row.item = self.__ui.item_code
+            db_estimate_item_row.qty = self.__ui.qty
+            db_estimate_item_row.standard_selling_price = self.__ui.selling_price
+            db_estimate_item_row.applied_selling_price = self.__ui.selling_price
+            db_estimate_item_row.cgst_tax_rate = self.__ui.cgst_tax_rate
+            db_estimate_item_row.sgst_tax_rate = self.__ui.sgst_tax_rate
+          
+            self.__db_estimate_item_table.create_row(db_estimate_item_row)
+
+        self.__db_session.commit()
+    
+
+    def delete_estimate(self):
+        if not self.__ui.estimate_number or self.__ui.estimate_number == '':
+            return
+
+        confirm_delete = ConfirmMessage('OK_CANCEL', 'Delete current Estimate?')
+        if confirm_delete.ok:
+            filter = "parent='{}'"
+            db_estimate_item_cursor = self.__db_estimate_item_table.list(filter.format(self.__ui.estimate_number))
+            for db_estimate_item_row in db_estimate_item_cursor:
+                print(db_estimate_item_row.name)
+                self.__db_estimate_item_table.delete_row(db_estimate_item_row)
+
+            self.__db_session.flush()
+            
+            db_estimate_row = self.__db_estimate_table.get_row(self.__ui.estimate_number)
+            if db_estimate_row:
+                self.__db_estimate_table.delete_row(db_estimate_row)
+            
+            self.__db_session.commit()
+
+
+    def delete_item(self, idx):
+        confirm_delete = ConfirmMessage('OK_CANCEL', 'Delete current Item?')
+        if confirm_delete.ok:
+            self.__ui.delete_item_line(idx)
+            self.sum_item_list()
+            if len(self.__ui.items_list) == idx:
+                idx -= 1
+            if idx > -1:
+                self.__ui.focus_items_list_row(idx) 
+
+               
 class ChangeQty:
 
     def __init__(self, item_line):
