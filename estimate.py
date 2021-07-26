@@ -61,12 +61,11 @@ class Estimate():
         focus = None    
         while True:
             event, values = self.__window.read()
-            print('est:', event)
             
             if self.__window.FindElementWithFocus():
                 focus = self.__window.FindElementWithFocus().Key
                 
-            #print('window=', event, 'prev=', prev_event, 'focus=', focus)
+            print('window=', event, 'prev=', prev_event, 'focus=', focus)
 
             if event in (sg.WIN_CLOSED, 'Escape:27', 'Escape', 'Exit'):
                 break
@@ -109,7 +108,7 @@ class Estimate():
                 
             if event == '+CLICK+':
                 self.initialize_action_pane()
-               
+
             if event in ('\t') and prev_event == '_SEARCH_NAME_':
                 self.__ui.focus_items_list()
 
@@ -135,8 +134,12 @@ class Estimate():
                 self.goto_last_row()
 
             if event == '_KEYPAD1_':        
-                result = self.keypad()
+                result = self.keypad(self.__ui.barcode)
                 self.__ui.barcode = result
+
+            if event == '_KEYPAD2_':        
+                result = self.keypad(self.__ui.search_name)
+                self.__ui.search_name = result
 
             if event in ('F1:112', 'F1'):  
                 self.new_estimate()
@@ -181,6 +184,17 @@ class Estimate():
                 item_code = self.item_lookup(filter, 385, 202)
                 self.process_item_name(item_code)
                 self.initialize_search_pane()
+
+            if event == '_BARCODE_+CLICK+' and prev_event== '_KEYPAD1_' and focus == '_BARCODE_':
+                self.process_barcode(self.__ui.barcode)
+                self.initialize_search_pane()
+
+            if event == '_SEARCH_NAME_+CLICK+' and prev_event== '_KEYPAD2_' and focus == '_SEARCH_NAME_':
+                if len(self.__ui.search_name) > 2:
+                    filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
+                    item_code = self.item_lookup(filter, 385, 202)
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()
 
             if event == 'v:86' and focus == '_BARCODE_':
                 self.process_barcode(self.__ui.barcode)
@@ -242,8 +256,8 @@ class Estimate():
 
     ######
     # Wrapper function for Keypad
-    def keypad(self):
-        keypad = Keypad()
+    def keypad(self, current_value):
+        keypad = Keypad(current_value)
         return(keypad.input_value)
 
 
@@ -699,30 +713,15 @@ class ChangeQty:
             if self.__window.FindElementWithFocus():
                 focus = self.__window.FindElementWithFocus().Key
             print('eventc=', event, 'prev=', prev_event, 'focus:', focus)
-            
-            if event == 'ENTER':        
-                self.__kb.press(Key.enter)
-                self.__kb.release(Key.enter)
-                
-            if event == 'TAB':        
-                self.__kb.press(Key.tab)
-                self.__kb.release(Key.tab)
-                
-            if event == 'DEL':
-                self.__kb.press(Key.delete)
-                self.__kb.release(Key.delete)
-                
-            if event == 'BACKSPACE':
-                self.__kb.press(Key.backspace)
-                self.__kb.release(Key.backspace)
-                
+                            
+            if event == '_KEYPAD_':        
+                result = self.keypad(self.__ui.new_qty)
+                self.__ui.new_qty = result
+                self.__new_qty = self.__ui.new_qty
+
             if event in ('Exit', '_CHANGE_QTY_ESC_', 'Escape:27', sg.WIN_CLOSED):
                 break             
                 
-            if event in ('T1','T2','T3','T4','T5','T6','T7','T8','T9','T0'):
-                if focus == '_NEW_QTY_':
-                    self.__ui.append_char('_NEW_QTY_', event[1])
-              
             if event == '\t':
                 if focus == '_NEW_QTY_':     
                     self.__ui.new_qty_f = self.__ui.new_qty
@@ -741,7 +740,16 @@ class ChangeQty:
         return self.__new_qty
 
     new_qty = property(get_new_qty, set_new_qty)
+
+
+    ######
+    # Wrapper function for Keypad
+    def keypad(self, current_value):
+        keypad = Keypad(current_value)
+        return(keypad.input_value)
+
         
+
 
 
      

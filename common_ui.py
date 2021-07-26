@@ -103,6 +103,10 @@ class KeypadUi:
         self.__pad_input = self.__popup.Element('_PAD_INPUT_').get()        
         return self.__pad_input
         
+    def focus_pad_input(self):
+        self.__popup.Element('_PAD_INPUT_').SetFocus()
+        self.__popup.Element('_PAD_INPUT_').update(select=True)        
+        
        
     pad_input = property(get_pad_input, set_pad_input)     
 

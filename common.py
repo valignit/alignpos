@@ -1,4 +1,6 @@
 import PySimpleGUI as sg
+from pynput.keyboard import Key, Controller
+
 from alignpos_db import DbConn, DbTable, DbQuery
 
 from common_layout import ConfirmMessageCanvas, ItemLookupCanvas, KeypadCanvas
@@ -61,6 +63,7 @@ class ConfirmMessage():
 class ItemLookup():
 
     def __init__(self, filter, lin, col):
+        
         self.__item_code = None
         self.__canvas = ItemLookupCanvas()
         self.__window = sg.Window("Item Name",
@@ -86,6 +89,10 @@ class ItemLookup():
         db_item_table = DbTable(self.__db_conn, 'tabItem')
         db_item_cursor = db_item_table.list(filter)
 
+        if (len(db_item_cursor) == 0):
+            self.__window.close()           
+            return
+        
         self.__ui.item_list = []
         for db_item_row in db_item_cursor:
             self.__ui.item_code = db_item_row.item_code
@@ -130,9 +137,11 @@ class ItemLookup():
 
 class Keypad():
 
-    def __init__(self):
+    def __init__(self, current_val):
         self.__input_value = ''
         self.__location = (100,100)
+        self.__kb = Controller()
+
         
         self.__canvas = KeypadCanvas()
     
@@ -140,11 +149,13 @@ class Keypad():
                         self.__canvas.layout,
                         keep_on_top = True, 
                         no_titlebar = True,                         
-                        return_keyboard_events = True, 
+                        return_keyboard_events = False, 
                         modal=True, 
                         finalize=True
                     )
         self.__ui = KeypadUi(self.__window)
+        self.__ui.pad_input = current_val 
+        self.__ui.focus_pad_input()
 
         self.handler()
 
@@ -157,11 +168,25 @@ class Keypad():
             if event in (sg.WIN_CLOSED, 'Escape:27', 'Escape', 'Exit', 'close'):
                 break
                             
-            if event.isalnum():
+            if event.isalnum() and not event in ('back', 'point', 'hyphen'):
                 inp_val = self.__ui.pad_input
                 inp_val += event[0]
                 self.__ui.pad_input = inp_val
                 
+            if event == 'back':
+                self.__kb.press(Key.backspace)
+                self.__kb.release(Key.backspace)
+
+            if event == 'point':
+                inp_val = self.__ui.pad_input
+                inp_val += '.'
+                self.__ui.pad_input = inp_val
+                
+            if event == 'hyphen':
+                inp_val = self.__ui.pad_input
+                inp_val += '-'
+                self.__ui.pad_input = inp_val
+
             if event == '_PAD_OK_':
                 self.__input_value = self.__ui.pad_input
                 break

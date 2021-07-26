@@ -69,7 +69,7 @@ class ElementStyle:
                     }
                     
     menu_button:  dict = {
-                        'size':(30, 1), 
+                        'size':(28, 1), 
                         'font':('Calibri 16'), 
                         'button_color': ('grey20', 'grey80'),
                         'use_ttk_buttons': True
@@ -239,7 +239,9 @@ class KeypadCanvas:
             [sg.Text(' ' * 11)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
                                 midRow] + [sg.Stretch()],
             [sg.Text(' ' * 18)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
-                                bottomRow] + [sg.Stretch()]]
+                                bottomRow] + [
+             sg.Button('.', key='point', **ElementStyle.pad_button),
+             sg.Button('-', key='hyphen', **ElementStyle.pad_button)] + [sg.Stretch()]]
 
     def get_layout(self):
         return self.__layout

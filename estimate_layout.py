@@ -46,7 +46,8 @@ class EstimateCanvas:
                 sg.Button(key='_KEYPAD1_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
                 sg.Text('Item Name:', **ap_style.search_text, pad=((20,0),(0,0))),
                 sg.Input(key='_SEARCH_NAME_', size=(38,1), **ap_style.search_input),
-                sg.Button(key='_ADDON_', button_text='Addon-F11', **ap_style.search_button, pad = ((100,0),(0,0))),
+                sg.Button(key='_KEYPAD2_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
+                sg.Button(key='_ADDON_', button_text='Addon-F11', **ap_style.search_button, pad = ((35,0),(0,0))),
                 sg.Button(key='_BUNDLE_', button_text='Bundle-F12', **ap_style.search_button, pad = ((5,3),(0,0)))                       
             ]
         ]
@@ -130,39 +131,6 @@ class EstimateCanvas:
             ]                
         ]        
         
-        ui_keypad_pane_layout = [
-            [
-                sg.Button(key='UP', button_text='↑', **ap_style.pad_button, pad = ((6,3),(6,3))),
-                sg.Button(key='T7', button_text='7', **ap_style.pad_button, pad = ((3,3),(6,3))),
-                sg.Button(key='T8', button_text='8', **ap_style.pad_button, pad = ((3,3),(6,3))),
-                sg.Button(key='T9', button_text='9', **ap_style.pad_button, pad = ((3,6),(6,3))),                    
-            ],
-            [
-                sg.Button(key='DOWN', button_text='↓', **ap_style.pad_button, pad = ((6,3),(3,3))),
-                sg.Button(key='T4', button_text='4', **ap_style.pad_button, pad = ((3,3),(3,3))),
-                sg.Button(key='T5', button_text='5', **ap_style.pad_button, pad = ((3,3),(3,3))),
-                sg.Button(key='T6', button_text='6', **ap_style.pad_button, pad = ((3,6),(3,3))),                    
-            ],
-            [
-                sg.Button(key='RIGHT', button_text='→', **ap_style.pad_button, pad = ((6,3),(3,3))),
-                sg.Button(key='T1', button_text='1', **ap_style.pad_button, pad = ((3,3),(3,3))),
-                sg.Button(key='T2', button_text='2', **ap_style.pad_button, pad = ((3,3),(3,3))),
-                sg.Button(key='T3', button_text='3', **ap_style.pad_button, pad = ((3,6),(3,3))),                    
-                
-            ],
-            [
-                sg.Button(key='LEFT', button_text='←', **ap_style.pad_button, pad = ((6,3),(3,3))),
-                sg.Button(key='T0', button_text='0', **ap_style.pad_button, pad = ((3,3),(3,3))),
-                sg.Button(key='ENTER',button_text='ENTER', **ap_style.pad_button_wide, pad = ((3,6),(3,3))),
-            ],            
-            [
-                sg.Button(key='BACKSPACE', button_text='\u232B', **ap_style.pad_button, pad = ((6,3),(3,6))),
-                sg.Button(key='FULL_STOP', button_text='.', **ap_style.pad_button, pad = ((3,3),(3,6))),                    
-                sg.Button(key='DEL', button_text='DEL', **ap_style.pad_button, pad = ((3,3),(3,6))),                    
-                sg.Button(key='TAB', button_text='TAB', **ap_style.pad_button, pad = ((3,3),(3,6))),                    
-            ],            
-        ]
-
         ui_bottom_pane_layout = [
             [
                 sg.Image(filename = 'alignpos_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
@@ -244,15 +212,6 @@ class EstimateCanvas:
                 sg.HorizontalSeparator(color = 'white', pad = ((0,0),(0,3))),
             ],
             [
-                sg.Frame('',
-                    ui_keypad_pane_layout, 
-                    background_color = 'white',
-                    vertical_alignment = 'top',
-                    border_width = 0,                   
-                    pad = ((23,0),(0,0)),
-                )     
-            ],
-            [
                 sg.HorizontalSeparator(color = 'white', pad = ((0,0),(5,10))),
             ],
             [
@@ -317,7 +276,9 @@ class ChangeQtyCanvas:
                 size=(15,1), 
                 enable_events=True,
                 justification = 'right'
-            )],
+             ),
+              sg.Button(key='_KEYPAD_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
+            ],
             [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(50,10)))],                        
             [sg.Button('Ok-F12', 
                 size=(8, 1), 
@@ -330,44 +291,9 @@ class ChangeQtyCanvas:
             ]           
         ]
         
-        right_pane_layout = [
-            [
-                sg.Button(key='UP', button_text='↑', **ap_style.pad_button),
-                sg.Button(key='T7', button_text='7', **ap_style.pad_button),
-                sg.Button(key='T8', button_text='8', **ap_style.pad_button),
-                sg.Button(key='T9', button_text='9', **ap_style.pad_button),                    
-            ],
-            [
-                sg.Button(key='DOWN', button_text='↓', **ap_style.pad_button),
-                sg.Button(key='T4', button_text='4', **ap_style.pad_button),
-                sg.Button(key='T5', button_text='5', **ap_style.pad_button),
-                sg.Button(key='T6', button_text='6', **ap_style.pad_button),                    
-            ],
-            [
-                sg.Button(key='RIGHT', button_text='→', **ap_style.pad_button),
-                sg.Button(key='T1', button_text='1', **ap_style.pad_button),
-                sg.Button(key='T2', button_text='2', **ap_style.pad_button),
-                sg.Button(key='T3', button_text='3', **ap_style.pad_button),                    
-                
-            ],
-            [
-                sg.Button(key='LEFT', button_text='←', **ap_style.pad_button),
-                sg.Button(key='T0', button_text='0', **ap_style.pad_button),
-                sg.Button(key='ENTER', button_text='ENT', **ap_style.pad_button_wide),
-            ],            
-            [
-                sg.Button(key='BACKSPACE', button_text='\u232B', **ap_style.pad_button),
-                sg.Button(key='FULL_STOP', button_text='.', **ap_style.pad_button),                    
-                sg.Button(key='DEL', button_text='DEL', **ap_style.pad_button),                    
-                sg.Button(key='TAB', button_text='TAB', **ap_style.pad_button),                    
-            ],            
-        
-        ]
-
         self.__layout = [
             [
                 sg.Column(left_pane_layout, vertical_alignment = 'top', pad = None),
-                sg.Column(right_pane_layout, vertical_alignment = 'center', pad = None)
             ]
         ]
 

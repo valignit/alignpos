@@ -62,6 +62,11 @@ class EstimateUi:
         self.__window['_NEXT_'].Widget.config(takefocus=0)
         self.__window['_END_'].Widget.config(takefocus=0)
         self.__window['_MOBILE_NUMBER_'].Widget.config(takefocus=0)
+
+        ###
+        # Unfocus Search Pane        
+        self.__window['_KEYPAD1_'].Widget.config(takefocus=0)
+        self.__window['_KEYPAD2_'].Widget.config(takefocus=0)
         self.__window['_ADDON_'].Widget.config(takefocus=0)
         self.__window['_BUNDLE_'].Widget.config(takefocus=0)        
 
@@ -91,27 +96,6 @@ class EstimateUi:
         self.__window['_TERMINAL_ID_'].Widget.config(takefocus=0)
         self.__window['_CURRENT_DATE_'].Widget.config(takefocus=0)
         
-        # Unfocus Keypad Pane        
-        self.__window['T1'].Widget.config(takefocus=0)     
-        self.__window['T2'].Widget.config(takefocus=0)
-        self.__window['T3'].Widget.config(takefocus=0)
-        self.__window['T4'].Widget.config(takefocus=0)
-        self.__window['T5'].Widget.config(takefocus=0)
-        self.__window['T6'].Widget.config(takefocus=0)
-        self.__window['T7'].Widget.config(takefocus=0)
-        self.__window['T8'].Widget.config(takefocus=0)
-        self.__window['T9'].Widget.config(takefocus=0)
-        self.__window['T0'].Widget.config(takefocus=0)
-        self.__window['UP'].Widget.config(takefocus=0)     
-        self.__window['DOWN'].Widget.config(takefocus=0)     
-        self.__window['LEFT'].Widget.config(takefocus=0)
-        self.__window['RIGHT'].Widget.config(takefocus=0)
-        self.__window['ENTER'].Widget.config(takefocus=0)
-        self.__window['BACKSPACE'].Widget.config(takefocus=0)
-        self.__window['FULL_STOP'].Widget.config(takefocus=0)
-        self.__window['TAB'].Widget.config(takefocus=0)
-        self.__window['DEL'].Widget.config(takefocus=0)
-
 
     ###
     # Setters and Getters for Header Pane 
@@ -490,25 +474,6 @@ class ChangeQtyUi:
         self.__new_qty = float(0.00)
 
         self.__popup['_EXISTING_QTY_'].Widget.config(takefocus=0)
-        self.__popup['T1'].Widget.config(takefocus=0)     
-        self.__popup['T2'].Widget.config(takefocus=0)
-        self.__popup['T3'].Widget.config(takefocus=0)
-        self.__popup['T4'].Widget.config(takefocus=0)
-        self.__popup['T5'].Widget.config(takefocus=0)
-        self.__popup['T6'].Widget.config(takefocus=0)
-        self.__popup['T7'].Widget.config(takefocus=0)
-        self.__popup['T8'].Widget.config(takefocus=0)
-        self.__popup['T9'].Widget.config(takefocus=0)
-        self.__popup['T0'].Widget.config(takefocus=0)
-        self.__popup['UP'].Widget.config(takefocus=0)     
-        self.__popup['DOWN'].Widget.config(takefocus=0)     
-        self.__popup['LEFT'].Widget.config(takefocus=0)
-        self.__popup['RIGHT'].Widget.config(takefocus=0)
-        self.__popup['ENTER'].Widget.config(takefocus=0)
-        self.__popup['BACKSPACE'].Widget.config(takefocus=0)
-        self.__popup['FULL_STOP'].Widget.config(takefocus=0)
-        self.__popup['TAB'].Widget.config(takefocus=0)
-        self.__popup['DEL'].Widget.config(takefocus=0)
         self.__popup["_CHANGE_QTY_OK_"].Widget.config(takefocus=0) 
         self.__popup["_CHANGE_QTY_ESC_"].Widget.config(takefocus=0) 
         

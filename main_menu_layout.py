@@ -15,7 +15,7 @@ class MainMenuLayout:
         menu_def = [
                 ['&File', ['E&xit']],      
                 ['&Operations', ['&Estimate', '&Invoice', '&Receipt', '&Cash']],      
-                ['&Interface', ['&Download Customers', '&Download Items', '&Download Exchanges', '---', '&Upload Invoices']],      
+                ['&Interface', ['&Download Customer', '&Download Item', '&Download Exchange', '---', '&Upload Invoice']],      
                 ['&Reports', ['&Daily Sales', 'Cash &Position']],      
                 ['&Help', '&About'], 
         ]
@@ -56,16 +56,16 @@ class MainMenuLayout:
                             sg.Text('Interface',**ap_style.menu_text),
                         ],
                         [
-                            sg.Button(key='_DOWNLOAD_CUSTOMERS_', button_text='Download Cu̲stomers',**ap_style.menu_button),
+                            sg.Button(key='_DOWNLOAD_CUSTOMERS_', button_text='Download Cu̲stomer',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_DOWNLOAD_ITEMS_', button_text='Download In̲voices',**ap_style.menu_button),
+                            sg.Button(key='_DOWNLOAD_ITEMS_', button_text='Download In̲voice',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_DOWNLOAD_EXCHANGES_', button_text='Download Exch̲anges',**ap_style.menu_button),
+                            sg.Button(key='_DOWNLOAD_EXCHANGES_', button_text='Download Exch̲ange',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_UPLOAD_INVOICES_', button_text='Upload Inv̲oices',**ap_style.menu_button),
+                            sg.Button(key='_UPLOAD_INVOICES_', button_text='Upload Inv̲oice',**ap_style.menu_button),
                         ],
                     ],
                     vertical_alignment = 'top', 
