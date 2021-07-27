@@ -1,41 +1,104 @@
-from alignpos_db import DbConn, DbTable, DbQuery
-from main_menu_ui import UiDetailPane, UiFooterPane, UiSummaryPane
+import PySimpleGUI as sg
+import json
+from subprocess import run
+
+from main_menu_layout import MainMenuCanvas
+from main_menu_ui import MainMenuUi
+from estimate import Estimate
+
+sg.theme('DefaultNoMoreNagging')
 
 
-class MainMenu():
-    db_conn = None
-    ui_window = None
+class MainMenu():   
     
-    ui_detail_pane = None
-    ui_footer_pane = None
-    ui_summary_pane = None
+    def __init__(self, user_id, terminal_id):
+        self.__user_id = user_id
+        self.__terminal_id = terminal_id
     
-    
-    def __init__(main_menu, db_conn, ui_window):
-        main_menu.db_conn = db_conn
-        main_menu.ui_window = ui_window
+        with open('./alignpos.json') as file_config:
+          config = json.load(file_config)
+
+        self.__welcome_text = config["welcome_text"]
+                
+        w, h = sg.Window.get_screen_size()
         
-        main_menu.ui_detail_pane = UiDetailPane(ui_window)
-        main_menu.ui_footer_pane = UiFooterPane(ui_window)
-        main_menu.ui_summary_pane = UiSummaryPane(ui_window)
+        self.__canvas = MainMenuCanvas(w, h)
+               
+        self.__window = sg.Window('Alignpos Menu', 
+                        self.__canvas.layout, 
+                        font='Helvetica 11', 
+                        finalize=True, 
+                        location=(0,0), 
+                        size=(w,h), 
+                        keep_on_top=False, 
+                        resizable=False,
+                        return_keyboard_events=True, 
+                        use_default_focus=False,
+                 )        
+     
+        self.__window.maximize()
+        self.__window['_LEFT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+        self.__window['_RIGHT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+          
+        self.__ui = MainMenuUi(self.__window)
         
-    
-    def initialize_ui_detail_pane(main_menu):
+        self.initialize_ui()
+
+        self.handler()
+
+    def handler(self):
+        prev_event = '' 
+        focus = None    
+        while True:
+            event, values = self.__window.read()
+            if self.__window.FindElementWithFocus():
+                focus = self.__window.FindElementWithFocus().Key
+                
+            #print('window=', event, 'prev=', prev_event, 'focus=', focus)
+
+            if event == sg.WIN_CLOSED:
+                self.__window.close()
+                break
+
+            if event == 'Escape:27':
+                self.__window.close()
+                break
+                
+            if event in ('E', 'e', 'Estimate', '_ESTIMATE_OPTION_'):
+                self.estimate_window()
+
+            if event in ('I', 'i', 'Invoice', '_INVOICE_OPTION_'):
+                self.invoice_window()
+                
+            if event == 'Exit':
+                break
+                
+        self.__window.close()
+
+    ######
+    # Wrapper function for Estimate window
+    def estimate_window(self):
+        estimate = Estimate()
+
+    ######
+    # Wrapper function for Invoice window
+    def invoice_window(self):
+        None
+          
+    def initialize_ui_detail_pane(self):
         None
 
+    def initialize_ui_footer_pane(self):
+        self.__ui.user_id = self.__user_id
+        self.__ui.terminal_id = self.__terminal_id
+        self.__ui.current_date = '2021/06/13'
 
-    def initialize_ui_footer_pane(main_menu):
-        main_menu.ui_footer_pane.user_id = 'XXX'
-        main_menu.ui_footer_pane.terminal_id = '101'
-        main_menu.ui_footer_pane.current_date = '2021/06/13'
+    def initialize_ui_summary_pane(self):
+        self.__ui.welcome_text = self.__welcome_text
 
+    def initialize_ui(self):
+        self.initialize_ui_detail_pane()
+        self.initialize_ui_footer_pane()
+        self.initialize_ui_summary_pane()
 
-    def initialize_ui_summary_pane(main_menu):
-        main_menu.ui_summary_pane.welcome_text = 'Welcome to AlignPos, a Point Of Sale application.'
-
-
-    def initialize_ui(main_menu):
-        main_menu.initialize_ui_detail_pane()
-        main_menu.initialize_ui_footer_pane()
-        main_menu.initialize_ui_summary_pane()
-  
+     

@@ -1,5 +1,3 @@
-import PySimpleGUI as sg
-import json
 import datetime
 
 

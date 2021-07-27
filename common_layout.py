@@ -4,7 +4,7 @@ import PySimpleGUI as sg
 ###
 # Common UI Styles             
 class ElementStyle:
-
+    
     page_title:  dict = {           
                         'font':("Calibri 18 bold"),
                         'size':(10,1),
@@ -162,6 +162,7 @@ class ElementStyle:
     search_input:  dict = {           
                         'justification':'left', 
                         'font':("Helvetica", 10),
+                        'background_color': 'White',
                         'enable_events':True                    
                     }
 
@@ -172,11 +173,64 @@ class ElementStyle:
                         'use_ttk_buttons': True
                     }
 
+    search_button_wide:  dict = {
+                        'size':(19, 1), 
+                        'font':('Calibri 16'), 
+                        'button_color': ('grey20', 'grey80'),
+                        'use_ttk_buttons': True
+                    }
+    search_button_short:  dict = {
+                        'size':(12, 1), 
+                        'font':('Calibri 11 bold'), 
+                        'button_color': ('grey20', 'grey80'),
+                        'use_ttk_buttons': True
+                    }
     welcome_text:  dict = {           
                         'font':("Calibri 13"),
                         'size':(20,15),
                         'background_color': 'White'
                     }
+
+
+class SigninCanvas:
+
+    def __init__(self):
+        self.__layout = [
+            [
+                sg.Image(filename = 'alignpos_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
+            
+            ],
+            [
+                sg.Frame('',
+                    [
+                        [
+                            sg.Text('Counter:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
+                            sg.Input(key='_SIGNIN_TERMINAL_ID_', readonly='True', size=(15,1), **ElementStyle.search_input, pad=((10,5),(15,5)))          
+                        ], 
+                        [
+                            sg.Text('User Id:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
+                            sg.Input(key='_SIGNIN_USER_ID_', size=(15,1), **ElementStyle.search_input, pad=((10,5),(15,5)))          
+                        ], 
+                        [
+                            sg.Text('Password:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(5,5))),
+                            sg.Input(key='_SIGNIN_PASSWD_', size=(15,1), **ElementStyle.search_input, password_char='*', pad=((10,5),(5,5)))          
+                        ], 
+                        [
+                            sg.B(key='_OK_', button_text='Ok - F12', **ElementStyle.search_button_short, pad=((10,5),(15,10))), 
+                            sg.B(key='_CANCEL_', button_text='Cancel - Esc', **ElementStyle.search_button_short, visible=True, pad=((10,12),(15,10)))
+                        ]
+                    ],
+                    background_color = 'grey90',
+                    border_width = 0,
+                    pad=((7,5),(10,10))
+                )
+            ]
+        ]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)      
 
 
 class ConfirmMessageCanvas:
@@ -191,7 +245,6 @@ class ConfirmMessageCanvas:
                 sg.B(key='_CANCEL_', button_text='Cancel - Esc', visible=True)
             ]
         ]
-
 
     def get_layout(self):
         return self.__layout
@@ -229,19 +282,38 @@ class KeypadCanvas:
         bottomRow = 'ZXCVBNM'
         
         self.__layout = [
-            [sg.Input(key='_PAD_INPUT_', size=(30,1), **ElementStyle.search_input),
-             sg.Button(key='_PAD_OK_', button_text='Ok', **ElementStyle.search_button)],
-            [sg.Button(c, key=c, **ElementStyle.pad_button) for c in numberRow] + [
-             sg.Button('⌫', key='back', **ElementStyle.pad_button),
-             sg.Button('Esc', key='close', **ElementStyle.pad_button)],
-            [sg.Text(' ' * 4)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
-                               topRow] + [sg.Stretch()],
-            [sg.Text(' ' * 11)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
-                                midRow] + [sg.Stretch()],
-            [sg.Text(' ' * 18)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
-                                bottomRow] + [
-             sg.Button('.', key='point', **ElementStyle.pad_button),
-             sg.Button('-', key='hyphen', **ElementStyle.pad_button)] + [sg.Stretch()]]
+            [
+                sg.Input(key='_PAD_INPUT_', size=(30,1), **ElementStyle.search_input),
+                sg.Button(key='_PAD_OK_', button_text='Ok', **ElementStyle.search_button)
+            ],
+            [
+                sg.Button(c, key=c, **ElementStyle.pad_button) for c in numberRow
+            ] + 
+            [
+                sg.Button('⌫', key='back', **ElementStyle.pad_button),
+                sg.Button('Esc', key='close', **ElementStyle.pad_button)
+            ],
+            [
+                sg.Text(' ' * 4)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
+                               topRow] + [sg.Stretch()
+            ],
+            [
+                sg.Text(' ' * 11)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
+                                midRow] + [sg.Stretch()
+            ],
+            [
+                sg.Text(' ' * 18)
+            ] + 
+            [
+                sg.Button(c, key=c, **ElementStyle.pad_button) for c in
+                                bottomRow
+            ] + 
+            [
+                sg.Button('.', key='point', **ElementStyle.pad_button),
+                sg.Button('-', key='hyphen', **ElementStyle.pad_button)
+            ] + 
+            [sg.Stretch()]
+        ]
 
     def get_layout(self):
         return self.__layout

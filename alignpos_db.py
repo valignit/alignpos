@@ -74,6 +74,7 @@ class DbTable():
             'tabInvoice_Item': conn.base.classes.tabInvoice_Item,
             'tabExchange': conn.base.classes.tabExchange,
             'tabSequence': conn.base.classes.tabSequence,
+            'tabUser': conn.base.classes.tabUser,
         }
         self.__table = switcher.get(table_name)
         

@@ -1,8 +1,9 @@
 import PySimpleGUI as sg
 from pynput.keyboard import Key, Controller
+import pdfkit
+import os
 
 from alignpos_db import DbConn, DbTable, DbQuery
-
 from estimate_layout import EstimateCanvas, ChangeQtyCanvas
 from estimate_ui import EstimateUi, ChangeQtyUi
 from common import ItemLookup, ConfirmMessage, Keypad
@@ -11,7 +12,6 @@ from common import ItemLookup, ConfirmMessage, Keypad
 class Estimate():
 
     def __init__(self):
-
         w, h = sg.Window.get_screen_size()
         
         kb = Controller()
@@ -179,6 +179,10 @@ class Estimate():
                         self.__ui.estimate_number = ''
                     self.__ui.focus_barcode()
                
+            if event in ('F9:120', 'F9'):
+                self.print_estimate()
+                self.__ui.focus_barcode()
+            
             if event in ('F11:122', 'F11', '_ADDON_'):
                 filter = "upper(item_code) like upper('ITEM-9%')"
                 item_code = self.item_lookup(filter, 385, 202)
@@ -291,7 +295,6 @@ class Estimate():
         self.__ui.sgst_tax_rate = float(0.00)
         self.__ui.item_line = [] 
 
-
     def initialize_action_pane(self):
         self.__window.Element('F1').update(text='New\nF1')    
         self.__window.Element('F2').update(text='Specs\nF2')
@@ -303,12 +306,10 @@ class Estimate():
         self.__window.Element('F8').update(text='Submit\nF8')
         self.__window.Element('F9').update(text='Print\nF9')
 
-
     def initialize_footer_pane(self):
         self.__ui.user_id = 'XXX'
         self.__ui.terminal_id = '101'
         self.__ui.current_date = '2021/06/13'
-
 
     def initialize_summary_pane(self):
         self.__ui.line_items = 0
@@ -322,7 +323,6 @@ class Estimate():
         self.__ui.roundoff_amount = 0.00          
         self.__ui.estimate_amount = 0.00
 
-
     def initialize_ui(self):
         self.initialize_header_pane()
         self.initialize_search_pane()
@@ -331,20 +331,17 @@ class Estimate():
         self.initialize_footer_pane()
         self.initialize_summary_pane()
 
-
     def clear_ui(self):
         self.initialize_header_pane()
         self.initialize_search_pane()    
         self.initialize_detail_pane()
         self.initialize_summary_pane()
     
-
     def goto_first_row(self):
         db_estimate_row = self.__db_estimate_table.first('')
         if db_estimate_row:
             self.clear_ui()    
             self.show_ui(db_estimate_row)    
-
 
     def goto_previous_row(self):
         if self.__ui.estimate_number:
@@ -357,7 +354,6 @@ class Estimate():
         else:
             goto_last_row()
 
-
     def goto_next_row(self):
         if self.__ui.estimate_number:
             name = self.__ui.estimate_number
@@ -369,13 +365,11 @@ class Estimate():
         else:
             goto_last_row()
 
-
     def goto_last_row(self):
         db_estimate_row = self.__db_estimate_table.last('')
         if db_estimate_row:
             self.clear_ui()
             self.show_ui(db_estimate_row)
-
 
     def show_ui(self, db_estimate_row):
         if not db_estimate_row:
@@ -403,7 +397,6 @@ class Estimate():
             self.__ui.discount_amount = 0.00       
         self.__ui.estimate_amount = db_estimate_row.estimate_amount
 
-
     def move_db_item_to_ui_detail_pane(self, db_item_row):
         self.__ui.item_code = db_item_row.name
         self.__ui.item_barcode = db_item_row.barcode
@@ -421,7 +414,6 @@ class Estimate():
         
         self.__ui.add_item_line()    
 
- 
     def move_db_estimate_item_to_ui_detail_pane(self, db_estimate_item_row):
         self.__ui.item_code = db_estimate_item_row.item
         
@@ -441,7 +433,6 @@ class Estimate():
         self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
         
         self.__ui.add_item_line()    
-
 
     def sum_item_list(self):
         line_items = 0
@@ -476,9 +467,10 @@ class Estimate():
         self.__ui.estimate_amount = estimate_rounded_amount
         self.__ui.roundoff_amount = estimate_rounded_amount - estimate_actual_amount    
 
-
     def process_change_qty(self, new_qty, item_idx):
         print('here1')
+        if not new_qty:
+            return
         if float(new_qty) > 0:
             print('here2')
             self.__ui.qty = new_qty
@@ -489,7 +481,6 @@ class Estimate():
             self.__ui.update_item_line(item_idx) 
             self.sum_item_list()
        
-
     def process_weight(self, idx):
         self.__ui.item_line_to_elements(idx)
         if self.__ui.uom == 'Kg':          
@@ -502,7 +493,6 @@ class Estimate():
             self.sum_item_list()
         else:
             sg.popup('Not applicable to this UOM', keep_on_top = True)         
-
 
     def process_barcode(self, barcode):
         if not barcode:
@@ -523,7 +513,6 @@ class Estimate():
         print('here')    
         self.sum_item_list()
 
-
     def process_item_name(self, item_code):
         filter = "item_code='{}'"   
         
@@ -531,7 +520,6 @@ class Estimate():
         if db_item_row:
             self.move_db_item_to_ui_detail_pane(db_item_row)
             self.sum_item_list()
-
 
     def new_estimate(self):
         if not len(self.__ui.items_list) > 0:
@@ -542,7 +530,6 @@ class Estimate():
             self.save_estimate()
             
         self.clear_ui()
-        
 
     def save_estimate(self):
         if not len(self.__ui.items_list) > 0:
@@ -552,7 +539,6 @@ class Estimate():
             self.insert_estimate()        
         else:
             self.update_estimate()
-
 
     def insert_estimate(self):
         db_query = DbQuery(self.__db_conn, 'SELECT nextval("ESTIMATE_NUMBER")')
@@ -599,7 +585,6 @@ class Estimate():
 
         self.__db_session.commit()
         
-
     def update_estimate(self):
         db_estimate_row = self.__db_estimate_table.get_row(self.__ui.estimate_number)
 
@@ -639,7 +624,6 @@ class Estimate():
 
         self.__db_session.commit()
     
-
     def delete_estimate(self):
         if not self.__ui.estimate_number or self.__ui.estimate_number == '':
             return
@@ -660,7 +644,6 @@ class Estimate():
             
             self.__db_session.commit()
 
-
     def delete_item(self, idx):
         confirm_delete = ConfirmMessage('OK_CANCEL', 'Delete current Item?')
         if confirm_delete.ok:
@@ -671,11 +654,117 @@ class Estimate():
             if idx > -1:
                 self.__ui.focus_items_list_row(idx) 
 
-               
+    ######
+    # Print Estimate into PDF file
+    def print_estimate(self):
+        config = pdfkit.configuration(wkhtmltopdf = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
+        options = {
+            'page-height': '120mm',
+            'page-width': '60mm',
+            'margin-top': '3mm',
+            'margin-bottom': '3mm',
+            'margin-right': '3mm',
+            'margin-left': '3mm',
+            'enable-local-file-access': None,
+            'quiet': None
+        } 
+
+        print_str = """
+                    <table style="width:100%">
+                        <tr>
+                            <td>
+                                <img src="c:\\python-tkinter\\al-fareeda-logo.png" alt="al-fareeda" width="100" height="48">
+                            </td>
+                            <td>
+                                &nbsp
+                            </td>
+                            <td padding: 10px;>
+                                <p style="font-size:9px; font-family:Courier; text-align:left">
+                                    13/2947,<br>
+                                    Pattinamkathaan&nbspbus&nbspstop,<br>
+                                    Ramanathapuram, Tamil&nbspNadu<br>                        
+                                    GSTIN: 33ABMFA2300A12E<br>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>                       
+                    <p style="font-size:18px; font-weight: bold; font-family:Courier; text-align:center">
+                        Estimate
+                    </p>            
+                """    
+
+        print_str += """
+                <p  style="font-size:14px; font-weight: bold; font-family:Courier">Estimate No: {}<br>
+                    Date: {}<br>
+                </p>            
+                """.format( self.__ui.estimate_number, 
+                            self.__ui.current_date
+                    )    
+
+        print_str += """
+                <p style="font-size:12px; font-family:Courier; margin: 0px;">
+                    Code&nbspItem&nbspName&nbsp&nbsp&nbsp&nbsp&nbspQty&nbsp&nbsp&nbsp&nbspAmount
+                </p>
+                <hr style="width:95%;text-align:left;margin-left:0">
+            """
+            
+        for idx in range(len(self.__ui.items_list)): 
+            self.__ui.item_line_to_elements(idx)        
+            print_str += """
+                <p style="font-size:12px; font-family:Courier; margin: 0px;";>
+                    {:^4s}&nbsp{:^10s}&nbsp&nbsp{}&nbsp&nbsp{}
+                </p>
+                """.format( self.__ui.item_code[5:], 
+                            self.__ui.item_name[0:10].ljust(10, ' ').replace(' ', ''),
+                            str(self.__ui.qty).rjust(5,'*').replace('*', '&nbsp'), 
+                            str(self.__ui.item_net_amount).rjust(8,'*').replace('*', '&nbsp')
+                    )
+     
+        print_str += """
+            <hr style="width:95%;text-align:left;margin-left:0">
+            """
+     
+        print_str += """
+            <p style="font-size:12px; font-family:Courier; margin: 0px;">
+                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+            </p>
+            <hr style="width:95%;text-align:left;margin-left:0">
+            <p style="font-size:12px; font-family:Courier; margin: 0px;">
+                &nbsp&nbsp&nbsp&nbsp&nbspCost&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+                &nbsp&nbsp&nbsp&nbsp&nbspCGS&nbspTax&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+                &nbsp&nbsp&nbsp&nbsp&nbspSGS&nbspTax&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+            </p>
+            <hr style="width:95%;text-align:left;margin-left:0">
+            <p style="font-size:12px; font-family:Courier; margin: 0px;">                    
+                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br><br>
+                &nbspDiscount&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+                &nbspRoundoff&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>                    
+            </p>
+            <hr style="width:95%;text-align:left;margin-left:0">
+            """.format(str(self.__ui.net_amount).rjust(12,'*').replace('*', '&nbsp'), 
+                        str(self.__ui.total_amount).rjust(12,'*').replace('*', '&nbsp'), 
+                        str(self.__ui.total_cgst_amount).rjust(12,'*').replace('*', '&nbsp'), 
+                        str(self.__ui.total_sgst_amount).rjust(12,'*').replace('*', '&nbsp'),
+                        str(self.__ui.net_amount).rjust(12,'*').replace('*', '&nbsp'),                            
+                        str(self.__ui.discount_amount).rjust(12,'*').replace('*', '&nbsp'),                            
+                        str(self.__ui.roundoff_amount).rjust(12,'*').replace('*', '&nbsp')                           
+                )
+        print_str += """
+            <p style="font-size:15px; font-family:Courier; font-weight: bold">
+                Net&nbspAmt&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
+            </p>
+            """.format(self.__ui.estimate_amount.rjust(10,'*').replace('*', '&nbsp'))
+        
+        try:    
+            pdfkit.from_string(print_str, 'micro.pdf', options=options)   
+            os.startfile('micro.pdf')
+        except:
+            pass
+
+    
 class ChangeQty:
 
     def __init__(self, item_line):
-
         self.__kb = Controller()
         
         self.__canvas = ChangeQtyCanvas()
@@ -702,7 +791,6 @@ class ChangeQty:
         
         self.handler()
         
-
     def handler(self):
         prev_event = '' 
         focus = None
@@ -718,6 +806,7 @@ class ChangeQty:
                 result = self.keypad(self.__ui.new_qty)
                 self.__ui.new_qty = result
                 self.__new_qty = self.__ui.new_qty
+                self.__ui.focus_new_qty()
 
             if event in ('Exit', '_CHANGE_QTY_ESC_', 'Escape:27', sg.WIN_CLOSED):
                 break             
@@ -740,7 +829,6 @@ class ChangeQty:
         return self.__new_qty
 
     new_qty = property(get_new_qty, set_new_qty)
-
 
     ######
     # Wrapper function for Keypad

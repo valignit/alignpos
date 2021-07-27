@@ -172,6 +172,15 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
+CREATE TABLE `tabUser` (
+	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`email` varchar(255) DEFAULT NULL,
+	`passwd` blob,
+	PRIMARY KEY (`name`) USING BTREE
+) ENGINE=InnoDB
+;
+
+insert into tabUser (name, email, passwd) values ('admin', 'admin@example.com', ENCODE('welcome', 'secret'));
 insert into tabSequence (name) values ('REFERENCE_NUMBER');
 insert into tabSequence (name, prefix) values ('INVOICE_NUMBER', 'SINV-');
 insert into tabSequence (name, prefix) values ('ESTIMATE_NUMBER', 'EST-');

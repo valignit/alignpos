@@ -4,9 +4,9 @@ from common_layout import ElementStyle as ap_style
 
 ###
 # Main Menu Layout               
-class MainMenuLayout:
-    def __init__(self, config, w, h):
-        sg.theme(config["ui_theme"])
+class MainMenuCanvas:
+    def __init__(self, w, h):
+            
         lw = w*78/100
         rw = w*22/100
         lh = h

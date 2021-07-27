@@ -1,6 +1,53 @@
-import PySimpleGUI as sg
-import json
 import datetime
+
+
+###
+# Signin Interface
+class SigninUi:
+
+    def __init__(self, window):
+        self.__window = window
+        self.__signin_user_id = ''
+        self.__signin_passwd = ''
+        self.__window['_SIGNIN_TERMINAL_ID_'].Widget.config(takefocus=0)
+       
+
+    def set_signin_terminal_id(self, signin_terminal_id):
+        self.__signin_terminal_id = signin_terminal_id
+        self.__window.Element('_SIGNIN_TERMINAL_ID_').update(value = self.__signin_terminal_id)
+        
+    def get_signin_terminal_id(self):
+        self.__signin_terminal_id = self.__window.Element('_SIGNIN_TERMINAL_ID_').get()        
+        return self.__signin_terminal_id
+        
+    def set_signin_user_id(self, signin_user_id):
+        self.__signin_user_id = signin_user_id
+        self.__window.Element('_SIGNIN_USER_ID_').update(value = self.__signin_user_id)
+        
+    def get_signin_user_id(self):
+        self.__signin_user_id = self.__window.Element('_SIGNIN_USER_ID_').get()        
+        return self.__signin_user_id
+        
+    def set_signin_passwd(self, signin_passwd):
+        self.__signin_passwd = signin_passwd
+        self.__window.Element('_SIGNIN_PASSWD_').update(value = self.__signin_passwd)
+        
+    def get_signin_passwd(self):
+        self.__signin_passwd = self.__window.Element('_SIGNIN_PASSWD_').get()        
+        return self.__signin_passwd
+        
+    def focus_signin_user_id(self):
+        self.__window.Element('_SIGNIN_USER_ID_').SetFocus()
+        self.__window.Element('_SIGNIN_USER_ID_').update(select=True)        
+        
+    def focus_signin_passwd(self):
+        self.__window.Element('_SIGNIN_PASSWD_').SetFocus()
+        self.__window.Element('_SIGNIN_PASSWD_').update(select=True)        
+       
+       
+    signin_terminal_id = property(get_signin_terminal_id, set_signin_terminal_id)     
+    signin_user_id = property(get_signin_user_id, set_signin_user_id)     
+    signin_passwd = property(get_signin_passwd, set_signin_passwd)     
 
 
 ###
@@ -105,7 +152,7 @@ class KeypadUi:
         
     def focus_pad_input(self):
         self.__popup.Element('_PAD_INPUT_').SetFocus()
-        self.__popup.Element('_PAD_INPUT_').update(select=True)        
+        self.__popup.Element('_PAD_INPUT_').update(select=True, move_cursor_to='none')        
         
        
     pad_input = property(get_pad_input, set_pad_input)     

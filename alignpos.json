@@ -8,9 +8,7 @@
 	"db_pos_database" : "alignpos",
 	"db_pos_user" : "alignpos",
 	"db_pos_passwd" : "alignpos123",
-	
-    "ui_theme": "DefaultNoMoreNagging",
-    
+	    
 	"welcome_text": "Welcome to AlignPos - Point Of Sale client application.\n\nThis application facilitates preparing estimates and invoices.\n\nPlease choose the required option from the menu.\n\nPress Escape to terminate the application.",
 	"ui_f1_tooltip": "Click here to display the help document\nexplaining all the functions, actions\nand navigations",
 

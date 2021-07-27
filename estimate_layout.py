@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-import json
+#import json
 
 from common_layout import ElementStyle as ap_style
 
@@ -8,12 +8,7 @@ from common_layout import ElementStyle as ap_style
 # Estimate Layout               
 class EstimateCanvas:
     def __init__(self):
-    
-        with open('./alignpos.json') as file_config:
-          config = json.load(file_config)
-        theme = config["ui_theme"]       
-        sg.theme(theme)
-
+   
         w, h = sg.Window.get_screen_size()        
         lw = w*78/100
         rw = w*25/100                
@@ -131,18 +126,34 @@ class EstimateCanvas:
             ]                
         ]        
         
+        ui_favorite_pane_layout = [
+            [
+                sg.Button(key='_ITEM_1_',  button_text='Xxxx', **ap_style.search_button_wide),
+            ],
+            [
+                sg.Button(key='_ITEM_2_',  button_text='Xxxx', **ap_style.search_button_wide),
+            ],
+            [
+                sg.Button(key='_ITEM_3_',  button_text='Xxxx', **ap_style.search_button_wide),
+            ],
+            [
+                sg.Button(key='_ITEM_4_',  button_text='Xxxx', **ap_style.search_button_wide),
+            ],
+            [
+                sg.Button(key='_ITEM_5_',  button_text='Xxxx', **ap_style.search_button_wide),
+            ],
+            [
+                sg.Button(key='_ITEM_6_',  button_text='Xxxx', **ap_style.search_button_wide),
+            ],
+
+        ]
+        
         ui_bottom_pane_layout = [
             [
                 sg.Image(filename = 'alignpos_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
             ]
         ]
-        
-        ui_temp_layout = [
-            [
-                sg.Graph(canvas_size=(300, 400), graph_bottom_left=(0,0), graph_top_right=(400, 400), background_color = None, key='graph')
-            ],      
-        ]
-        
+
         ui_left_panes_layout = [
             [
                 sg.Frame('',
@@ -211,6 +222,16 @@ class EstimateCanvas:
             [
                 sg.HorizontalSeparator(color = 'white', pad = ((0,0),(0,3))),
             ],
+            [
+                sg.Frame('',
+                    ui_favorite_pane_layout, 
+                    background_color = 'white',
+                    vertical_alignment = 'top',
+                    border_width = 0,                   
+                    pad = ((0,0),(0,0)),
+                )     
+            ],
+            
             [
                 sg.HorizontalSeparator(color = 'white', pad = ((0,0),(5,10))),
             ],

@@ -1,12 +1,110 @@
 import PySimpleGUI as sg
+import json
 from pynput.keyboard import Key, Controller
 
 from alignpos_db import DbConn, DbTable, DbQuery
+from common_layout import SigninCanvas, ConfirmMessageCanvas, ItemLookupCanvas, KeypadCanvas
+from common_ui import SigninUi, ItemLookupUi, KeypadUi
 
-from common_layout import ConfirmMessageCanvas, ItemLookupCanvas, KeypadCanvas
-from common_ui import ItemLookupUi, KeypadUi
+sg.theme('DefaultNoMoreNagging')
 
  
+class Signin():
+    
+    def __init__(self):
+        with open('./alignpos.json') as file_config:
+          config = json.load(file_config)
+
+        self.__terminal_id = config["terminal_id"]
+        
+        self.__canvas = SigninCanvas()
+
+        self.__window = sg.Window("AlignPOS Signin", 
+                        self.__canvas.layout,
+                        background_color = 'White',
+                        keep_on_top = True, 
+                        return_keyboard_events = True, 
+                        modal=True, 
+                        finalize=True
+                    )
+
+        self.__ui = SigninUi(self.__window)
+
+        self.__db_conn = DbConn()
+        self.__db_session = self.__db_conn.session
+        self.__db_user_table = DbTable(self.__db_conn, 'tabUser')
+
+        self.__window.bind('<FocusIn>', '+FOCUS IN+')
+        self.__window.bind('<FocusOut>', '+FOCUS OUT+')
+
+        self.__window["_OK_"].Widget.config(takefocus=0) 
+        self.__window["_CANCEL_"].Widget.config(takefocus=0)
+
+        self.__type = type
+        self.__ok = False
+
+        self.__ui.signin_terminal_id = self.__terminal_id
+        self.__ui.focus_signin_user_id()
+        
+        self.handler()
+
+
+    def handler(self):
+        if self.__type == 'OK':
+            self.__window.Element("_CANCEL_").update(visible=False)
+        else:
+            self.__window.Element("_CANCEL_").update(visible=True)
+
+        while True:
+            event, values = self.__window.read()
+            print('signin:', event)
+            
+            if event in ('_OK_', 'F12:123', 'F12', '\r'):
+                if self.validate_user():
+                    self.__ok = True
+                    break              
+            
+            if event in ('Escape:27', '_CANCEL_', sg.WIN_CLOSED):
+                self.__ok = False
+                break
+                
+        self.__window.close()
+
+
+    def validate_user(self):
+        db_query = DbQuery(self.__db_conn, 'select name, DECODE(passwd, "secret") as passwd from tabUser where name = "{}"'.format(self.__ui.signin_user_id))
+        if  db_query.result:
+            for db_row in db_query.result:
+                print('passwd:', db_row[0], self.__ui.signin_passwd, db_row[1].decode("utf-8"))
+                if self.__ui.signin_passwd == db_row[1].decode("utf-8"):
+                    return True
+                else:
+                    ConfirmMessage('OK', 'Password mismatch')
+                    self.__ui.focus_signin_passwd()
+                    return False                
+        else:
+            ConfirmMessage('OK', 'Invalid User')
+            self.__ui.focus_signin_user_id()
+            return False
+
+    
+    def get_ok(self):
+        return self.__ok
+
+
+    def get_sign_in_user_id(self):
+        return self.__ui.signin_user_id
+
+ 
+    def get_sign_in_terminal_id(self):
+        return self.__ui.signin_terminal_id
+
+ 
+    ok = property(get_ok)         
+    user_id = property(get_sign_in_user_id)         
+    terminal_id = property(get_sign_in_terminal_id)         
+
+    
 class ConfirmMessage():
     
     def __init__(self, type, message):
@@ -33,6 +131,7 @@ class ConfirmMessage():
 
         self.handler()
 
+
     def handler(self):
         if self.__type == 'OK':
             self.__window.Element("_CANCEL_").update(visible=False)
@@ -57,13 +156,13 @@ class ConfirmMessage():
     def get_ok(self):
         return self.__ok
     
+    
     ok = property(get_ok)         
 
     
 class ItemLookup():
 
-    def __init__(self, filter, lin, col):
-        
+    def __init__(self, filter, lin, col):       
         self.__item_code = None
         self.__canvas = ItemLookupCanvas()
         self.__window = sg.Window("Item Name",
@@ -131,14 +230,16 @@ class ItemLookup():
       
     def get_item_code(self):
         return self.__item_code
+
     
     item_code = property(get_item_code)         
 
 
 class Keypad():
 
-    def __init__(self, current_val):
+    def __init__(self, current_value):
         self.__input_value = ''
+        self.__current_value = current_value
         self.__location = (100,100)
         self.__kb = Controller()
 
@@ -154,8 +255,9 @@ class Keypad():
                         finalize=True
                     )
         self.__ui = KeypadUi(self.__window)
-        self.__ui.pad_input = current_val 
+        self.__ui.pad_input = current_value
         self.__ui.focus_pad_input()
+        
 
         self.handler()
 
@@ -170,7 +272,18 @@ class Keypad():
                             
             if event.isalnum() and not event in ('back', 'point', 'hyphen'):
                 inp_val = self.__ui.pad_input
-                inp_val += event[0]
+
+                sel_val = None
+                try:
+                    sel_val = self.__window['_PAD_INPUT_'].Widget.selection_get()
+                except sg.tk.TclError:
+                    sel_val = None
+                if sel_val:
+                    inp_val = event[0]
+                    self.__kb.press(Key.right)
+                    self.__kb.release(Key.right)                    
+                else:
+                    inp_val += event[0]
                 self.__ui.pad_input = inp_val
                 
             if event == 'back':
@@ -197,7 +310,9 @@ class Keypad():
     def set_input_value(self, input_value):
         self.__input_value = input_value
 
+
     def get_input_value(self):
         return self.__input_value
+
     
     input_value = property(get_input_value, set_input_value)         
