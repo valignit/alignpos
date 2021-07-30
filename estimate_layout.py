@@ -7,7 +7,7 @@ from common_layout import ElementStyle as ap_style
 ###
 # Estimate Layout               
 class EstimateCanvas:
-    def __init__(self):
+    def __init__(self, item_groups):
    
         w, h = sg.Window.get_screen_size()        
         lw = w*78/100
@@ -41,9 +41,7 @@ class EstimateCanvas:
                 sg.Button(key='_KEYPAD1_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
                 sg.Text('Item Name:', **ap_style.search_text, pad=((20,0),(0,0))),
                 sg.Input(key='_SEARCH_NAME_', size=(38,1), **ap_style.search_input),
-                sg.Button(key='_KEYPAD2_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
-                sg.Button(key='_ADDON_', button_text='Addon-F11', **ap_style.search_button, pad = ((35,0),(0,0))),
-                sg.Button(key='_BUNDLE_', button_text='Bundle-F12', **ap_style.search_button, pad = ((5,3),(0,0)))                       
+                sg.Button(key='_KEYPAD2_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                                      
             ]
         ]
 
@@ -127,25 +125,7 @@ class EstimateCanvas:
         ]        
         
         ui_favorite_pane_layout = [
-            [
-                sg.Button(key='_ITEM_1_',  button_text='Xxxx', **ap_style.search_button_wide),
-            ],
-            [
-                sg.Button(key='_ITEM_2_',  button_text='Xxxx', **ap_style.search_button_wide),
-            ],
-            [
-                sg.Button(key='_ITEM_3_',  button_text='Xxxx', **ap_style.search_button_wide),
-            ],
-            [
-                sg.Button(key='_ITEM_4_',  button_text='Xxxx', **ap_style.search_button_wide),
-            ],
-            [
-                sg.Button(key='_ITEM_5_',  button_text='Xxxx', **ap_style.search_button_wide),
-            ],
-            [
-                sg.Button(key='_ITEM_6_',  button_text='Xxxx', **ap_style.search_button_wide),
-            ],
-
+            [sg.Button(item_group, key='_' + item_group.upper() + '_', **ap_style.search_button_wide)] for item_group in item_groups
         ]
         
         ui_bottom_pane_layout = [
@@ -228,7 +208,7 @@ class EstimateCanvas:
                     background_color = 'white',
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((0,0),(0,0)),
+                    pad = ((4,0),(2,3)),
                 )     
             ],
             
@@ -241,7 +221,7 @@ class EstimateCanvas:
                     background_color = 'white',
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((0,0),(13,0)),
+                    pad = ((0,0),(10,0)),
                 )     
             ],
         ]
@@ -300,7 +280,7 @@ class ChangeQtyCanvas:
              ),
               sg.Button(key='_KEYPAD_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
             ],
-            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(50,10)))],                        
+            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(20,10)))],                        
             [sg.Button('Ok-F12', 
                 size=(8, 1), 
                 font='Calibri 12 bold', 

@@ -58,6 +58,15 @@ class Signin():
         while True:
             event, values = self.__window.read()
             print('signin:', event)
+
+            ### following code will be removed later
+            if event in ('F1', 'F1:112'):
+                self.__ui.signin_user_id = 'admin'
+                self.__ui.signin_passwd = 'welcome'              
+                if self.validate_user():
+                    self.__ok = True
+                    break              
+            ###
             
             if event in ('_OK_', 'F12:123', 'F12', '\r'):
                 if self.validate_user():
@@ -269,7 +278,7 @@ class Keypad():
             
             if event in (sg.WIN_CLOSED, 'Escape:27', 'Escape', 'Exit', 'close'):
                 break
-                            
+
             if event.isalnum() and not event in ('back', 'point', 'hyphen'):
                 inp_val = self.__ui.pad_input
 

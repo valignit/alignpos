@@ -65,8 +65,6 @@ class EstimateUi:
         # Unfocus Search Pane        
         self.__window['_KEYPAD1_'].Widget.config(takefocus=0)
         self.__window['_KEYPAD2_'].Widget.config(takefocus=0)
-        self.__window['_ADDON_'].Widget.config(takefocus=0)
-        self.__window['_BUNDLE_'].Widget.config(takefocus=0)        
 
         # Unfocus Summary Pane
         self.__window['_LINE_ITEMS_'].Widget.config(takefocus=0)
@@ -76,6 +74,10 @@ class EstimateUi:
         self.__window['_DISCOUNT_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_ROUNDOFF_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_ESTIMATE_AMOUNT_'].Widget.config(takefocus=0)
+
+        # Unfocus Favorite Pane        
+        self.__window['_ADDON_'].Widget.config(takefocus=0)
+        self.__window['_BUNDLE_'].Widget.config(takefocus=0)
 
         # Unfocus Action Pane
         self.__window['F1'].Widget.config(takefocus=0)

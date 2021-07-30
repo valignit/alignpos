@@ -65,10 +65,10 @@ class MainMenu():
                 break
                 
             if event in ('E', 'e', 'Estimate', '_ESTIMATE_OPTION_'):
-                self.estimate_window()
+                self.estimate_window(self.__user_id, self.__terminal_id)
 
             if event in ('I', 'i', 'Invoice', '_INVOICE_OPTION_'):
-                self.invoice_window()
+                self.invoice_window(self.__user_id, self.__terminal_id)
                 
             if event == 'Exit':
                 break
@@ -77,12 +77,12 @@ class MainMenu():
 
     ######
     # Wrapper function for Estimate window
-    def estimate_window(self):
-        estimate = Estimate()
+    def estimate_window(self, user_id, terminal_id):
+        estimate = Estimate(user_id, terminal_id)
 
     ######
     # Wrapper function for Invoice window
-    def invoice_window(self):
+    def invoice_window(self, user_id, terminal_id):
         None
           
     def initialize_ui_detail_pane(self):

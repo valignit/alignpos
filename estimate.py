@@ -11,12 +11,36 @@ from common import ItemLookup, ConfirmMessage, Keypad
 
 class Estimate():
 
-    def __init__(self):
+    def __init__(self, user_id, terminal_id):
         w, h = sg.Window.get_screen_size()
-        
         kb = Controller()
-    
-        self.__canvas = EstimateCanvas()
+        
+        self.__db_conn = DbConn()
+        self.__db_session = self.__db_conn.session
+        self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
+        self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
+        self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
+        self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
+
+        # Dynamically creating Favorite buttons - done before Layout instance is created
+        # Begin
+        item_groups = []
+        item_groups.append('ADDON')
+        item_groups.append('BUNDLE')        
+        item_count = 0
+        db_query = DbQuery(self.__db_conn, 'select distinct(item_group) from tabItem where item_group <> "NULL"')
+        if  db_query.result:
+            for db_row in db_query.result:
+                item_groups.append(db_row[0][0:12].upper())
+                item_count += 1
+                if item_count > 3:
+                    break
+        tot_groups = 6 - item_count
+        for i in range(tot_groups):
+            item_groups.append('UNUSED-' + str(i+1))
+        # End
+        
+        self.__canvas = EstimateCanvas(item_groups)
         
         self.__window = sg.Window('Estimate', 
                         self.__canvas.layout,
@@ -40,18 +64,30 @@ class Estimate():
 
         self.__ui = EstimateUi(self.__window)
 
-        self.__db_conn = DbConn()
-        self.__db_session = self.__db_conn.session
-        self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
-        self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
-        self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
-        self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
-
         self.__kb = kb
         
         self.initialize_ui()
+        self.__ui.user_id = user_id
+        self.__ui.terminal_id = terminal_id        
         self.goto_last_row()               
         self.__ui.focus_barcode()        
+
+        # Avoid focus to Favorite buttons - done after UI instance is created
+        # Begin
+        item_count = 0
+        db_query = DbQuery(self.__db_conn, 'select distinct(item_group) from tabItem where item_group <> "NULL"')        
+        if  db_query.result:
+            for db_row in db_query.result:
+                key = '_' + db_row[0][0:12].upper() + '_'
+                self.__window[key].Widget.config(takefocus=0)
+                item_count += 1
+                if item_count > 3:
+                    break
+        tot_groups = 6 - item_count
+        for i in range(tot_groups):
+            key = '_UNUSED-' + str(i+1) + '_'
+            self.__window[key].Widget.config(takefocus=0)
+        # End
 
         self.handler()
 
@@ -136,10 +172,17 @@ class Estimate():
             if event == '_KEYPAD1_':        
                 result = self.keypad(self.__ui.barcode)
                 self.__ui.barcode = result
+                self.process_barcode(self.__ui.barcode)
+                self.initialize_search_pane()
 
             if event == '_KEYPAD2_':        
                 result = self.keypad(self.__ui.search_name)
                 self.__ui.search_name = result
+                if len(self.__ui.search_name) > 2:
+                    filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
+                    item_code = self.item_lookup(filter, 385, 202)
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()            
 
             if event in ('F1:112', 'F1'):  
                 self.new_estimate()
@@ -188,18 +231,7 @@ class Estimate():
                 item_code = self.item_lookup(filter, 385, 202)
                 self.process_item_name(item_code)
                 self.initialize_search_pane()
-
-            if event == '_BARCODE_+CLICK+' and prev_event== '_KEYPAD1_' and focus == '_BARCODE_':
-                self.process_barcode(self.__ui.barcode)
-                self.initialize_search_pane()
-
-            if event == '_SEARCH_NAME_+CLICK+' and prev_event== '_KEYPAD2_' and focus == '_SEARCH_NAME_':
-                if len(self.__ui.search_name) > 2:
-                    filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
-                    item_code = self.item_lookup(filter, 385, 202)
-                    self.process_item_name(item_code)
-                    self.initialize_search_pane()
-
+            
             if event == 'v:86' and focus == '_BARCODE_':
                 self.process_barcode(self.__ui.barcode)
                 self.initialize_search_pane()
@@ -307,8 +339,8 @@ class Estimate():
         self.__window.Element('F9').update(text='Print\nF9')
 
     def initialize_footer_pane(self):
-        self.__ui.user_id = 'XXX'
-        self.__ui.terminal_id = '101'
+        self.__ui.user_id = ''
+        self.__ui.terminal_id = ''
         self.__ui.current_date = '2021/06/13'
 
     def initialize_summary_pane(self):
@@ -468,7 +500,6 @@ class Estimate():
         self.__ui.roundoff_amount = estimate_rounded_amount - estimate_actual_amount    
 
     def process_change_qty(self, new_qty, item_idx):
-        print('here1')
         if not new_qty:
             return
         if float(new_qty) > 0:
@@ -510,7 +541,6 @@ class Estimate():
                 self.move_db_item_to_ui_detail_pane(db_item_row)
         else:
             return
-        print('here')    
         self.sum_item_list()
 
     def process_item_name(self, item_code):
@@ -694,7 +724,8 @@ class Estimate():
                 """    
 
         print_str += """
-                <p  style="font-size:14px; font-weight: bold; font-family:Courier">Estimate No: {}<br>
+                <p  style="font-size:14px; font-weight: bold; font-family:Courier">
+                    Estimate No: {}<br>
                     Date: {}<br>
                 </p>            
                 """.format( self.__ui.estimate_number, 
@@ -703,7 +734,10 @@ class Estimate():
 
         print_str += """
                 <p style="font-size:12px; font-family:Courier; margin: 0px;">
-                    Code&nbspItem&nbspName&nbsp&nbsp&nbsp&nbsp&nbspQty&nbsp&nbsp&nbsp&nbspAmount
+                    Code&nbspItem&nbsp
+                    Name&nbsp&nbsp&nbsp&nbsp&nbsp
+                    Qty&nbsp&nbsp&nbsp&nbsp
+                    Amount
                 </p>
                 <hr style="width:95%;text-align:left;margin-left:0">
             """
@@ -772,7 +806,7 @@ class ChangeQty:
         self.__window = sg.Window("Change Quantity", 
                         self.__canvas.layout, 
                         location=(300,250), 
-                        size=(530,280), 
+                        size=(350,200), 
                         modal=True, 
                         finalize=True,
                         keep_on_top = True,

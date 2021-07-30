@@ -1,6 +1,25 @@
-                        sg.Text('USER:', **ap_style.title_text),
-                        sg.Input(key='_USER_ID_', **ap_style.title_input),
-                        sg.Text('COUNTER:', **ap_style.title_text),
-                        sg.Input(key='_TERMINAL_ID_', **ap_style.title_input),
-                        sg.Text('DATE:', **ap_style.title_text),
-                        sg.Input(key='_CURRENT_DATE_', **ap_style.title_input)
+            '''
+            if event == '_BARCODE_+CLICK+' and prev_event== '_KEYPAD1_' and focus == '_BARCODE_':
+                self.process_barcode(self.__ui.barcode)
+                self.initialize_search_pane()
+
+            if event == '_BARCODE_+CLICK+' and prev_event== '_KEYPAD2_' and focus == '_BARCODE_':
+                if len(self.__ui.search_name) > 2:
+                    filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
+                    item_code = self.item_lookup(filter, 385, 202)
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()            
+            
+            if event == '_SEARCH_NAME_+CLICK+' and prev_event== '_KEYPAD1_' and focus == '_SEARCH_NAME_':
+                self.process_barcode(self.__ui.barcode)
+                self.initialize_search_pane()
+                
+            if event == '_SEARCH_NAME_+CLICK+' and prev_event== '_KEYPAD2_' and focus == '_SEARCH_NAME_':
+                if len(self.__ui.search_name) > 2:
+                    filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
+                    item_code = self.item_lookup(filter, 385, 202)
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()
+            '''
+                sg.Button(key='_ADDON_', button_text='Addon-F11', **ap_style.search_button, pad = ((35,0),(0,0)), visible = False),
+                sg.Button(key='_BUNDLE_', button_text='Bundle-F12', **ap_style.search_button, pad = ((5,3),(0,0)), visible = False) 

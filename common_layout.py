@@ -139,17 +139,17 @@ class ElementStyle:
                     }
 
     footer_text:  dict = {           
-                        'font':("Helvetica 8"),
-                        'size':(8,1),
+                        'font':("Helvetica 9"),
+                        'size':(9,1),
                         'justification': 'left'
                     }    
 
     footer_input:  dict = {           
                         'readonly':True, 
-                        'justification':'right', 
+                        'justification':'left', 
                         'disabled_readonly_text_color':'grey32', 
                         'disabled_readonly_background_color':'grey89', 
-                        'font':("Helvetica", 8),
+                        'font':("Helvetica", 9),
                         'size':(10,1)                        
                     }
 
@@ -174,8 +174,8 @@ class ElementStyle:
                     }
 
     search_button_wide:  dict = {
-                        'size':(19, 1), 
-                        'font':('Calibri 16'), 
+                        'size':(29, 1), 
+                        'font':('Calibri 11 bold'), 
                         'button_color': ('grey20', 'grey80'),
                         'use_ttk_buttons': True
                     }
@@ -283,15 +283,15 @@ class KeypadCanvas:
         
         self.__layout = [
             [
-                sg.Input(key='_PAD_INPUT_', size=(30,1), **ElementStyle.search_input),
-                sg.Button(key='_PAD_OK_', button_text='Ok', **ElementStyle.search_button)
+                sg.Input(key='_PAD_INPUT_', size=(44,1), **ElementStyle.search_input, pad=((0,14),(0,0))),
+                sg.Button(key='_PAD_OK_', button_text='Ok', **ElementStyle.search_button),
+                sg.Button(key='close', button_text='Cancel', **ElementStyle.search_button)
             ],
             [
                 sg.Button(c, key=c, **ElementStyle.pad_button) for c in numberRow
             ] + 
             [
                 sg.Button('⌫', key='back', **ElementStyle.pad_button),
-                sg.Button('Esc', key='close', **ElementStyle.pad_button)
             ],
             [
                 sg.Text(' ' * 4)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
