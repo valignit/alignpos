@@ -2,7 +2,7 @@
 # Application: alignPOS
 # Installation: AFSM
 # CLI Program: delete_invoices
-# Description: Delete all invoices in local db
+# Description: Delete all estimates in local db
 # Version: 1.0
 # 1.0.0 - 25-04-2021: New program
 ##################################################
@@ -34,7 +34,7 @@ def print_log(msg):
 ##############################
 # Main
 ##############################
-print_log('alignPOS - Delete Invoices - Version 1.1')
+print_log('alignPOS - Delete Estimates - Version 1.1')
 print_log('----------------------------------------')
 
 ######
@@ -94,7 +94,7 @@ db_pos_cur = db_pos_conn.cursor()
 ######
 # Delete Invoice Item records
 db_pos_sql_stmt = (
-    "DELETE FROM `tabInvoice_Item`"
+    "DELETE FROM `tabEstimate_Item`"
 )
 
 try:
@@ -109,7 +109,7 @@ except mariadb.Error as db_err:
 ######
 # Delete Invoice records
 db_pos_sql_stmt = (
-    "DELETE FROM tabInvoice"
+    "DELETE FROM tabEstimate"
 )
 
 try:

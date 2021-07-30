@@ -72,7 +72,7 @@ except requests.exceptions.RequestException as ws_err:
 # Connect to POS database
 db_pos_host = config["db_pos_host"]
 db_pos_port = config["db_pos_port"]
-db_pos_name = config["db_pos_name"]
+db_pos_database = config["db_pos_database"]
 db_pos_user = config["db_pos_user"]
 db_pos_passwd = config["db_pos_passwd"]
 
@@ -82,7 +82,7 @@ try:
         password = db_pos_passwd,
         host = db_pos_host,
         port = db_pos_port,
-        database = db_pos_name
+        database = db_pos_database
     )
     print_log("POS database connected")
 

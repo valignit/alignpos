@@ -384,7 +384,7 @@ class Estimate():
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
         else:
-            goto_last_row()
+            self.goto_last_row()
 
     def goto_next_row(self):
         if self.__ui.estimate_number:
@@ -395,7 +395,7 @@ class Estimate():
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
         else:
-            goto_last_row()
+            self.goto_last_row()
 
     def goto_last_row(self):
         db_estimate_row = self.__db_estimate_table.last('')

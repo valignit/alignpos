@@ -303,6 +303,36 @@ class ChangeQtyCanvas:
     
     layout = property(get_layout)         
 
+
+class ListEstimatesCanvas:
+    def __init__(self):
+    
+        list_layout = [
+            [],
+            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(20,10)))],                        
+            [sg.Button('Ok-F12', 
+                size=(8, 1), 
+                font='Calibri 12 bold', 
+                key='_LIST_ESTIMATE_OK_'), 
+             sg.Button('Exit-Esc', 
+                size=(8, 1), 
+                font='Calibri 12 bold', 
+                key='_LIST_ESTIMATE_ESC_'), 
+            ]           
+        ]
+        
+        self.__layout = [
+            [
+                sg.Column(list_layout, vertical_alignment = 'top', pad = None),
+            ]
+        ]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)         
+
+
 ###
 if __name__ == "__main__":
     print('***Not an executable module, please call the main script')
