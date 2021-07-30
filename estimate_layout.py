@@ -1,5 +1,4 @@
 import PySimpleGUI as sg
-#import json
 
 from common_layout import ElementStyle as ap_style
 

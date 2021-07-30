@@ -1,0 +1,10 @@
+PySimpleGUI
+os
+sys
+json
+warnings
+subprocess
+datetime
+sqlalchemy
+pynput
+pdfkit
