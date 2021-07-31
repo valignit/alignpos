@@ -21,6 +21,8 @@ class EstimateUi:
         
         # Initialize Detail Pane
         self.__items_list = []
+        self.__item_line = []
+        self.__item_idx = 0
         self.__item_code = str('')
         self.__item_barcode = str('')
         self.__item_name = str('')
@@ -33,8 +35,7 @@ class EstimateUi:
         self.__item_net_amount = float(0.00)
         self.__cgst_tax_rate = float(0.00)
         self.__sgst_tax_rate = float(0.00)
-        self.__item_line = []
-        self.__item_idx = 0
+
         
         # Initialize Footer Pane
         self.__user_id = ''
@@ -372,7 +373,7 @@ class EstimateUi:
     # Specific to Detail Pane        
     def clear_ui_items_list(self):
         self.__ui_items_list.clear()
-        self.__window.Element('_ui_items_list_').update(values = self.__ui_items_list)
+        self.__window.Element('_ITEMS_LIST_').update(values = self.__ui_items_list)
 
     def elements_to_item_line(self):
         self.__item_line.append(self.__item_code)
@@ -434,6 +435,8 @@ class EstimateUi:
     
     # Properties for Detail Pane    
     items_list = property(get_items_list, set_items_list)
+    item_line = property(get_item_line, set_item_line)
+    item_idx = property(get_item_idx, set_item_idx)
     item_code = property(get_item_code, set_item_code)
     item_barcode = property(get_item_barcode, set_item_barcode)
     item_name = property(get_item_name, set_item_name)
@@ -446,8 +449,7 @@ class EstimateUi:
     item_net_amount = property(get_item_net_amount, set_item_net_amount)
     cgst_tax_rate = property(get_cgst_tax_rate, set_cgst_tax_rate)
     sgst_tax_rate = property(get_sgst_tax_rate, set_sgst_tax_rate)
-    item_line = property(get_item_line, set_item_line)
-    item_idx = property(get_item_idx, set_item_idx)
+
     
     # Properties for Footer Pane    
     user_id = property(get_user_id, set_user_id) 
@@ -473,7 +475,7 @@ class ChangeQtyUi:
         self.__existing_qty = float(0.00)
         self.__new_qty = float(0.00)
 
-        self.__popup['_EXISTING_QTY_'].Widget.config(takefocus=0)
+        self.__popup["_EXISTING_QTY_"].Widget.config(takefocus=0)
         self.__popup["_CHANGE_QTY_OK_"].Widget.config(takefocus=0) 
         self.__popup["_CHANGE_QTY_ESC_"].Widget.config(takefocus=0) 
         
@@ -526,3 +528,186 @@ class ChangeQtyUi:
     new_qty = property(get_new_qty, set_new_qty) 
     new_qty_f = property(get_new_qty, set_new_qty_f) 
 
+
+class EstimateListUi:
+    def __init__(self, window):
+        self.__window = window
+
+        self.__estimates_list = []
+        self.__estimate_line = []
+        self.__estimate_idx = 0
+        self.__estimate_number = ''
+        self.__estimate_number_search = ''
+        self.__mobile_number = ''
+        self.__mobile_number_search = ''
+        self.__line_items = 0
+        self.__total_amount = float(0.00)
+        self.__total_tax_amount = float(0.00)
+        self.__net_amount = float(0.00)
+        self.__discount_amount = float(0.00)
+        self.__roundoff_amount = float(0.00)
+        self.__estimate_amount = float(0.00)
+        
+        self.__window["_ESTIMATE_LIST_OK_"].Widget.config(takefocus=0)
+        self.__window["_ESTIMATE_LIST_ESC_"].Widget.config(takefocus=0)
+        self.__window["_ESTIMATE_LIST_SEARCH_"].Widget.config(takefocus=0)
+       
+
+    # Setters and Getters for Summary Pane
+    def set_estimates_list(self, estimates_list):
+        self.__estimates_list = estimates_list
+        self.__window.Element('_ESTIMATES_LIST_').update(values = self.__estimates_list)
+        
+    def get_estimates_list(self):
+        self.__estimates_list = self.__window.Element('_ESTIMATES_LIST_').get()
+        return self.__estimates_list
+              
+    def set_estimate_line(self, estimate_line):
+        self.__estimate_line = estimate_line
+        
+    def get_estimate_line(self):
+        self.__estimate_line = self.__estimates_list[self.__item_idx]
+        return self.__estimate_line
+    
+    def set_estimate_number_search(self, estimate_number_search):
+        self.__estimate_number_search = estimate_number_search
+        self.__window.Element('_ESTIMATE_NUMBER_SEARCH_').update(value = self.__estimate_number_search)
+        
+    def get_estimate_number_search(self):
+        self.__estimate_number_search = self.__window.Element('_ESTIMATE_NUMBER_SEARCH_').get()        
+        return self.__estimate_number_search
+        
+    def set_mobile_number_search(self, mobile_number_search):
+        self.__mobile_number_search = mobile_number_search
+        self.__window.Element('_MOBILE_NUMBER_SEARCH_').update(value = self.__mobile_number_search)
+        
+    def get_mobile_number_search(self):
+        self.__mobile_number_search = self.__window.Element('_MOBILE_NUMBER_SEARCH_').get()        
+        return self.__mobile_number_search
+        
+    def set_estimate_number(self, estimate_number):
+        self.__estimate_number = estimate_number
+        
+    def get_estimate_number(self):
+        return self.__estimate_number
+        
+    def set_mobile_number(self, mobile_number):
+        self.__mobile_number = mobile_number
+        
+    def get_mobile_number(self):
+        return self.__mobile_number
+        
+    def set_line_items(self, line_items):
+        self.__line_items = line_items
+        
+    def get_line_items(self):
+        return self.__line_items
+        
+    def set_total_amount(self, total_amount):
+        self.__total_amount = total_amount
+        
+    def get_total_amount(self):
+        return self.__total_amount
+
+    def set_total_tax_amount(self, total_tax_amount):
+        self.__total_tax_amount = total_tax_amount
+        
+    def get_total_tax_amount(self):
+        return self.__total_tax_amount
+
+    def set_net_amount(self, total_net_amount):
+        self.__net_amount = total_net_amount
+        
+    def get_net_amount(self):
+        return self.__net_amount
+
+    def set_discount_amount(self, discount_amount):
+        self.__discount_amount = discount_amount
+        
+    def get_discount_amount(self):
+        return self.__discount_amount
+
+    def set_roundoff_amount(self, roundoff_amount):
+        self.__roundoff_amount = roundoff_amount
+        
+    def get_roundoff_amount(self):
+        return self.__roundoff_amount
+
+    def set_estimate_amount(self, estimate_amount):
+        self.__estimate_amount = estimate_amount
+        
+    def get_estimate_amount(self):
+        return self.__estimate_amount
+
+    def set_estimate_idx(self, estimate_idx):
+        self.__estimate_idx = estimate_idx
+        
+    def get_estimate_idx(self):
+        return self.__estimate_idx  
+
+    # Focus Summary Pane        
+    def focus_estimates_list(self):
+        self.__window['_ESTIMATES_LIST_'].Widget.config(takefocus=1)
+        if len(self.__estimates_list) > 0:        
+            table_row = self.__window['_ESTIMATES_LIST_'].Widget.get_children()[0]
+            self.__window['_ESTIMATES_LIST_'].Widget.selection_set(table_row)  # move selection
+            self.__window['_ESTIMATES_LIST_'].Widget.focus(table_row)  # move focus
+            self.__window['_ESTIMATES_LIST_'].Widget.see(table_row)  # scroll to show i
+
+    def focus_estimates_list_row(self, idx):
+        self.__window['_ESTIMATES_LIST_'].Widget.config(takefocus=1)        
+        table_row = self.__window['_ESTIMATES_LIST_'].Widget.get_children()[idx]
+        self.__window['_ESTIMATES_LIST_'].Widget.selection_set(table_row)  # move selection
+        self.__window['_ESTIMATES_LIST_'].Widget.focus(table_row)  # move focus
+        self.__window['_ESTIMATES_LIST_'].Widget.see(table_row)  # scroll to show i
+    
+    def clear_ui_estimates_list(self):
+        self.__ui_estimate_list.clear()
+        self.__window.Element('_ESTIMATES_LIST_').update(values = self.__ui_estimate_list)
+
+    def elements_to_estimate_line(self):
+        self.__estimate_line.append(self.__estimate_number)
+        self.__estimate_line.append(self.__mobile_number)        
+        self.__estimate_line.append(self.__line_items)        
+        self.__estimate_line.append("{:.2f}".format(float(self.__total_amount)))      
+        self.__estimate_line.append("{:.2f}".format(float(self.__total_tax_amount)))       
+        self.__estimate_line.append("{:.2f}".format(float(self.__net_amount)))    
+        self.__estimate_line.append("{:.2f}".format(float(self.__discount_amount)))       
+        self.__estimate_line.append("{:.2f}".format(float(self.__roundoff_amount)))
+        self.__estimate_line.append("{:.2f}".format(float(self.__estimate_amount)))
+       
+    def estimate_line_to_elements(self, idx):
+        self.__estimate_line = self.__estimates_list[idx]
+        self.__estimate_number = self.__estimate_line[0]
+        self.__mobile_number = self.__estimate_line[1]
+        self.__line_items = self.__estimate_line[2]
+        self.__total_amount = self.__estimate_line[3]
+        self.__total_tax_amount = self.__estimate_line[4]
+        self.__net_amount = self.__estimate_line[5]
+        self.__discount_amount = self.__estimate_line[6]
+        self.__roundoff_amount = self.__estimate_line[7]
+        self.__estimate_amount = self.__estimate_line[8]
+
+    def add_estimate_line(self):
+        self.__estimate_line = []
+        self.elements_to_estimate_line()    
+        self.__estimates_list.append(self.__estimate_line)
+        self.__window.Element('_ESTIMATES_LIST_').update(values = self.__estimates_list)
+
+
+    # Properties for Summary Pane    
+    estimates_list = property(get_estimates_list, set_estimates_list)
+    estimate_line = property(get_estimate_line, set_estimate_line)
+    estimate_idx = property(get_estimate_idx, set_estimate_idx)
+    estimate_number_search = property(get_estimate_number_search, set_estimate_number_search)
+    mobile_number_search = property(get_mobile_number_search, set_mobile_number_search)
+    estimate_number = property(get_estimate_number, set_estimate_number)
+    mobile_number = property(get_mobile_number, set_mobile_number)
+    line_items = property(get_line_items, set_line_items)
+    total_amount = property(get_total_amount, set_total_amount)
+    total_tax_amount = property(get_total_tax_amount, set_total_tax_amount)
+    net_amount = property(get_net_amount, set_net_amount)
+    discount_amount = property(get_discount_amount, set_discount_amount)
+    roundoff_amount = property(get_roundoff_amount, set_roundoff_amount)
+    estimate_amount = property(get_estimate_amount, set_estimate_amount)
+       

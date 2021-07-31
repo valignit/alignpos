@@ -25,8 +25,9 @@ class EstimateCanvas:
             [
                 sg.Text('Estimate', **ap_style.page_title, pad=((0,0),(0,3))),
                 sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_ESTIMATE_NUMBER_'),
-                sg.Text('', **ap_style.page_title, pad=((0,350),(0,3)), key='_MOBILE_NUMBER_'),
-                sg.Button(key='_BEGIN_', button_text='BEGN\nPgUp',**ap_style.nav_button, pad = ((0,5),(0,0))),
+                sg.Text('', **ap_style.page_title, pad=((0,300),(0,3)), key='_MOBILE_NUMBER_'),
+                sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.nav_button, pad = ((0,5),(0,0))),
+                sg.Button(key='_BEGIN_', button_text='BEGN\nPgUp',**ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_NEXT_', button_text='NEXT\n→', **ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_END_', button_text='END\nPgDn', **ap_style.nav_button, pad = ((3,3),(0,0))),                    
@@ -258,42 +259,44 @@ class EstimateCanvas:
 class ChangeQtyCanvas:
     def __init__(self):
     
-        left_pane_layout = [
-            [sg.Text('', key='_ITEM_NAME_', size=(25,2),  font=("Helvetica Bold", 14))],
-            [sg.Text('Existing Quantity:', size=(15,1),  font=("Helvetica", 11)),     
-             sg.Input(key='_EXISTING_QTY_',
-                readonly=True, 
-                font=("Helvetica", 11),
-                size=(15,1),
-                justification = 'right'
-            )],
-            [sg.Text('New Quantity:', size=(15,1),  font=("Helvetica", 11), pad=((5,5),(10,10))),             
-             sg.Input(key='_NEW_QTY_',
-                readonly=False, 
-                focus=True, 
-                background_color='white',
-                font=("Helvetica", 11),
-                size=(15,1), 
-                enable_events=True,
-                justification = 'right'
-             ),
-              sg.Button(key='_KEYPAD_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
+        change_qty_layout = [
+            [
+                sg.Text('', key='_ITEM_NAME_', size=(25,2),  font=("Helvetica Bold", 14))
             ],
-            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(20,10)))],                        
-            [sg.Button('Ok-F12', 
-                size=(8, 1), 
-                font='Calibri 12 bold', 
-                key='_CHANGE_QTY_OK_'), 
-             sg.Button('Exit-Esc', 
-                size=(8, 1), 
-                font='Calibri 12 bold', 
-                key='_CHANGE_QTY_ESC_'), 
+            [
+                sg.Text('Existing Quantity:', size=(15,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_EXISTING_QTY_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('New Quantity:', size=(15,1),  font=("Helvetica", 11), pad=((5,5),(10,10))),             
+                sg.Input(key='_NEW_QTY_',
+                    readonly=False, 
+                    focus=True, 
+                    background_color='white',
+                    font=("Helvetica", 11),
+                    size=(15,1), 
+                    enable_events=True,
+                    justification = 'right'
+                ),
+                sg.Button(key='_KEYPAD_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
+            ],
+            [
+                sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(20,10)))
+            ],                        
+            [
+                sg.Button('Ok-F12', **ap_style.search_button_short, key='_CHANGE_QTY_OK_'), 
+                sg.Button('Exit-Esc', **ap_style.search_button_short, key='_CHANGE_QTY_ESC_'), 
             ]           
         ]
         
         self.__layout = [
             [
-                sg.Column(left_pane_layout, vertical_alignment = 'top', pad = None),
+                sg.Column(change_qty_layout, vertical_alignment = 'top', pad = None),
             ]
         ]
 
@@ -303,26 +306,49 @@ class ChangeQtyCanvas:
     layout = property(get_layout)         
 
 
-class ListEstimatesCanvas:
+class EstimateListCanvas:
     def __init__(self):
     
-        list_layout = [
-            [],
-            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(20,10)))],                        
-            [sg.Button('Ok-F12', 
-                size=(8, 1), 
-                font='Calibri 12 bold', 
-                key='_LIST_ESTIMATE_OK_'), 
-             sg.Button('Exit-Esc', 
-                size=(8, 1), 
-                font='Calibri 12 bold', 
-                key='_LIST_ESTIMATE_ESC_'), 
-            ]           
+        estimate_list_layout = [
+            [
+                sg.Text('Estimate No:', size=(15,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_ESTIMATE_NUMBER_SEARCH_',
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                ),
+                sg.Text('Mobile No:', size=(15,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_MOBILE_NUMBER_SEARCH_',
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                ),
+                sg.Button('Search', **ap_style.search_button_short, key='_ESTIMATE_LIST_SEARCH_'),                                
+            ],
+        
+            [
+                sg.Table(values=[], key='_ESTIMATES_LIST_', enable_events=True,
+                     headings= ['Estimate-No', 'Mobile-No', 'Items', 'Total-Amt', 'Tax', 'Net-Amt', 'Discount', 'Roundoff', 'Estimate-Amt'],
+                     font=(("Helvetica", 11)),
+                     auto_size_columns=False,
+                     justification='right',
+                     row_height=25,
+                     alternating_row_color='MistyRose2',
+                     num_rows=10,
+                     display_row_numbers=True,
+                     col_widths=[10, 12, 5, 9, 9, 9, 9, 9, 12],
+                     pad=((5,0),(5,5))
+                )            
+            ],
+            [
+                sg.Button('Ok-F12', **ap_style.search_button_short, key='_ESTIMATE_LIST_OK_'),                
+                sg.Button('Exit-Esc', **ap_style.search_button_short, key='_ESTIMATE_LIST_ESC_'), 
+            ]             
         ]
         
         self.__layout = [
             [
-                sg.Column(list_layout, vertical_alignment = 'top', pad = None),
+                sg.Column(estimate_list_layout, vertical_alignment = 'top', pad = ((0,0),(0,0))),
             ]
         ]
 

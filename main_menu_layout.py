@@ -14,7 +14,7 @@ class MainMenuCanvas:
 
         menu_def = [
                 ['&File', ['E&xit']],      
-                ['&Operations', ['&Estimate', '&Invoice', '&Receipt', '&Cash']],      
+                ['&Operations', ['&Estimate', '&Invoice', '&Receipt', '&Cash', '---', 'Day Close']],      
                 ['&Interface', ['&Download Customer', '&Download Item', '&Download Exchange', '---', '&Upload Invoice']],      
                 ['&Reports', ['&Daily Sales', 'Cash &Position']],      
                 ['&Help', '&About'], 
@@ -44,6 +44,9 @@ class MainMenuCanvas:
                         ],
                         [
                             sg.Button(key='_CASH_OPTION_', button_text='C̲ash',**ap_style.menu_button),
+                        ],
+                        [
+                            sg.Button(key='_DAY_CLOSE_OPTION_', button_text='D̲ay Close',**ap_style.menu_button),
                         ],
                     ],
                     vertical_alignment = 'top', 
@@ -145,7 +148,7 @@ class MainMenuCanvas:
                     ui_footer_pane_layout, 
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((5,0),(320,0)),
+                    pad = ((5,0),(285,0)),
                 )     
             ],
         ]

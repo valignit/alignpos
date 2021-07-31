@@ -4,8 +4,8 @@ import pdfkit
 import os
 
 from alignpos_db import DbConn, DbTable, DbQuery
-from estimate_layout import EstimateCanvas, ChangeQtyCanvas
-from estimate_ui import EstimateUi, ChangeQtyUi
+from estimate_layout import EstimateCanvas, ChangeQtyCanvas, EstimateListCanvas
+from estimate_ui import EstimateUi, ChangeQtyUi, EstimateListUi
 from common import ItemLookup, ConfirmMessage, Keypad
 
 
@@ -13,7 +13,9 @@ class Estimate():
 
     def __init__(self, user_id, terminal_id):
         w, h = sg.Window.get_screen_size()
+
         kb = Controller()
+        self.__kb = kb
         
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
@@ -64,12 +66,11 @@ class Estimate():
 
         self.__ui = EstimateUi(self.__window)
 
-        self.__kb = kb
         
         self.initialize_ui()
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id        
-        self.goto_last_row()               
+        self.goto_last_row()        
         self.__ui.focus_barcode()        
 
         # Avoid focus to Favorite buttons - done after UI instance is created
@@ -183,7 +184,7 @@ class Estimate():
                     item_code = self.item_lookup(filter, 385, 202)
                     self.process_item_name(item_code)
                     self.initialize_search_pane()            
-
+            
             if event in ('F1:112', 'F1'):  
                 self.new_estimate()
                 self.__ui.focus_barcode()
@@ -225,6 +226,10 @@ class Estimate():
             if event in ('F9:120', 'F9'):
                 self.print_estimate()
                 self.__ui.focus_barcode()
+
+            if event in ('F10', 'F10:121', '_FIND_'):
+                estimate_number = self.estimate_list()
+                self.goto_this_row(estimate_number)
             
             if event in ('F11:122', 'F11', '_ADDON_'):
                 filter = "upper(item_code) like upper('ITEM-9%')"
@@ -288,6 +293,13 @@ class Estimate():
     def change_qty(self, item_line):
         change_qty = ChangeQty(item_line)
         return(change_qty.new_qty)
+
+
+    ######
+    # Wrapper function for Estimate List
+    def estimate_list(self):
+        estimate_list = EstimateList()
+        return(estimate_list.estimate_number)
 
 
     ######
@@ -369,6 +381,16 @@ class Estimate():
         self.initialize_detail_pane()
         self.initialize_summary_pane()
     
+    def goto_this_row(self, estimate_number):
+        if estimate_number:
+            filter = "name = '{}'"
+            db_estimate_row = self.__db_estimate_table.last(filter.format(estimate_number))
+            if db_estimate_row:
+                self.clear_ui()    
+                self.show_ui(db_estimate_row)
+        else:
+            self.goto_last_row()
+
     def goto_first_row(self):
         db_estimate_row = self.__db_estimate_table.first('')
         if db_estimate_row:
@@ -801,27 +823,24 @@ class ChangeQty:
     def __init__(self, item_line):
         self.__kb = Controller()
         
+        self.__new_qty = 0
+        
         self.__canvas = ChangeQtyCanvas()
         
         self.__window = sg.Window("Change Quantity", 
                         self.__canvas.layout, 
                         location=(300,250), 
-                        size=(350,200), 
+                        size=(350,210), 
                         modal=True, 
                         finalize=True,
                         keep_on_top = True,
-                        return_keyboard_events=True
+                        return_keyboard_events=True,
                     )
 
         self.__ui = ChangeQtyUi(self.__window)
 
-        self.__ui.item_line = item_line
-
-        self.__ui.item_name = self.__ui.item_line[2]
-        self.__ui.existing_qty = self.__ui.item_line[4]
-        self.__ui.new_qty_f = 0.00
-        self.__ui.focus_new_qty()
-        self.__new_qty = 0.00
+        self.__ui.item_name = item_line[2]
+        self.__ui.existing_qty = item_line[4]
         
         self.handler()
         
@@ -834,22 +853,20 @@ class ChangeQty:
             
             if self.__window.FindElementWithFocus():
                 focus = self.__window.FindElementWithFocus().Key
-            print('eventc=', event, 'prev=', prev_event, 'focus:', focus)
+            print('change_qty=', event, 'prev=', prev_event, 'focus:', focus)
                             
             if event == '_KEYPAD_':        
                 result = self.keypad(self.__ui.new_qty)
                 self.__ui.new_qty = result
-                self.__new_qty = self.__ui.new_qty
+                self.__ui.new_qty_f = self.__ui.new_qty
                 self.__ui.focus_new_qty()
 
             if event in ('Exit', '_CHANGE_QTY_ESC_', 'Escape:27', sg.WIN_CLOSED):
                 break             
                 
             if event == '\t':
-                if focus == '_NEW_QTY_':     
-                    self.__ui.new_qty_f = self.__ui.new_qty
-                    self.__ui.focus_new_qty()       
-
+                self.__ui.new_qty_f = self.__ui.new_qty
+ 
             if event in ('_CHANGE_QTY_OK_', 'F12:123', '\r'):
                 self.__new_qty = self.__ui.new_qty
                 break
@@ -870,8 +887,119 @@ class ChangeQty:
         keypad = Keypad(current_value)
         return(keypad.input_value)
 
+
+class EstimateList:
+    def __init__(self):    
+        self.__estimate_number = ''
         
+        kb = Controller()
+        self.__kb = kb
+        
+        self.__canvas = EstimateListCanvas()
+        self.__window = sg.Window("List Estimate",
+                        self.__canvas.layout,
+                        location=(100,100), 
+                        size=(835,360), 
+                        modal=True, 
+                        finalize=True,
+                        return_keyboard_events=True, 
+                        keep_on_top = True,                    
+                    )
+    
+        self.__ui = EstimateListUi(self.__window)
+        
+        self.__db_conn = DbConn()
+
+        db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
+        filter=''
+        db_estimate_cursor = db_estimate_table.list(filter)
+
+        if (len(db_estimate_cursor) == 0):
+            self.__window.close()           
+            return
+        
+        self.__ui.estimates_list = []
+
+        self.__base_query = 'select tabEstimate.name, \
+tabEstimate.total_amount, \
+(tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) as tax_amount, \
+(tabEstimate.total_amount + tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) as net_amount,\
+ifnull(tabEstimate.discount_amount,0) as discount_amount,\
+tabEstimate.estimate_amount - ((tabEstimate.total_amount + tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) - \
+(ifnull(tabEstimate.discount_amount,0))) as roundoff_amount, \
+tabEstimate.estimate_amount, \
+(select count(*) from tabEstimate_Item where tabEstimate_Item.parent = tabEstimate.name) as line_count, \
+tabCustomer.mobile_number \
+from tabEstimate, tabCustomer \
+where tabEstimate.customer = tabCustomer.name '
+
+        db_query = DbQuery(self.__db_conn, self.__base_query)
+        if  db_query.result:
+            for db_row in db_query.result:
+                self.__ui.estimate_number = db_row[0]
+                self.__ui.total_amount = db_row[1]
+                self.__ui.total_tax_amount = db_row[2]
+                self.__ui.net_amount = db_row[3]
+                self.__ui.discount_amount = db_row[4]
+                self.__ui.roundoff_amount = db_row[5]
+                self.__ui.estimate_amount = db_row[6]
+                self.__ui.line_items = db_row[7]
+                self.__ui.mobile_number = db_row[8]
+                self.__ui.add_estimate_line()
+
+        self.__ui.estimate_idx = 0
+        self.__ui.focus_estimates_list()
+       
+        self.handler()
 
 
+    def handler(self):  
+        prev_event = ''    
+        while True:
+            event, values = self.__window.read()
+            print('estimate_list=', event, prev_event, values)
+            if event in ("Exit", '_ESTIMATE_LIST_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
+                break
 
-     
+            if event == '_ESTIMATE_LIST_SEARCH_':
+                this_query = ''
+                if self.__ui.estimate_number_search:
+                    if not self.__ui.estimate_number_search == '':
+                        this_query = ' and tabEstimate.name = "' + self.__ui.estimate_number_search + '"'
+                if self.__ui.mobile_number_search:
+                    if not self.__ui.mobile_number_search == '':
+                        this_query = ' and tabCustomer.mobile_number = "' + self.__ui.mobile_number_search + '"'
+                db_query = DbQuery(self.__db_conn, self.__base_query + this_query)        
+                if  db_query.result:
+                    self.__ui.estimates_list = []                        
+                    for db_row in db_query.result:
+                        self.__ui.estimate_number = db_row[0]
+                        self.__ui.total_amount = db_row[1]
+                        self.__ui.total_tax_amount = db_row[2]
+                        self.__ui.net_amount = db_row[3]
+                        self.__ui.discount_amount = db_row[4]
+                        self.__ui.roundoff_amount = db_row[5]
+                        self.__ui.estimate_amount = db_row[6]
+                        self.__ui.line_items = db_row[7]
+                        self.__ui.mobile_number = db_row[8]
+                        self.__ui.add_estimate_line()
+
+            if event in ('_ESTIMATE_LIST_OK_', '\r'):
+                estimate_idx = values['_ESTIMATES_LIST_'][0]
+                self.__ui.estimate_line_to_elements(estimate_idx)
+                self.__estimate_number = self.__ui.estimate_number
+                print(self.__estimate_number)
+                break
+            
+            if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN'):               
+                prev_event = event
+           
+        self.__db_conn.close()           
+        self.__window.close()    
+
+      
+    def get_estimate_number(self):
+        return self.__estimate_number
+
+    
+    estimate_number = property(get_estimate_number)     
