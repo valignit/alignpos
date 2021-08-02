@@ -216,7 +216,7 @@ class SigninCanvas:
                             sg.Input(key='_SIGNIN_PASSWD_', size=(15,1), **ElementStyle.search_input, password_char='*', pad=((10,5),(5,5)))          
                         ], 
                         [
-                            sg.B(key='_OK_', button_text='Ok - F12', **ElementStyle.search_button_short, pad=((10,5),(15,10))), 
+                            sg.B(key='_OK_', button_text='Ok - Ent', **ElementStyle.search_button_short, pad=((10,5),(15,10))), 
                             sg.B(key='_CANCEL_', button_text='Cancel - Esc', **ElementStyle.search_button_short, visible=True, pad=((10,12),(15,10)))
                         ]
                     ],
@@ -241,7 +241,7 @@ class ConfirmMessageCanvas:
                 sg.T(key='_MESSAGE_',size=(30,1))
             ], 
             [
-                sg.B(key='_OK_', button_text='Ok - F12'), 
+                sg.B(key='_OK_', button_text='Ok - Ent'), 
                 sg.B(key='_CANCEL_', button_text='Cancel - Esc', visible=True)
             ]
         ]
@@ -318,4 +318,38 @@ class KeypadCanvas:
     def get_layout(self):
         return self.__layout
     
-    layout = property(get_layout)             
+    layout = property(get_layout)
+
+
+class ItemListCanvas:
+    def __init__(self):
+    
+        item_list_layout = [
+            [
+                sg.Table(values=[], key='_ITEMS_LIST_', enable_events=True,
+                     headings= ['Item-code', 'Item-Name', 'Stock', 'Price'],
+                     font=(("Helvetica", 11)),
+                     auto_size_columns=False,
+                     justification='right',
+                     row_height=25,
+                     alternating_row_color='MistyRose2',
+                     num_rows=10,
+                     display_row_numbers=False,
+                     bind_return_key = True,
+                     col_widths=[10, 20, 9, 12],
+                     pad=((0,0),(0,5))
+                )            
+            ],
+        ]
+        
+        self.__layout = [
+            [
+                sg.Column(item_list_layout, vertical_alignment = 'top', pad = ((0,0),(0,0))),
+            ]
+        ]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)         
+    

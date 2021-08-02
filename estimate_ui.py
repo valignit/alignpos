@@ -18,6 +18,8 @@ class EstimateUi:
         # Initialize Search Pane
         self.__barcode = str('')
         self.__search_name = str('') 
+        self.__item_group = str('') 
+        self.__item_groups_list = ['']
         
         # Initialize Detail Pane
         self.__items_list = []
@@ -35,7 +37,6 @@ class EstimateUi:
         self.__item_net_amount = float(0.00)
         self.__cgst_tax_rate = float(0.00)
         self.__sgst_tax_rate = float(0.00)
-
         
         # Initialize Footer Pane
         self.__user_id = ''
@@ -56,6 +57,7 @@ class EstimateUi:
         ###
         # Unfocus Header Pane        
         self.__window['_ESTIMATE_NUMBER_'].Widget.config(takefocus=0)
+        self.__window['_FIND_'].Widget.config(takefocus=0)
         self.__window['_BEGIN_'].Widget.config(takefocus=0)
         self.__window['_PREVIOUS_'].Widget.config(takefocus=0)
         self.__window['_NEXT_'].Widget.config(takefocus=0)
@@ -151,6 +153,21 @@ class EstimateUi:
     def get_search_name(self):
         self.__search_name = self.__window.Element('_SEARCH_NAME_').get()        
         return self.__search_name
+
+    def set_item_group(self, item_group):
+        self.__item_group = item_group
+        self.__window.Element('_ITEM_GROUP_').update(values = self.__item_group_list)
+        
+    def get_item_group(self):
+        self.__item_group = self.__window.Element('_ITEM_GROUP_').get()        
+        return self.__item_group
+
+    def set_item_groups_list(self, item_groups_list):
+        self.__item_groups_list = item_groups_list
+        self.__window.Element('_ITEM_GROUP_').update(values = self.__item_groups_list)
+        
+    def get_item_groups_list(self):
+        return self.__item_groups_list
 
 
     # Setters and Getters for Detail Pane    
@@ -351,10 +368,20 @@ class EstimateUi:
     def focus_item_name(self):
         self.__window.Element('_SEARCH_NAME_').SetFocus() 
                                    
+    def focus_item_group(self):
+        self.__window.Element('_ITEM_GROUP_').SetFocus() 
 
-    # Focus Detail Pane        
+    def focus_item_group_line(self, idx):
+        self.__window.Element('_ITEM_GROUP_').update(set_to_index = idx)
+
+
+    # Focus Detail Pane
+    def unfocus_items_list(self):
+        self.__window.Element('_ITEMS_LIST_').update(select_rows=[])
+
     def focus_items_list(self):
         self.__window['_ITEMS_LIST_'].Widget.config(takefocus=1)
+        self.__window.Element('_ITEMS_LIST_').set_focus(force = True)                
         if len(self.__items_list) > 0:        
             table_row = self.__window['_ITEMS_LIST_'].Widget.get_children()[0]
             self.__window['_ITEMS_LIST_'].Widget.selection_set(table_row)  # move selection
@@ -363,6 +390,7 @@ class EstimateUi:
 
     def focus_items_list_row(self, idx):
         self.__window['_ITEMS_LIST_'].Widget.config(takefocus=1)        
+        self.__window.Element('_ITEMS_LIST_').set_focus(force = True)                
         table_row = self.__window['_ITEMS_LIST_'].Widget.get_children()[idx]
         self.__window['_ITEMS_LIST_'].Widget.selection_set(table_row)  # move selection
         self.__window['_ITEMS_LIST_'].Widget.focus(table_row)  # move focus
@@ -419,7 +447,14 @@ class EstimateUi:
 
     def delete_item_line(self, idx):
         self.__items_list.pop(idx)
-        self.__window.Element('_ITEMS_LIST_').update(values = self.__items_list)
+        self.__window.Element('_ITEMS_LIST_').update(values = self.__items_list)      
+
+    
+    ###
+    def unfocus_favorite_pane(self, fav_item_names_list):
+        for fav_item in fav_item_names_list:
+            self.__window[fav_item].Widget.config(takefocus=0)
+            
 
     ###
     # Properties for Header Pane
@@ -432,6 +467,8 @@ class EstimateUi:
     # Properties for Search Pane
     barcode = property(get_barcode, set_barcode) 
     search_name = property(get_search_name, set_search_name) 
+    item_group = property(get_item_group, set_item_group) 
+    item_groups_list = property(get_item_groups_list, set_item_groups_list) 
     
     # Properties for Detail Pane    
     items_list = property(get_items_list, set_items_list)
@@ -449,7 +486,6 @@ class EstimateUi:
     item_net_amount = property(get_item_net_amount, set_item_net_amount)
     cgst_tax_rate = property(get_cgst_tax_rate, set_cgst_tax_rate)
     sgst_tax_rate = property(get_sgst_tax_rate, set_sgst_tax_rate)
-
     
     # Properties for Footer Pane    
     user_id = property(get_user_id, set_user_id) 
@@ -479,7 +515,6 @@ class ChangeQtyUi:
         self.__popup["_CHANGE_QTY_OK_"].Widget.config(takefocus=0) 
         self.__popup["_CHANGE_QTY_ESC_"].Widget.config(takefocus=0) 
         
-
     def set_item_name(self, item_name):
         self.__item_name = item_name
         self.__popup.Element('_ITEM_NAME_').update(value = self.__item_name)
@@ -552,8 +587,7 @@ class EstimateListUi:
         self.__window["_ESTIMATE_LIST_ESC_"].Widget.config(takefocus=0)
         self.__window["_ESTIMATE_LIST_SEARCH_"].Widget.config(takefocus=0)
        
-
-    # Setters and Getters for Summary Pane
+    # Setters and Getters
     def set_estimates_list(self, estimates_list):
         self.__estimates_list = estimates_list
         self.__window.Element('_ESTIMATES_LIST_').update(values = self.__estimates_list)
@@ -645,9 +679,10 @@ class EstimateListUi:
     def get_estimate_idx(self):
         return self.__estimate_idx  
 
-    # Focus Summary Pane        
+    # Focus        
     def focus_estimates_list(self):
         self.__window['_ESTIMATES_LIST_'].Widget.config(takefocus=1)
+        self.__window.Element('_ESTIMATES_LIST_').set_focus(force = True)        
         if len(self.__estimates_list) > 0:        
             table_row = self.__window['_ESTIMATES_LIST_'].Widget.get_children()[0]
             self.__window['_ESTIMATES_LIST_'].Widget.selection_set(table_row)  # move selection
@@ -655,7 +690,8 @@ class EstimateListUi:
             self.__window['_ESTIMATES_LIST_'].Widget.see(table_row)  # scroll to show i
 
     def focus_estimates_list_row(self, idx):
-        self.__window['_ESTIMATES_LIST_'].Widget.config(takefocus=1)        
+        self.__window['_ESTIMATES_LIST_'].Widget.config(takefocus=1)
+        self.__window.Element('_ESTIMATES_LIST_').set_focus(force = True)
         table_row = self.__window['_ESTIMATES_LIST_'].Widget.get_children()[idx]
         self.__window['_ESTIMATES_LIST_'].Widget.selection_set(table_row)  # move selection
         self.__window['_ESTIMATES_LIST_'].Widget.focus(table_row)  # move focus
@@ -694,8 +730,7 @@ class EstimateListUi:
         self.__estimates_list.append(self.__estimate_line)
         self.__window.Element('_ESTIMATES_LIST_').update(values = self.__estimates_list)
 
-
-    # Properties for Summary Pane    
+    # Properties   
     estimates_list = property(get_estimates_list, set_estimates_list)
     estimate_line = property(get_estimate_line, set_estimate_line)
     estimate_idx = property(get_estimate_idx, set_estimate_idx)

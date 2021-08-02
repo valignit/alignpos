@@ -6,7 +6,7 @@ from common_layout import ElementStyle as ap_style
 ###
 # Estimate Layout               
 class EstimateCanvas:
-    def __init__(self, item_groups):
+    def __init__(self, fav_items_list):
    
         w, h = sg.Window.get_screen_size()        
         lw = w*78/100
@@ -39,9 +39,11 @@ class EstimateCanvas:
                 sg.Text('Barcode:', **ap_style.search_text),
                 sg.Input(key='_BARCODE_', size=(15,1), **ap_style.search_input),
                 sg.Button(key='_KEYPAD1_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
-                sg.Text('Item Name:', **ap_style.search_text, pad=((20,0),(0,0))),
-                sg.Input(key='_SEARCH_NAME_', size=(38,1), **ap_style.search_input),
-                sg.Button(key='_KEYPAD2_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                                      
+                sg.Text('Item Name:', **ap_style.search_text, pad=((25,0),(0,0))),
+                sg.Input(key='_SEARCH_NAME_', size=(35,1), **ap_style.search_input),
+                sg.Button(key='_KEYPAD2_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))), 
+                sg.Text('Item Group:', **ap_style.search_text),
+                sg.Combo([''], key='_ITEM_GROUP_',default_value = 'None'),                
             ]
         ]
 
@@ -121,11 +123,20 @@ class EstimateCanvas:
             [
                 sg.Text('Estimate:', **ap_style.summary_text_bold, pad=((5,0),(10,10))),
                 sg.Input(key='_ESTIMATE_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(10,10))),
-            ]                
+            ],
         ]        
         
-        ui_favorite_pane_layout = [
-            [sg.Button(item_group, key='_' + item_group.upper() + '_', **ap_style.search_button_wide)] for item_group in item_groups
+        ui_favorite1_pane_layout = [
+            [
+                sg.Button('ADDON', key='_ADDON_', **ap_style.search_button_wide)
+            ],
+            [
+                sg.Button('BUNDLE', key='_BUNDLE_', **ap_style.search_button_wide)
+            ]
+        ]
+
+        ui_favorite2_pane_layout = [
+            [sg.Button(fav_item, key=fav_item.upper(), **ap_style.search_button_wide)] for fav_item in fav_items_list
         ]
         
         ui_bottom_pane_layout = [
@@ -200,18 +211,26 @@ class EstimateCanvas:
                 )     
             ],
             [
-                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(0,3))),
+                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(3,3))),
             ],
             [
                 sg.Frame('',
-                    ui_favorite_pane_layout, 
-                    background_color = 'white',
+                    ui_favorite1_pane_layout, 
+                    background_color = 'grey90',
+                    vertical_alignment = 'top',
+                    border_width = 0,                   
+                    pad = ((4,0),(2,9)),
+                )     
+            ],
+            [
+                sg.Frame('',
+                    ui_favorite2_pane_layout, 
+                    background_color = 'grey90',
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((4,0),(2,3)),
                 )     
-            ],
-            
+            ],            
             [
                 sg.HorizontalSeparator(color = 'white', pad = ((0,0),(5,10))),
             ],
@@ -323,7 +342,7 @@ class EstimateListCanvas:
                     size=(15,1),
                     justification = 'right'
                 ),
-                sg.Button('Search', **ap_style.search_button_short, key='_ESTIMATE_LIST_SEARCH_'),                                
+                sg.Button('Search-F11', **ap_style.search_button_short, key='_ESTIMATE_LIST_SEARCH_', pad=((100,0),(0,0))),                                
             ],
         
             [
@@ -335,7 +354,7 @@ class EstimateListCanvas:
                      row_height=25,
                      alternating_row_color='MistyRose2',
                      num_rows=10,
-                     display_row_numbers=True,
+                     display_row_numbers=False,
                      col_widths=[10, 12, 5, 9, 9, 9, 9, 9, 12],
                      pad=((5,0),(5,5))
                 )            

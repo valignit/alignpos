@@ -6,7 +6,7 @@ import os
 from alignpos_db import DbConn, DbTable, DbQuery
 from estimate_layout import EstimateCanvas, ChangeQtyCanvas, EstimateListCanvas
 from estimate_ui import EstimateUi, ChangeQtyUi, EstimateListUi
-from common import ItemLookup, ConfirmMessage, Keypad
+from common import ItemLookup, ConfirmMessage, Keypad, ItemList
 
 
 class Estimate():
@@ -24,25 +24,25 @@ class Estimate():
         self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
         self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
 
-        # Dynamically creating Favorite buttons - done before Layout instance is created
-        # Begin
-        item_groups = []
-        item_groups.append('ADDON')
-        item_groups.append('BUNDLE')        
-        item_count = 0
-        db_query = DbQuery(self.__db_conn, 'select distinct(item_group) from tabItem where item_group <> "NULL"')
+        # Creating Items Group list - done before Layout instance is created
+        item_groups_list = ['None']
+        db_query = DbQuery(self.__db_conn, 'select distinct(item_group) from tabItem where item_group <> "NULL"')        
         if  db_query.result:
             for db_row in db_query.result:
-                item_groups.append(db_row[0][0:12].upper())
-                item_count += 1
-                if item_count > 3:
-                    break
-        tot_groups = 6 - item_count
-        for i in range(tot_groups):
-            item_groups.append('UNUSED-' + str(i+1))
-        # End
+                item_groups_list.append(db_row[0])
+
+        # Dynamically creating Favorite items list - done before Layout instance is created
+        self.__fav_item_codes_list = ['ITEM-1001', 'ITEM-1002', 'ITEM-9001', 'ITEM-9002', 'ITEM-2001']
+        self.__fav_item_names_list = []
+        for fav_item_code in self.__fav_item_codes_list:
+            db_item_row = self.__db_item_table.get_row(fav_item_code)
+            if db_item_row:
+                self.__fav_item_names_list.append((db_item_row.item_name[:18].replace(' ', '_')).upper())
         
-        self.__canvas = EstimateCanvas(item_groups)
+        #sg.popup(self.__fav_item_names_list, keep_on_top = True)                    
+        #sg.popup(self.__fav_item_codes_list[self.__fav_item_names_list.index('PRIL_DISH_WASHING_')], keep_on_top = True)                    
+                
+        self.__canvas = EstimateCanvas(self.__fav_item_names_list)
         
         self.__window = sg.Window('Estimate', 
                         self.__canvas.layout,
@@ -63,33 +63,24 @@ class Estimate():
         self.__window['_RIGHT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
         self.__window['_BARCODE_'].bind('<FocusIn>', '+CLICK+')
         self.__window['_SEARCH_NAME_'].bind('<FocusIn>', '+CLICK+')
+        self.__window['_ITEM_GROUP_'].bind('<FocusIn>', '+CLICK+')
 
-        self.__ui = EstimateUi(self.__window)
+        self.__ui = EstimateUi(self.__window)       
+        self.initialize_ui()        
 
-        
-        self.initialize_ui()
+        self.__ui.item_groups_list = item_groups_list
+        self.__ui.focus_item_group_line(0)
+        self.__ui.unfocus_favorite_pane(self.__fav_item_names_list)
+
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id        
-        self.goto_last_row()        
-        self.__ui.focus_barcode()        
+        self.goto_last_row()
+        
+        self.__ui.focus_barcode()
 
         # Avoid focus to Favorite buttons - done after UI instance is created
         # Begin
-        item_count = 0
-        db_query = DbQuery(self.__db_conn, 'select distinct(item_group) from tabItem where item_group <> "NULL"')        
-        if  db_query.result:
-            for db_row in db_query.result:
-                key = '_' + db_row[0][0:12].upper() + '_'
-                self.__window[key].Widget.config(takefocus=0)
-                item_count += 1
-                if item_count > 3:
-                    break
-        tot_groups = 6 - item_count
-        for i in range(tot_groups):
-            key = '_UNUSED-' + str(i+1) + '_'
-            self.__window[key].Widget.config(takefocus=0)
         # End
-
         self.handler()
 
 
@@ -142,21 +133,6 @@ class Estimate():
             if event == 'BACKSPACE':
                 self.__kb.press(Key.backspace)
                 self.__kb.release(Key.backspace)
-                
-            if event == '+CLICK+':
-                self.initialize_action_pane()
-
-            if event in ('\t') and prev_event == '_SEARCH_NAME_':
-                self.__ui.focus_items_list()
-
-            if focus == '_ITEMS_LIST_':
-                if len(self.__ui.items_list) > 0:
-                    self.initialize_action_pane()
-                else:
-                    self.__ui.focus_barcode()        
-            else:
-                self.initialize_action_pane()
-                self.__ui.items_list = self.__ui.items_list
 
             if event in ('Prior:33', '_BEGIN_'):
                 self.goto_first_row()
@@ -170,6 +146,31 @@ class Estimate():
             if event in ('Next:34', '_END_'):
                 self.goto_last_row()
 
+            if event == '\t':
+                print('tab:',focus)            
+                if focus == '_ITEMS_LIST_':
+                    self.__ui.focus_items_list()
+                else:
+                    self.__ui.unfocus_items_list()
+ 
+            if event in ('_BARCODE_+CLICK+', '_SEARCH_NAME_+CLICK+', '_ITEM_GROUP_+CLICK+'):
+                self.__ui.unfocus_items_list()
+           
+            if event in self.__fav_item_names_list:
+                #sg.popup(self.__fav_item_codes_list[self.__fav_item_names_list.index(event)], keep_on_top = True)
+                item_code = self.__fav_item_codes_list[self.__fav_item_names_list.index(event)]
+                self.process_item_name(item_code)                    
+                self.__ui.focus_barcode()                        
+                
+            if event == '_ITEMS_LIST_' and focus == '_ITEM_GROUP_' :
+                selected_group = values['_ITEM_GROUP_']
+                if not selected_group == 'None':
+                    filter = 'item_group = "{}"'.format(selected_group)
+                    item_code = self.item_list(filter)
+                    self.process_item_name(item_code)                    
+                    self.__ui.focus_item_group_line(0)
+                    self.__ui.focus_barcode()        
+            
             if event == '_KEYPAD1_':        
                 result = self.keypad(self.__ui.barcode)
                 self.__ui.barcode = result
@@ -181,7 +182,7 @@ class Estimate():
                 self.__ui.search_name = result
                 if len(self.__ui.search_name) > 2:
                     filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
-                    item_code = self.item_lookup(filter, 385, 202)
+                    item_code = self.item_list(filter)
                     self.process_item_name(item_code)
                     self.initialize_search_pane()            
             
@@ -210,11 +211,23 @@ class Estimate():
                     self.__ui.focus_barcode()
 
             if event in ('F7:118', 'F7', 'Delete:46', 'Delete'):
-                if prev_event == '_ITEMS_LIST_':
+                if focus == '_ITEMS_LIST_':
+                    confirm_delete = ConfirmMessage('OK_CANCEL', 'Delete current Item?')
+                    if not confirm_delete.ok:
+                        continue
                     idx = values['_ITEMS_LIST_'][0]
                     self.delete_item(idx)
+                elif focus == '_ITEM_GROUP_':
+                    self.__ui.focus_item_group_line(0)
+                    self.__ui.focus_barcode()                         
+                    continue
                 else:
-                    estimate_number = self.__ui.estimate_number
+                    if not self.__ui.estimate_number or self.__ui.estimate_number == '':
+                        continue
+                    confirm_delete = ConfirmMessage('OK_CANCEL', 'Delete current Estimate?')
+                    if not confirm_delete.ok:
+                        continue
+                    estimate_number = self.__ui.estimate_number            
                     self.delete_estimate()
                     self.clear_ui()
                     self.__ui.estimate_number = estimate_number
@@ -228,14 +241,22 @@ class Estimate():
                 self.__ui.focus_barcode()
 
             if event in ('F10', 'F10:121', '_FIND_'):
+                if len(self.__ui.items_list) > 0:
+                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                    if confirm_save.ok:
+                        self.save_estimate()
                 estimate_number = self.estimate_list()
                 self.goto_this_row(estimate_number)
             
-            if event in ('F11:122', 'F11', '_ADDON_'):
+            if (event == '_ADDON_') or (event == 'Alt_L:18' and prev_event in ('a', 'A')):
                 filter = "upper(item_code) like upper('ITEM-9%')"
-                item_code = self.item_lookup(filter, 385, 202)
+                item_code = self.item_list(filter)                
                 self.process_item_name(item_code)
                 self.initialize_search_pane()
+            
+            if (event == '_BUNDLE_') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
+                sg.popup('Feature not yet implemented', keep_on_top = True)
+                self.__ui.focus_barcode()
             
             if event == 'v:86' and focus == '_BARCODE_':
                 self.process_barcode(self.__ui.barcode)
@@ -244,7 +265,7 @@ class Estimate():
             if event == 'v:86' and focus == '_SEARCH_NAME_':
                 if len(self.__ui.search_name) > 2:
                     filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
-                    item_code = self.item_lookup(filter, 385, 202)
+                    item_code = self.item_list(filter)
                     self.process_item_name(item_code)
                     self.initialize_search_pane()
 
@@ -269,7 +290,7 @@ class Estimate():
             if event.isalnum() and focus == '_SEARCH_NAME_':
                 if len(self.__ui.search_name) > 2:
                     filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
-                    item_code = self.item_lookup(filter, 385, 202)
+                    item_code = self.item_list(filter)                    
                     self.process_item_name(item_code)
                     self.initialize_search_pane()
                 
@@ -303,6 +324,13 @@ class Estimate():
 
 
     ######
+    # Wrapper function for Item List
+    def item_list(self, filter):
+        item_list = ItemList(filter)
+        return(item_list.item_code)
+
+
+    ######
     # Wrapper function for Keypad
     def keypad(self, current_value):
         keypad = Keypad(current_value)
@@ -317,11 +345,10 @@ class Estimate():
         self.__ui.customer_name = ''
         self.__ui.customer_address = ''
  
- 
     def initialize_search_pane(self):
         self.__ui.barcode = ''
         self.__ui.search_name = ''
-
+        self.__ui.focus_item_group_line(0)
 
     def initialize_detail_pane(self):
         self.__ui.items_list = []
@@ -525,7 +552,6 @@ class Estimate():
         if not new_qty:
             return
         if float(new_qty) > 0:
-            print('here2')
             self.__ui.qty = new_qty
             self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
             self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
@@ -545,7 +571,7 @@ class Estimate():
             self.__ui.update_item_line(idx)
             self.sum_item_list()
         else:
-            sg.popup('Not applicable to this UOM', keep_on_top = True)         
+            sg.popup('Not applicable to this UOM', keep_on_top = True)
 
     def process_barcode(self, barcode):
         if not barcode:
@@ -677,34 +703,27 @@ class Estimate():
         self.__db_session.commit()
     
     def delete_estimate(self):
-        if not self.__ui.estimate_number or self.__ui.estimate_number == '':
-            return
+        filter = "parent='{}'"
+        db_estimate_item_cursor = self.__db_estimate_item_table.list(filter.format(self.__ui.estimate_number))
+        for db_estimate_item_row in db_estimate_item_cursor:
+            print(db_estimate_item_row.name)
+            self.__db_estimate_item_table.delete_row(db_estimate_item_row)
 
-        confirm_delete = ConfirmMessage('OK_CANCEL', 'Delete current Estimate?')
-        if confirm_delete.ok:
-            filter = "parent='{}'"
-            db_estimate_item_cursor = self.__db_estimate_item_table.list(filter.format(self.__ui.estimate_number))
-            for db_estimate_item_row in db_estimate_item_cursor:
-                print(db_estimate_item_row.name)
-                self.__db_estimate_item_table.delete_row(db_estimate_item_row)
+        self.__db_session.flush()
+        
+        db_estimate_row = self.__db_estimate_table.get_row(self.__ui.estimate_number)
+        if db_estimate_row:
+            self.__db_estimate_table.delete_row(db_estimate_row)
+        
+        self.__db_session.commit()
 
-            self.__db_session.flush()
-            
-            db_estimate_row = self.__db_estimate_table.get_row(self.__ui.estimate_number)
-            if db_estimate_row:
-                self.__db_estimate_table.delete_row(db_estimate_row)
-            
-            self.__db_session.commit()
-
-    def delete_item(self, idx):
-        confirm_delete = ConfirmMessage('OK_CANCEL', 'Delete current Item?')
-        if confirm_delete.ok:
-            self.__ui.delete_item_line(idx)
-            self.sum_item_list()
-            if len(self.__ui.items_list) == idx:
-                idx -= 1
-            if idx > -1:
-                self.__ui.focus_items_list_row(idx) 
+    def delete_item(self, idx):            
+        self.__ui.delete_item_line(idx)
+        self.sum_item_list()
+        if len(self.__ui.items_list) == idx:
+            idx -= 1
+        if idx > -1:
+            self.__ui.focus_items_list_row(idx) 
 
     ######
     # Print Estimate into PDF file
@@ -891,7 +910,17 @@ class ChangeQty:
 class EstimateList:
     def __init__(self):    
         self.__estimate_number = ''
-        
+
+        self.__db_conn = DbConn()
+
+        db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
+        filter=''
+        db_estimate_cursor = db_estimate_table.list(filter)
+
+        if (len(db_estimate_cursor) == 0):
+            sg.popup('Estimate(s) not found', keep_on_top = True)                    
+            return
+       
         kb = Controller()
         self.__kb = kb
         
@@ -899,7 +928,7 @@ class EstimateList:
         self.__window = sg.Window("List Estimate",
                         self.__canvas.layout,
                         location=(100,100), 
-                        size=(835,360), 
+                        size=(800,360), 
                         modal=True, 
                         finalize=True,
                         return_keyboard_events=True, 
@@ -908,15 +937,6 @@ class EstimateList:
     
         self.__ui = EstimateListUi(self.__window)
         
-        self.__db_conn = DbConn()
-
-        db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
-        filter=''
-        db_estimate_cursor = db_estimate_table.list(filter)
-
-        if (len(db_estimate_cursor) == 0):
-            self.__window.close()           
-            return
         
         self.__ui.estimates_list = []
 
@@ -961,7 +981,7 @@ where tabEstimate.customer = tabCustomer.name '
             if event in ("Exit", '_ESTIMATE_LIST_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
                 break
 
-            if event == '_ESTIMATE_LIST_SEARCH_':
+            if event in ('_ESTIMATE_LIST_SEARCH_', 'F11', 'F11:122'):
                 this_query = ''
                 if self.__ui.estimate_number_search:
                     if not self.__ui.estimate_number_search == '':
@@ -984,7 +1004,7 @@ where tabEstimate.customer = tabCustomer.name '
                         self.__ui.mobile_number = db_row[8]
                         self.__ui.add_estimate_line()
 
-            if event in ('_ESTIMATE_LIST_OK_', '\r'):
+            if event in ('_ESTIMATE_LIST_OK_', '\r', 'F12', 'F12:123'):
                 estimate_idx = values['_ESTIMATES_LIST_'][0]
                 self.__ui.estimate_line_to_elements(estimate_idx)
                 self.__estimate_number = self.__ui.estimate_number

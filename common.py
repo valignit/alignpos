@@ -3,8 +3,8 @@ import json
 from pynput.keyboard import Key, Controller
 
 from alignpos_db import DbConn, DbTable, DbQuery
-from common_layout import SigninCanvas, ConfirmMessageCanvas, ItemLookupCanvas, KeypadCanvas
-from common_ui import SigninUi, ItemLookupUi, KeypadUi
+from common_layout import SigninCanvas, ConfirmMessageCanvas, ItemLookupCanvas, KeypadCanvas, ItemListCanvas
+from common_ui import SigninUi, ItemLookupUi, KeypadUi, ItemListUi
 
 sg.theme('DefaultNoMoreNagging')
 
@@ -48,7 +48,6 @@ class Signin():
         
         self.handler()
 
-
     def handler(self):
         if self.__type == 'OK':
             self.__window.Element("_CANCEL_").update(visible=False)
@@ -57,7 +56,7 @@ class Signin():
 
         while True:
             event, values = self.__window.read()
-            print('signin:', event)
+            print('signin:', event, values)
 
             ### following code will be removed later
             if event in ('F1', 'F1:112'):
@@ -68,7 +67,7 @@ class Signin():
                     break              
             ###
             
-            if event in ('_OK_', 'F12:123', 'F12', '\r'):
+            if event in ('_OK_', '\r'):
                 if self.validate_user():
                     self.__ok = True
                     break              
@@ -78,7 +77,6 @@ class Signin():
                 break
                 
         self.__window.close()
-
 
     def validate_user(self):
         db_query = DbQuery(self.__db_conn, 'select name, DECODE(passwd, "secret") as passwd from tabUser where name = "{}"'.format(self.__ui.signin_user_id))
@@ -95,20 +93,16 @@ class Signin():
             ConfirmMessage('OK', 'Invalid User')
             self.__ui.focus_signin_user_id()
             return False
-
-    
+   
     def get_ok(self):
         return self.__ok
 
-
     def get_sign_in_user_id(self):
         return self.__ui.signin_user_id
-
  
     def get_sign_in_terminal_id(self):
         return self.__ui.signin_terminal_id
 
- 
     ok = property(get_ok)         
     user_id = property(get_sign_in_user_id)         
     terminal_id = property(get_sign_in_terminal_id)         
@@ -138,20 +132,19 @@ class ConfirmMessage():
         self.__message = message
         self.__ok = False
 
-        self.handler()
-
-
-    def handler(self):
         if self.__type == 'OK':
             self.__window.Element("_CANCEL_").update(visible=False)
         else:
             self.__window.Element("_CANCEL_").update(visible=True)
+            
+        self.handler()
 
+    def handler(self):
         while True:
             event, values = self.__window.read()
             #print('message_popup:', event)
             
-            if event in ('_OK_', 'F12:123', 'F12', '\r'):
+            if event in ('_OK_', '\r'):
                 self.__ok = True
                 break
             
@@ -161,11 +154,9 @@ class ConfirmMessage():
                 
         self.__window.close()
 
-
     def get_ok(self):
         return self.__ok
-    
-    
+        
     ok = property(get_ok)         
 
     
@@ -212,7 +203,6 @@ class ItemLookup():
 
         self.handler()
 
-
     def handler(self):
         prev_event = ''    
         while True:
@@ -235,11 +225,9 @@ class ItemLookup():
             
         self.__db_conn.close()           
         self.__window.close()    
-
       
     def get_item_code(self):
         return self.__item_code
-
     
     item_code = property(get_item_code)         
 
@@ -269,7 +257,6 @@ class Keypad():
         
 
         self.handler()
-
         
     def handler(self):
         while True:
@@ -315,13 +302,98 @@ class Keypad():
                 
         self.__window.close()    
         
-
     def set_input_value(self, input_value):
         self.__input_value = input_value
 
-
     def get_input_value(self):
         return self.__input_value
+   
+    input_value = property(get_input_value, set_input_value)         
+
+
+class ItemList:
+    def __init__(self, filter):    
+        self.__item_code = ''
+
+        self.__db_conn = DbConn()
+
+        db_item_table = DbTable(self.__db_conn, 'tabItem')
+        self.__filter=filter
+        db_item_cursor = db_item_table.list(filter)
+
+        if (len(db_item_cursor) == 0):
+            sg.popup('Item(s) not found', keep_on_top = True)
+            return
+       
+        kb = Controller()
+        self.__kb = kb
+        
+        self.__canvas = ItemListCanvas()
+        self.__window = sg.Window("List Item",
+                        self.__canvas.layout,
+                        location=(300,250), 
+                        size=(495,200), 
+                        modal=True, 
+                        finalize=True,
+                        return_keyboard_events=True,
+                        no_titlebar = False,
+                        keep_on_top = True,                    
+                    )
+    
+        self.__ui = ItemListUi(self.__window)
+        
+        self.__ui.items_list = []
+
+        for db_item_row in db_item_cursor:
+            self.__ui.item_code = db_item_row.item_code
+            self.__ui.item_name = db_item_row.item_name
+            self.__ui.stock = db_item_row.stock
+            self.__ui.selling_price = db_item_row.selling_price
+            self.__ui.add_item_line()
+
+        self.__ui.item_idx = 0
+        self.__ui.focus_items_list()
+        
+        self.handler()
+
+    def handler(self):  
+        prev_event = ''    
+        prev_values = ''    
+        item_idx  = 0    
+        while True:
+            event, values = self.__window.read()
+            print('item_list=', event, prev_event, values)
+                
+            if event in ("Exit", '_ITEM_LIST_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
+                break
+
+            if event == '\r':
+                # Cancelling the unwanted initial Enter key event passed from the previous window                 
+                continue
+                
+            if event in ('_ITEM_LIST_OK_', 'F12', 'F12:123'):
+                item_idx = values['_ITEMS_LIST_'][0]
+                self.__ui.item_line_to_elements(item_idx)
+                self.__item_code = self.__ui.item_code
+                print(self.__item_code)
+                break
+
+            if event == prev_event and values == prev_values:
+                item_idx = values['_ITEMS_LIST_'][0]
+                self.__ui.item_line_to_elements(item_idx)
+                self.__item_code = self.__ui.item_code
+                print(self.__item_code)
+                break
+            
+            if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN'):               
+                prev_event = event
+            prev_values = values
+            
+        self.__db_conn.close()           
+        self.__window.close()    
+     
+    def get_item_code(self):
+        return self.__item_code
 
     
-    input_value = property(get_input_value, set_input_value)         
+    item_code = property(get_item_code)     
