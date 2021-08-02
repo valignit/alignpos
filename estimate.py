@@ -37,7 +37,7 @@ class Estimate():
         for fav_item_code in self.__fav_item_codes_list:
             db_item_row = self.__db_item_table.get_row(fav_item_code)
             if db_item_row:
-                self.__fav_item_names_list.append((db_item_row.item_name[:18].replace(' ', '_')).upper())
+                self.__fav_item_names_list.append((db_item_row.item_name[:16].replace(' ', '_')).upper())
         
         #sg.popup(self.__fav_item_names_list, keep_on_top = True)                    
         #sg.popup(self.__fav_item_codes_list[self.__fav_item_names_list.index('PRIL_DISH_WASHING_')], keep_on_top = True)                    
@@ -78,9 +78,6 @@ class Estimate():
         
         self.__ui.focus_barcode()
 
-        # Avoid focus to Favorite buttons - done after UI instance is created
-        # Begin
-        # End
         self.handler()
 
 
@@ -157,10 +154,14 @@ class Estimate():
                 self.__ui.unfocus_items_list()
            
             if event in self.__fav_item_names_list:
-                #sg.popup(self.__fav_item_codes_list[self.__fav_item_names_list.index(event)], keep_on_top = True)
                 item_code = self.__fav_item_codes_list[self.__fav_item_names_list.index(event)]
                 self.process_item_name(item_code)                    
                 self.__ui.focus_barcode()                        
+
+            if event == 'Alt_L:18' and prev_event in ('1','2','3','4','5'):
+                item_code = self.__fav_item_codes_list[int(prev_event)-1]
+                self.process_item_name(item_code)             
+                self.__ui.focus_barcode()                
                 
             if event == '_ITEMS_LIST_' and focus == '_ITEM_GROUP_' :
                 selected_group = values['_ITEM_GROUP_']
@@ -294,7 +295,8 @@ class Estimate():
                     self.process_item_name(item_code)
                     self.initialize_search_pane()
                 
-            if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN', 'DEL', 'Delete:46', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'):
+            #if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN', 'DEL', 'Delete:46', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'):
+            if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN', 'DEL', 'Delete:46'):
                 prev_event = event
 
         self.__db_conn.close()

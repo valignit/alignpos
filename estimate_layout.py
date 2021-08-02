@@ -128,15 +128,15 @@ class EstimateCanvas:
         
         ui_favorite1_pane_layout = [
             [
-                sg.Button('ADDON', key='_ADDON_', **ap_style.search_button_wide)
+                sg.Button('ADDON  (Alt-A)', key='_ADDON_', **ap_style.search_button_wide)
             ],
             [
-                sg.Button('BUNDLE', key='_BUNDLE_', **ap_style.search_button_wide)
+                sg.Button('BUNDLE  (Alt-B)', key='_BUNDLE_', **ap_style.search_button_wide)
             ]
         ]
 
         ui_favorite2_pane_layout = [
-            [sg.Button(fav_item, key=fav_item.upper(), **ap_style.search_button_wide)] for fav_item in fav_items_list
+            [sg.Button(fav_item + '  (Alt-' + str(count) + ')', key=fav_item.upper(), **ap_style.search_button_wide)] for count, fav_item in enumerate(fav_items_list, start=1)
         ]
         
         ui_bottom_pane_layout = [
