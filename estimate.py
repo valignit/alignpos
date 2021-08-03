@@ -17,30 +17,22 @@ class Estimate():
         kb = Controller()
         self.__kb = kb
         
+        self.__actual_items_list = []
+        
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
         self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
         self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
         self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
         self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
-
-        # Creating Items Group list - done before Layout instance is created
-        item_groups_list = ['None']
-        db_query = DbQuery(self.__db_conn, 'select distinct(item_group) from tabItem where item_group <> "NULL"')        
-        if  db_query.result:
-            for db_row in db_query.result:
-                item_groups_list.append(db_row[0])
-
-        # Dynamically creating Favorite items list - done before Layout instance is created
+        
+        # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
         self.__fav_item_codes_list = ['ITEM-1001', 'ITEM-1002', 'ITEM-9001', 'ITEM-9002', 'ITEM-2001']
         self.__fav_item_names_list = []
         for fav_item_code in self.__fav_item_codes_list:
             db_item_row = self.__db_item_table.get_row(fav_item_code)
             if db_item_row:
-                self.__fav_item_names_list.append((db_item_row.item_name[:16].replace(' ', '_')).upper())
-        
-        #sg.popup(self.__fav_item_names_list, keep_on_top = True)                    
-        #sg.popup(self.__fav_item_codes_list[self.__fav_item_names_list.index('PRIL_DISH_WASHING_')], keep_on_top = True)                    
+                self.__fav_item_names_list.append((db_item_row.item_name[:16].replace(' ', '_')).upper())                  
                 
         self.__canvas = EstimateCanvas(self.__fav_item_names_list)
         
@@ -67,6 +59,13 @@ class Estimate():
 
         self.__ui = EstimateUi(self.__window)       
         self.initialize_ui()        
+
+        # Creating Item Groups list to populate search combo
+        item_groups_list = ['None']
+        db_query = DbQuery(self.__db_conn, 'select distinct(item_group) from tabItem where item_group <> "NULL"')        
+        if  db_query.result:
+            for db_row in db_query.result:
+                item_groups_list.append(db_row[0])
 
         self.__ui.item_groups_list = item_groups_list
         self.__ui.focus_item_group_line(0)
@@ -132,15 +131,31 @@ class Estimate():
                 self.__kb.release(Key.backspace)
 
             if event in ('Prior:33', '_BEGIN_'):
+                if not self.__actual_items_list == self.__ui.items_list:
+                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                    if confirm_save.ok:
+                        self.save_estimate()            
                 self.goto_first_row()
-
+                
             if event in ('Left:37', '_PREVIOUS_'):
+                if not self.__actual_items_list == self.__ui.items_list:
+                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                    if confirm_save.ok:
+                        self.save_estimate()            
                 self.goto_previous_row()
                 
             if event in ('Right:39', '_NEXT_'):
+                if not self.__actual_items_list == self.__ui.items_list:
+                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                    if confirm_save.ok:
+                        self.save_estimate()            
                 self.goto_next_row()
 
             if event in ('Next:34', '_END_'):
+                if not self.__actual_items_list == self.__ui.items_list:
+                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                    if confirm_save.ok:
+                        self.save_estimate()            
                 self.goto_last_row()
 
             if event == '\t':
@@ -187,9 +202,9 @@ class Estimate():
                     self.process_item_name(item_code)
                     self.initialize_search_pane()            
             
-            if event in ('F1:112', 'F1'):  
+            if event in ('F1:112', 'F1'):
                 self.new_estimate()
-                self.__ui.focus_barcode()
+                self.__ui.focus_barcode()                    
 
             if event in ('F2:113', 'F2'):        
                 confirm_test = ConfirmMessage('OK_CANCEL', 'Called from Estimate F2 event')
@@ -243,9 +258,10 @@ class Estimate():
 
             if event in ('F10', 'F10:121', '_FIND_'):
                 if len(self.__ui.items_list) > 0:
-                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
-                    if confirm_save.ok:
-                        self.save_estimate()
+                    if not self.__actual_items_list == self.__ui.items_list:                
+                        confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                        if confirm_save.ok:
+                            self.save_estimate()
                 estimate_number = self.estimate_list()
                 self.goto_this_row(estimate_number)
             
@@ -479,6 +495,7 @@ class Estimate():
         else:
             self.__ui.discount_amount = 0.00       
         self.__ui.estimate_amount = db_estimate_row.estimate_amount
+        self.__actual_items_list = self.__ui.items_list.copy()
 
     def move_db_item_to_ui_detail_pane(self, db_item_row):
         self.__ui.item_code = db_item_row.name
@@ -604,10 +621,11 @@ class Estimate():
     def new_estimate(self):
         if not len(self.__ui.items_list) > 0:
             return
-            
-        confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
-        if confirm_save.ok:
-            self.save_estimate()
+
+        if not self.__actual_items_list == self.__ui.items_list:
+            confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+            if confirm_save.ok:
+                self.save_estimate()
             
         self.clear_ui()
 
@@ -619,6 +637,7 @@ class Estimate():
             self.insert_estimate()        
         else:
             self.update_estimate()
+        self.__actual_items_list = self.__ui.items_list
 
     def insert_estimate(self):
         db_query = DbQuery(self.__db_conn, 'SELECT nextval("ESTIMATE_NUMBER")')
