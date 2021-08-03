@@ -355,6 +355,7 @@ class EstimateListCanvas:
                      alternating_row_color='MistyRose2',
                      num_rows=10,
                      display_row_numbers=False,
+                     bind_return_key = True,
                      col_widths=[10, 12, 5, 9, 9, 9, 9, 9, 12],
                      pad=((5,0),(5,5))
                 )            

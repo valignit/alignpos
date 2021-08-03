@@ -433,6 +433,7 @@ class Estimate():
             if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
+                self.__ui.focus_barcode()                
         else:
             self.goto_last_row()
 
@@ -440,7 +441,8 @@ class Estimate():
         db_estimate_row = self.__db_estimate_table.first('')
         if db_estimate_row:
             self.clear_ui()    
-            self.show_ui(db_estimate_row)    
+            self.show_ui(db_estimate_row)
+            self.__ui.focus_barcode()            
 
     def goto_previous_row(self):
         if self.__ui.estimate_number:
@@ -450,6 +452,7 @@ class Estimate():
             if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
+                self.__ui.focus_barcode()                
         else:
             self.goto_last_row()
 
@@ -461,6 +464,7 @@ class Estimate():
             if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
+                self.__ui.focus_barcode()               
         else:
             self.goto_last_row()
 
@@ -469,6 +473,7 @@ class Estimate():
         if db_estimate_row:
             self.clear_ui()
             self.show_ui(db_estimate_row)
+            self.__ui.focus_barcode()
 
     def show_ui(self, db_estimate_row):
         if not db_estimate_row:
@@ -995,10 +1000,13 @@ where tabEstimate.customer = tabCustomer.name '
 
 
     def handler(self):  
-        prev_event = ''    
+        prev_event = ''
+        prev_values = ''
+        
         while True:
             event, values = self.__window.read()
-            print('estimate_list=', event, prev_event, values)
+            #print('estimate_list=', event, prev_event, values)
+            print('estimate_list=', event, prev_event)
             if event in ("Exit", '_ESTIMATE_LIST_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
                 break
 
@@ -1029,11 +1037,17 @@ where tabEstimate.customer = tabCustomer.name '
                 estimate_idx = values['_ESTIMATES_LIST_'][0]
                 self.__ui.estimate_line_to_elements(estimate_idx)
                 self.__estimate_number = self.__ui.estimate_number
-                print(self.__estimate_number)
+                break
+            
+            if event == prev_event and values == prev_values:
+                estimate_idx = values['_ESTIMATES_LIST_'][0]
+                self.__ui.estimate_line_to_elements(estimate_idx)
+                self.__estimate_number = self.__ui.estimate_number
                 break
             
             if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN'):               
                 prev_event = event
+            prev_values = values
            
         self.__db_conn.close()           
         self.__window.close()    

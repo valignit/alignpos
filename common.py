@@ -375,14 +375,12 @@ class ItemList:
                 item_idx = values['_ITEMS_LIST_'][0]
                 self.__ui.item_line_to_elements(item_idx)
                 self.__item_code = self.__ui.item_code
-                print(self.__item_code)
                 break
 
             if event == prev_event and values == prev_values:
                 item_idx = values['_ITEMS_LIST_'][0]
                 self.__ui.item_line_to_elements(item_idx)
                 self.__item_code = self.__ui.item_code
-                print(self.__item_code)
                 break
             
             if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN'):               
