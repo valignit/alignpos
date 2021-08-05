@@ -3,6 +3,7 @@ from pynput.keyboard import Key, Controller
 import pdfkit
 import os
 
+from alignpos_kv import KvConn
 from alignpos_db import DbConn, DbTable, DbQuery
 from estimate_layout import EstimateCanvas, ChangeQtyCanvas, EstimateListCanvas
 from estimate_ui import EstimateUi, ChangeQtyUi, EstimateListUi
@@ -13,6 +14,8 @@ class Estimate():
 
     def __init__(self, user_id, terminal_id):
         w, h = sg.Window.get_screen_size()
+        
+        self.__kv = KvConn()
 
         kb = Controller()
         self.__kb = kb
@@ -27,12 +30,20 @@ class Estimate():
         self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
         
         # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
-        self.__fav_item_codes_list = ['ITEM-1001', 'ITEM-1002', 'ITEM-9001', 'ITEM-9002', 'ITEM-2001']
+
+        self.__fav_item_codes_list = []        
+        self.__fav_item_codes_list.append(self.__kv.get('favorite_item_1'))
+        print('fav1:', self.__kv.get('favorite_item_1'))
+        self.__fav_item_codes_list.append(self.__kv.get('favorite_item_2'))
+        self.__fav_item_codes_list.append(self.__kv.get('favorite_item_3'))
+        self.__fav_item_codes_list.append(self.__kv.get('favorite_item_4'))
+        self.__fav_item_codes_list.append(self.__kv.get('favorite_item_5'))
         self.__fav_item_names_list = []
         for fav_item_code in self.__fav_item_codes_list:
+            print('fav:', fav_item_code)
             db_item_row = self.__db_item_table.get_row(fav_item_code)
             if db_item_row:
-                self.__fav_item_names_list.append((db_item_row.item_name[:16].replace(' ', '_')).upper())                  
+                self.__fav_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())                  
                 
         self.__canvas = EstimateCanvas(self.__fav_item_names_list)
         
@@ -159,7 +170,6 @@ class Estimate():
                 self.goto_last_row()
 
             if event == '\t':
-                print('tab:',focus)            
                 if focus == '_ITEMS_LIST_':
                     self.__ui.focus_items_list()
                 else:
@@ -176,8 +186,8 @@ class Estimate():
             if event == 'Alt_L:18' and prev_event in ('1','2','3','4','5'):
                 item_code = self.__fav_item_codes_list[int(prev_event)-1]
                 self.process_item_name(item_code)             
-                self.__ui.focus_barcode()                
-                
+                self.__ui.focus_barcode()                                     
+            
             if event == '_ITEMS_LIST_' and focus == '_ITEM_GROUP_' :
                 selected_group = values['_ITEM_GROUP_']
                 if not selected_group == 'None':
@@ -206,20 +216,36 @@ class Estimate():
                 self.new_estimate()
                 self.__ui.focus_barcode()                    
 
-            if event in ('F2:113', 'F2'):        
-                confirm_test = ConfirmMessage('OK_CANCEL', 'Called from Estimate F2 event')
+            if event in ('F2:113', 'F2'):
+                if focus == '_ITEMS_LIST_' :        
+                    confirm_test = ConfirmMessage('OK', 'Feature not yet implemented')
+                else:
+                    confirm_test = ConfirmMessage('OK', 'Select an Item')                
 
             if event in ('F3:114', 'F3'):
-                item_idx = values['_ITEMS_LIST_'][0]
-                new_qty = self.change_qty(self.__ui.items_list[item_idx])
-                self.process_change_qty(new_qty, item_idx)
-                self.__ui.focus_barcode()        
+                if focus == '_ITEMS_LIST_' :
+                    item_idx = values['_ITEMS_LIST_'][0]
+                    new_qty = self.change_qty(self.__ui.items_list[item_idx])
+                    self.process_change_qty(new_qty, item_idx)
+                    self.__ui.focus_barcode()        
+                else:
+                    confirm_test = ConfirmMessage('OK', 'Select an Item')                
                 
             if event in ('F4:115', 'F4'):
-                item_idx = values['_ITEMS_LIST_'][0]
-                self.process_weight(item_idx)
-                self.sum_item_list()
-                self.__ui.focus_barcode()        
+                if focus == '_ITEMS_LIST_' :
+                    item_idx = values['_ITEMS_LIST_'][0]
+                    self.process_weight(item_idx)
+                    self.sum_item_list()
+                    self.__ui.focus_barcode()
+                else:
+                    confirm_test = ConfirmMessage('OK', 'Select an Item')                                
+
+
+            if event in ('F5:116', 'F5'):
+                if focus == '_ITEMS_LIST_' :        
+                    confirm_test = ConfirmMessage('OK', 'Feature not yet implemented')
+                else:
+                    confirm_test = ConfirmMessage('OK', 'Select an Item')                
 
             if event in ('F6:117', 'F6'):
                 if len(self.__ui.items_list) > 0:
@@ -358,7 +384,10 @@ class Estimate():
     def initialize_header_pane(self):
         self.__ui.estimate_number = ''
         self.__ui.payment_status = ''
-        self.__ui.mobile_number = '0000000000'
+        walk_in_customer = self.__kv.get('walk_in_customer')   
+        db_customer_row = self.__db_customer_table.get_row(walk_in_customer)
+        if db_customer_row:        
+            self.__ui.mobile_number = db_customer_row.mobile_number
         self.__ui.customer_number = ''
         self.__ui.customer_name = ''
         self.__ui.customer_address = ''
@@ -429,7 +458,8 @@ class Estimate():
     def goto_this_row(self, estimate_number):
         if estimate_number:
             filter = "name = '{}'"
-            db_estimate_row = self.__db_estimate_table.last(filter.format(estimate_number))
+            #db_estimate_row = self.__db_estimate_table.last(filter.format(estimate_number))
+            db_estimate_row = self.__db_estimate_table.get_row(estimate_number)
             if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)

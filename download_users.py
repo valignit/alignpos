@@ -1,9 +1,9 @@
 ##################################################
 # Application: alignPOS
 # Installation: AFSM
-# CLI Program: download_customers
-# Description: Get the Customers created and updated after the last download.
-#              Insert or Update the Customers table in local db
+# CLI Program: download_users
+# Description: Get the Users created and updated after the last download.
+#              Insert or Update the Users table in local db
 # Version: 1.0
 # 1.0.0 - 09-07-2021: New program
 ##################################################
@@ -16,13 +16,13 @@ from datetime import datetime, timedelta
 
 
 last_sync = '2000-01-01 00:01:01.000001'
-customer_count = 0
+user_count = 0
 
 ##############################
 # Print and Log
 ##############################
 def print_log(msg):
-    #print(msg)
+    print(msg)
     msg = str(now) + ': ' + msg + '\n'
     file_log.write(msg)
 
@@ -38,7 +38,7 @@ with open('./alignpos.json') as file_config:
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
 file_log = open(file_name, "w")
 
-print_log('alignPOS - Download Customers - Version 1.1')
+print_log('alignPOS - Download Users - Version 1.1')
 print_log('-------------------------------------------')
 
 ######
@@ -96,8 +96,8 @@ db_pos_cur = db_pos_conn.cursor()
 
 
 ######
-# Fetch Created list of Customers from ERP
-ws_erp_method = 'api/method/get_created_customers?limit_page_length=None'
+# Fetch Created list of Users from ERP
+ws_erp_method = 'api/method/get_created_users'
 try:
     ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
     ws_erp_resp.raise_for_status()   
@@ -120,30 +120,28 @@ except requests.exceptions.RequestException as ws_err:
 ######
 # Fetch each Item from Item List from ERP
 
-customer_create_count = 0
-for ws_customer_row in ws_erp_resp_json["customers"]:
-    print_log("Creating Item: " + ws_customer_row["name"])
-    customer_count+=1
-    customer_create_count+=1
-    customer_name = ws_customer_row["name"]
-    customer_customer_name = ws_customer_row["customer_name"]
-    customer_type = ws_customer_row["customer_type"]
-    customer_mobile_number = ws_customer_row["mobile_number"]
-    customer_address = ws_customer_row["address"]
-    customer_loyalty_points = ws_customer_row["loyalty_points"]
-    customer_created = ws_customer_row["creation"]
+user_create_count = 0
+for ws_user_row in ws_erp_resp_json["users"]:
+    print_log("Creating Item: " + ws_user_row["username"])
+    user_count+=1
+    user_create_count+=1
+    user_name = ws_user_row["username"]
+    user_full_name = ws_user_row["full_name"]
+    user_role = ws_user_row["role"]
+    user_enabled = ws_user_row["enabled"]
+    user_created = ws_user_row["creation"]
  
-    customer_created_datetime = datetime.strptime(ws_customer_row["creation"], '%Y-%m-%d %H:%M:%S.%f')
+    user_created_datetime = datetime.strptime(ws_user_row["creation"], '%Y-%m-%d %H:%M:%S.%f')
     last_sync_datetime = datetime.strptime(last_sync, '%Y-%m-%d %H:%M:%S.%f') 
 
-    if customer_created_datetime > last_sync_datetime:
-        last_sync = customer_created
+    if user_created_datetime > last_sync_datetime:
+        last_sync = user_created
     
     db_pos_sql_stmt = (
-       "INSERT INTO tabCustomer (name, customer_name, customer_type, address, mobile_number, loyalty_points, creation, owner)"
-       "VALUES (%s, %s, %s, %s, %s, %s, now(), %s)"
+       "INSERT INTO tabUser (name, full_name, passwd, role, enabled, creation, owner)"
+       "VALUES (%s, %s, ENCODE('welcome', 'secret'), %s, %d, now(), %s)"
     )
-    db_pos_sql_data = (customer_name, customer_customer_name, customer_type, customer_address, customer_mobile_number, customer_loyalty_points, ws_erp_user)
+    db_pos_sql_data = (user_name, user_full_name, user_role, user_enabled, ws_erp_user)
 
     try:
         db_pos_cur.execute(db_pos_sql_stmt, db_pos_sql_data)
@@ -153,12 +151,12 @@ for ws_customer_row in ws_erp_resp_json["customers"]:
         db_pos_conn.rollback()
         sys.exit(1)
 
-print_log(f"Total Customers Created: {customer_create_count}")
+print_log(f"Total Users Created: {user_create_count}")
 
 
 ######
-# Fetch Updated list of Customers from ERP
-ws_erp_method = 'api/method/get_updated_customers?limit_page_length=None'
+# Fetch Updated list of Users from ERP
+ws_erp_method = 'api/method/get_updated_users'
 try:
     ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
     ws_erp_resp.raise_for_status()   
@@ -181,37 +179,34 @@ except requests.exceptions.RequestException as ws_err:
 ######
 # Fetch each Item from Item List from ERP
 
-customer_update_count = 0
-for ws_customer_row in ws_erp_resp_json["customers"]:
-    print_log("Updating Item: " + ws_customer_row["name"])
-    customer_count+=1
-    customer_update_count+=1
-    customer_name = ws_customer_row["name"]
-    customer_customer_name = ws_customer_row["customer_name"]
-    customer_type = ws_customer_row["customer_type"]
-    customer_mobile_number = ws_customer_row["mobile_number"]
-    customer_address = ws_customer_row["address"]
-    customer_loyalty_points = ws_customer_row["loyalty_points"]
-    customer_modified = ws_customer_row["modified"]
+user_update_count = 0
+for ws_user_row in ws_erp_resp_json["users"]:
+    print_log("Updating Item: " + ws_user_row["username"])
+    user_count+=1
+    user_update_count+=1
+    user_name = ws_user_row["username"]
+    user_full_name = ws_user_row["full_name"]
+    user_role = ws_user_row["role"]
+    user_enabled = ws_user_row["enabled"]
+    user_modified = ws_user_row["modified"]
   
-    customer_modified_datetime = datetime.strptime(ws_customer_row["modified"], '%Y-%m-%d %H:%M:%S.%f')
+    user_modified_datetime = datetime.strptime(ws_user_row["modified"], '%Y-%m-%d %H:%M:%S.%f')
     last_sync_datetime = datetime.strptime(last_sync, '%Y-%m-%d %H:%M:%S.%f') 
 
-    if customer_modified_datetime > last_sync_datetime:
-        last_sync = customer_modified
+    if user_modified_datetime > last_sync_datetime:
+        last_sync = user_modified
     
     db_pos_sql_stmt = (
-       "UPDATE tabCustomer  SET customer_name = %s, \
-                            customer_type = %s, \
-                            mobile_number = %s, \
-                            address = %s, \
-                            loyalty_points = %s, \
+       "UPDATE tabUser  SET name = %s, \
+                            full_name = %s, \
+                            role = %s, \
+                            enabled = %d, \
                             modified = now(), \
                             modified_by = %s \
                         WHERE name = %s" \
     )
-    db_pos_sql_data = ( customer_customer_name, customer_type, customer_mobile_number, \
-                        customer_address, customer_loyalty_points, ws_erp_user, customer_name \
+    db_pos_sql_data = ( user_name, user_full_name, user_role, user_enabled, \
+                        ws_erp_user, user_name \
     )
 
     try:
@@ -222,17 +217,17 @@ for ws_customer_row in ws_erp_resp_json["customers"]:
         db_pos_conn.rollback()
         sys.exit(1)
 
-print_log(f"Total Customers Updated: {customer_update_count}")
+print_log(f"Total Users Updated: {user_update_count}")
 
 
 ######
 # Update Last sync date time
-if (customer_count > 0):
+if (user_count > 0):
     ws_erp_payload = {"date": last_sync}
     
     #print('payload:', ws_erp_payload)
 
-    ws_erp_method = '/api/method/put_customer_sync_date_time'
+    ws_erp_method = '/api/method/put_user_sync_date_time'
     try:
         ws_erp_resp = ws_erp_sess.put(ws_erp_host + ws_erp_method, json=ws_erp_payload)
         ws_erp_resp.raise_for_status()   
@@ -261,5 +256,5 @@ db_pos_conn.close()
 
 ######    
 # Closing Log file 
-print_log("Download Customers process completed")
+print_log("Download Users process completed")
 file_log.close()

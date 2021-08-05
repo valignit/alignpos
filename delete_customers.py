@@ -107,7 +107,7 @@ except mariadb.Error as db_err:
     db_pos_conn.rollback()
     sys.exit(1)
 
-last_sync_date_time = '01-01-2001, 0:00 am IST'
+last_sync_date_time = '2000-01-01 00:00:00'
 ws_erp_payload = {"date": last_sync_date_time }
 
 ws_erp_method = '/api/method/put_customer_sync_date_time'

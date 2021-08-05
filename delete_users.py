@@ -1,8 +1,8 @@
 ##################################################
 # Application: alignPOS
 # Installation: AFSM 
-# CLI Program: delete_exchange_adjustments
-# Description: Delete all rows in the Exchange Adjustment table in local db
+# CLI Program: delete_items
+# Description: Delete all rows in the user table in local db
 # Version: 1.0
 # 1.0.0 - 09-07-2021: New program
 ##################################################
@@ -34,8 +34,8 @@ def print_log(msg):
 ##############################
 # Main
 ##############################
-print_log('alignPOS - Delete Exchange Adjustments - Version 1.1')
-print_log('----------------------------------------------------')
+print_log('alignPOS - Delete Users - Version 1.1')
+print_log('-------------------------------------')
 
 
 ######
@@ -93,15 +93,15 @@ except mariadb.Error as db_err:
 db_pos_cur = db_pos_conn.cursor()
 
 ######
-# Delete old Customer records
+# Delete old User records
 db_pos_sql_stmt = (
-    "DELETE FROM `tabExchange Adjustment`"
+    "DELETE FROM tabUser"
 )
 
 try:
     db_pos_cur.execute(db_pos_sql_stmt)
     db_pos_conn.commit()
-    print_log("Old Exchange records Deleted")
+    print_log("Old User records Deleted")
 except mariadb.Error as db_err:
     print_log(f"POS database error 102: {db_err}")
     db_pos_conn.rollback()
@@ -110,7 +110,7 @@ except mariadb.Error as db_err:
 last_sync_date_time = '2000-01-01 00:00:00'
 ws_erp_payload = {"date": last_sync_date_time }
 
-ws_erp_method = '/api/method/put_exchange_adjustment_sync_date_time'
+ws_erp_method = '/api/method/put_user_sync_date_time'
 try:
     ws_erp_resp = ws_erp_sess.put(ws_erp_host + ws_erp_method, json=ws_erp_payload)
     ws_erp_resp.raise_for_status()   
@@ -138,5 +138,5 @@ db_pos_conn.close()
 
 ######    
 # Closing Log file 
-print_log("Delete Exchange Adjustments process completed")
+print_log("Delete Users process completed")
 file_log.close()

@@ -60,7 +60,7 @@ class Signin():
 
             ### following code will be removed later
             if event in ('F1', 'F1:112'):
-                self.__ui.signin_user_id = 'admin'
+                self.__ui.signin_user_id = 'administrator'
                 self.__ui.signin_passwd = 'welcome'              
                 if self.validate_user():
                     self.__ok = True
@@ -79,12 +79,17 @@ class Signin():
         self.__window.close()
 
     def validate_user(self):
-        db_query = DbQuery(self.__db_conn, 'select name, DECODE(passwd, "secret") as passwd from tabUser where name = "{}"'.format(self.__ui.signin_user_id))
+        db_query = DbQuery(self.__db_conn, 'select name, DECODE(passwd, "secret") as passwd, role, enabled from tabUser where name = "{}"'.format(self.__ui.signin_user_id))
         if  db_query.result:
             for db_row in db_query.result:
-                print('passwd:', db_row[0], self.__ui.signin_passwd, db_row[1].decode("utf-8"))
+                #print('passwd:', db_row[0], self.__ui.signin_passwd, db_row[1].decode("utf-8"))
                 if self.__ui.signin_passwd == db_row[1].decode("utf-8"):
-                    return True
+                    if db_row[3] == 1:                    
+                        return True
+                    else:
+                        ConfirmMessage('OK', 'Inactive User')
+                        self.__ui.focus_signin_user_id()
+                        return False                                   
                 else:
                     ConfirmMessage('OK', 'Password mismatch')
                     self.__ui.focus_signin_passwd()

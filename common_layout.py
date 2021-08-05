@@ -150,7 +150,7 @@ class ElementStyle:
                         'disabled_readonly_text_color':'grey32', 
                         'disabled_readonly_background_color':'grey89', 
                         'font':("Helvetica", 9),
-                        'size':(10,1)                        
+                        'size':(12,1)                        
                     }
 
     search_text:  dict = {           

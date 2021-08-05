@@ -174,13 +174,19 @@ ENGINE=InnoDB
 
 CREATE TABLE `tabUser` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`email` varchar(255) DEFAULT NULL,
+	`full_name` varchar(255) DEFAULT NULL,
 	`passwd` blob,
+	`role` varchar(255) DEFAULT NULL,
+	`enabled` int(1) DEFAULT 1,
+	`creation` DATETIME(6) NULL DEFAULT NULL,
+	`modified` DATETIME(6) NULL DEFAULT NULL,
+	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	PRIMARY KEY (`name`) USING BTREE
 ) ENGINE=InnoDB
 ;
 
-insert into tabUser (name, email, passwd) values ('admin', 'admin@example.com', ENCODE('welcome', 'secret'));
+insert into tabUser (name, full_name, passwd, role, enabled, creation, owner) values ('administrator', 'administrator', ENCODE('welcome', 'secret'), 'Alignpos Administrator', 1, now(), 'administrator');
 insert into tabSequence (name) values ('REFERENCE_NUMBER');
 insert into tabSequence (name, prefix) values ('INVOICE_NUMBER', 'SINV-');
 insert into tabSequence (name, prefix) values ('ESTIMATE_NUMBER', 'EST-');

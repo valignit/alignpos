@@ -133,7 +133,7 @@ for ws_item_row in ws_erp_resp_json["items"]:
     item_selling_price = ws_item_row["standard_rate"]
     item_maximum_retail_price = ws_item_row["maximum_retail_price"]
     item_tax_template = ''
-    item_modified = ws_item_row["modified"]
+    item_created = ws_item_row["creation"]
 
     # Pick first uom of the Item 
     for uom in ws_item_row["uoms"]:
@@ -181,11 +181,11 @@ for ws_item_row in ws_erp_resp_json["items"]:
         if tax["tax_type"] == 'SGST - AFSM':
             sgst_tax_rate = tax["tax_rate"]
   
-    item_modified_datetime = datetime.strptime(ws_item_row["modified"], '%Y-%m-%d %H:%M:%S.%f')
+    item_created_datetime = datetime.strptime(ws_item_row["creation"], '%Y-%m-%d %H:%M:%S.%f')
     last_sync_datetime = datetime.strptime(last_sync, '%Y-%m-%d %H:%M:%S.%f') 
 
-    if item_modified_datetime > last_sync_datetime:
-        last_sync = item_modified
+    if item_created_datetime > last_sync_datetime:
+        last_sync = item_created
     
     db_pos_sql_stmt = (
        "INSERT INTO tabItem (name, item_code, item_name, item_group, barcode, uom, stock, selling_price, maximum_retail_price, cgst_tax_rate, sgst_tax_rate, creation, owner)"

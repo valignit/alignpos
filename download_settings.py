@@ -1,26 +1,21 @@
 ##################################################
 # Application: alignPOS
-# Installation: AFSM 
-# CLI Program: delete_exchange_adjustments
-# Description: Delete all rows in the Exchange Adjustment table in local db
+# Installation: AFSM
+# CLI Program: download_settings
+# Description: Get the Alignpos Settings from ERPNext
 # Version: 1.0
 # 1.0.0 - 09-07-2021: New program
 ##################################################
 
 import json
 import requests
-import mariadb
+import pickledb
 import sys
-import datetime
+from datetime import datetime, timedelta
 
 
-now = datetime.datetime.now()
-
-with open('./alignpos.json') as file_config:
-  config = json.load(file_config)
-  
-file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
-file_log = open(file_name, "w")
+last_sync = '2000-01-01 00:01:01.000001'
+customer_count = 0
 
 ##############################
 # Print and Log
@@ -34,9 +29,16 @@ def print_log(msg):
 ##############################
 # Main
 ##############################
-print_log('alignPOS - Delete Exchange Adjustments - Version 1.1')
-print_log('----------------------------------------------------')
+now = datetime.now()
 
+with open('./alignpos.json') as file_config:
+  config = json.load(file_config)
+  
+file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
+file_log = open(file_name, "w")
+
+print_log('alignPOS - Download Settings - Version 1.1')
+print_log('------------------------------------------')
 
 ######
 # Connect to ERPNext web service
@@ -67,56 +69,19 @@ except requests.exceptions.RequestException as ws_err:
     print_log(f"ERP web service error 201d: {ws_err}")
     sys.exit(1)
 
+######
+# Connect to Key Value database
+kv = pickledb.load('alignpos_settings', False)
 
 ######
-# Connect to POS database
-db_pos_host = config["db_pos_host"]
-db_pos_port = config["db_pos_port"]
-db_pos_database = config["db_pos_database"]
-db_pos_user = config["db_pos_user"]
-db_pos_passwd = config["db_pos_passwd"]
-
+# Fetch Created list of Customers from ERP
+ws_erp_method = 'api/resource/Alignpos Settings/Alignpos Settings'
 try:
-    db_pos_conn = mariadb.connect(
-        user = db_pos_user,
-        password = db_pos_passwd,
-        host = db_pos_host,
-        port = db_pos_port,
-        database = db_pos_database
-    )
-    print_log("POS database connected")
-
-except mariadb.Error as db_err:
-    print_log(f"POS database error 101: {db_err}")
-    sys.exit(1)
-    
-db_pos_cur = db_pos_conn.cursor()
-
-######
-# Delete old Customer records
-db_pos_sql_stmt = (
-    "DELETE FROM `tabExchange Adjustment`"
-)
-
-try:
-    db_pos_cur.execute(db_pos_sql_stmt)
-    db_pos_conn.commit()
-    print_log("Old Exchange records Deleted")
-except mariadb.Error as db_err:
-    print_log(f"POS database error 102: {db_err}")
-    db_pos_conn.rollback()
-    sys.exit(1)
-
-last_sync_date_time = '2000-01-01 00:00:00'
-ws_erp_payload = {"date": last_sync_date_time }
-
-ws_erp_method = '/api/method/put_exchange_adjustment_sync_date_time'
-try:
-    ws_erp_resp = ws_erp_sess.put(ws_erp_host + ws_erp_method, json=ws_erp_payload)
+    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
     ws_erp_resp.raise_for_status()   
     ws_erp_resp_text = ws_erp_resp.text
     ws_erp_resp_json = json.loads(ws_erp_resp_text)
-    #print_log(ws_erp_resp_json["data"])
+    #print_log(ws_erp_resp_text)
 except requests.exceptions.HTTPError as ws_err:
     print_log(f"ERP web service error 202a: {ws_err}")
     sys.exit(1)
@@ -130,13 +95,34 @@ except requests.exceptions.RequestException as ws_err:
     print_log(f"ERP web service error 202d: {ws_err}")
     sys.exit(1)
 
-print_log(f"Time Stamp Updated: {last_sync_date_time}")
+######
+# Fetch Alignpos Settings from ERP
+ws_settings_row = ws_erp_resp_json["data"]
+walk_in_customer = ws_settings_row["walk_in_customer"]
+favorite_item_1 = ws_settings_row["favorite_item_1"]
+favorite_item_2 = ws_settings_row["favorite_item_2"]
+favorite_item_3 = ws_settings_row["favorite_item_3"]
+favorite_item_4 = ws_settings_row["favorite_item_4"]
+favorite_item_5 = ws_settings_row["favorite_item_5"]
+
+kv.set('walk_in_customer', walk_in_customer)
+kv.set('favorite_item_1', favorite_item_1)
+kv.set('favorite_item_2', favorite_item_2)
+kv.set('favorite_item_3', favorite_item_3)
+kv.set('favorite_item_4', favorite_item_4)
+kv.set('favorite_item_5', favorite_item_5)
 
 ######    
 # Closing DB connection
-db_pos_conn.close()
+print('Loaded walk_in_customer: ', kv.get('walk_in_customer'))
+print('Loaded favorite_item_1: ', kv.get('favorite_item_1'))
+print('Loaded favorite_item_2: ', kv.get('favorite_item_2'))
+print('Loaded favorite_item_3: ', kv.get('favorite_item_3'))
+print('Loaded favorite_item_4: ', kv.get('favorite_item_4'))
+print('Loaded favorite_item_5: ', kv.get('favorite_item_5'))
+kv.dump()
 
 ######    
 # Closing Log file 
-print_log("Delete Exchange Adjustments process completed")
+print_log("Download Alignpos Settings process completed")
 file_log.close()
