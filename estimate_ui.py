@@ -396,6 +396,14 @@ class EstimateUi:
         self.__window['_ITEMS_LIST_'].Widget.focus(table_row)  # move focus
         self.__window['_ITEMS_LIST_'].Widget.see(table_row)  # scroll to show i
 
+    def focus_items_list_last(self):
+        idx = len(self.__items_list) - 1
+        self.__window['_ITEMS_LIST_'].Widget.config(takefocus=1)        
+        self.__window.Element('_ITEMS_LIST_').set_focus(force = True)                
+        table_row = self.__window['_ITEMS_LIST_'].Widget.get_children()[idx]
+        self.__window['_ITEMS_LIST_'].Widget.selection_set(table_row)  # move selection
+        self.__window['_ITEMS_LIST_'].Widget.focus(table_row)  # move focus
+        self.__window['_ITEMS_LIST_'].Widget.see(table_row)  # scroll to show i
 
     ###
     # Specific to Detail Pane        
@@ -438,10 +446,14 @@ class EstimateUi:
         self.__items_list.append(self.__item_line)
         self.__window.Element('_ITEMS_LIST_').update(values = self.__items_list)
 
+    def fetch_item_line(self, idx):
+        self.item_line_to_elements(idx)
+        return self.__item_line
+
     def update_item_line(self, idx):
         self.__item_line = []
         self.elements_to_item_line()
-        print(self.__item_line)
+        print('ui:', self.__item_line)
         self.__items_list[idx] = self.__item_line
         self.__window.Element('_ITEMS_LIST_').update(values = self.__items_list)
 
@@ -745,4 +757,4 @@ class EstimateListUi:
     discount_amount = property(get_discount_amount, set_discount_amount)
     roundoff_amount = property(get_roundoff_amount, set_roundoff_amount)
     estimate_amount = property(get_estimate_amount, set_estimate_amount)
-       
+

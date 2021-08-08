@@ -104,6 +104,7 @@ favorite_item_2 = ws_settings_row["favorite_item_2"]
 favorite_item_3 = ws_settings_row["favorite_item_3"]
 favorite_item_4 = ws_settings_row["favorite_item_4"]
 favorite_item_5 = ws_settings_row["favorite_item_5"]
+welcome_text = ws_settings_row["welcome_text"]
 
 kv.set('walk_in_customer', walk_in_customer)
 kv.set('favorite_item_1', favorite_item_1)
@@ -111,6 +112,7 @@ kv.set('favorite_item_2', favorite_item_2)
 kv.set('favorite_item_3', favorite_item_3)
 kv.set('favorite_item_4', favorite_item_4)
 kv.set('favorite_item_5', favorite_item_5)
+kv.set('welcome_text', welcome_text)
 
 ######    
 # Closing DB connection
@@ -120,6 +122,8 @@ print('Loaded favorite_item_2: ', kv.get('favorite_item_2'))
 print('Loaded favorite_item_3: ', kv.get('favorite_item_3'))
 print('Loaded favorite_item_4: ', kv.get('favorite_item_4'))
 print('Loaded favorite_item_5: ', kv.get('favorite_item_5'))
+#print('Loaded welcome_text: ', kv.get('welcome_text'))
+
 kv.dump()
 
 ######    

@@ -3,8 +3,10 @@ import json
 from pynput.keyboard import Key, Controller
 
 from alignpos_db import DbConn, DbTable, DbQuery
-from common_layout import SigninCanvas, ConfirmMessageCanvas, ItemLookupCanvas, KeypadCanvas, ItemListCanvas
-from common_ui import SigninUi, ItemLookupUi, KeypadUi, ItemListUi
+#from common_layout import SigninCanvas, ConfirmMessageCanvas, ItemLookupCanvas, KeypadCanvas, ItemListCanvas
+#from common_ui import SigninUi, ItemLookupUi, KeypadUi, ItemListUi
+from common_layout import SigninCanvas, ConfirmMessageCanvas, KeypadCanvas, ItemListCanvas, CustomerListCanvas
+from common_ui import SigninUi, KeypadUi, ItemListUi, CustomerListUi
 
 sg.theme('DefaultNoMoreNagging')
 
@@ -164,7 +166,8 @@ class ConfirmMessage():
         
     ok = property(get_ok)         
 
-    
+
+'''    
 class ItemLookup():
 
     def __init__(self, filter, lin, col):       
@@ -235,7 +238,7 @@ class ItemLookup():
         return self.__item_code
     
     item_code = property(get_item_code)         
-
+'''
 
 class Keypad():
 
@@ -399,4 +402,122 @@ class ItemList:
         return self.__item_code
 
     
-    item_code = property(get_item_code)     
+    item_code = property(get_item_code)
+
+
+class CustomerList:
+    def __init__(self):    
+        self.__customer_number = ''
+        self.__mobile_number = ''
+
+        self.__db_conn = DbConn()
+
+        db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
+        filter=''
+        db_customer_cursor = db_customer_table.list(filter)
+
+        if (len(db_customer_cursor) == 0):
+            sg.popup('Customer(s) not found', keep_on_top = True)                    
+            return
+       
+        kb = Controller()
+        self.__kb = kb
+        
+        self.__canvas = CustomerListCanvas()
+        self.__window = sg.Window("List Customer",
+                        self.__canvas.layout,
+                        location=(100,100), 
+                        size=(700,360), 
+                        modal=True, 
+                        finalize=True,
+                        return_keyboard_events=True, 
+                        keep_on_top = True,                    
+                    )
+    
+        self.__ui = CustomerListUi(self.__window)
+                
+        self.__ui.customers_list = []
+
+        self.__base_query = 'select tabCustomer.name, \
+        tabCustomer.mobile_number, \
+        tabCustomer.customer_name, \
+        tabCustomer.customer_type \
+        from tabCustomer \
+        where tabCustomer.name = tabCustomer.name'
+        
+        db_query = DbQuery(self.__db_conn, self.__base_query)        
+        if  db_query.result:
+            self.__ui.customers_list = []                        
+            for db_row in db_query.result:
+                self.__ui.customer_number = db_row[0]
+                self.__ui.mobile_number = db_row[1]
+                self.__ui.customer_name = db_row[2]
+                self.__ui.customer_type = db_row[3]
+                self.__ui.add_customer_line()
+
+        self.__ui.customer_idx = 0
+        self.__ui.focus_customers_list()
+       
+        self.handler()
+
+
+    def handler(self):  
+        prev_event = ''
+        prev_values = ''
+        
+        while True:
+            event, values = self.__window.read()
+            #print('customer_list=', event, prev_event, values)
+            print('customer_list=', event, prev_event)
+            if event in ("Exit", '_CUSTOMER_LIST_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
+                break
+
+            if event in ('_CUSTOMER_LIST_SEARCH_', 'F11', 'F11:122'):
+                this_query = ''
+                if self.__ui.customer_number_search:
+                    if not self.__ui.customer_number_search == '':
+                        this_query = ' and tabCustomer.name = "' + self.__ui.customer_number_search + '"'
+                if self.__ui.mobile_number_search:
+                    if not self.__ui.mobile_number_search == '':
+                        this_query = ' and tabCustomer.mobile_number = "' + self.__ui.mobile_number_search + '"'
+                db_query = DbQuery(self.__db_conn, self.__base_query + this_query)        
+                if  db_query.result:
+                    self.__ui.customers_list = []                        
+                    for db_row in db_query.result:
+                        self.__ui.customer_number = db_row[0]
+                        self.__ui.mobile_number = db_row[1]
+                        self.__ui.customer_name = db_row[2]
+                        self.__ui.customer_type = db_row[3]
+                        self.__ui.add_customer_line()
+
+            if event in ('_CUSTOMER_LIST_OK_', '\r', 'F12', 'F12:123'):
+                customer_idx = values['_CUSTOMERS_LIST_'][0]
+                self.__ui.customer_line_to_elements(customer_idx)
+                self.__customer_number = self.__ui.customer_number
+                self.__mobile_number = self.__ui.mobile_number
+                break
+            
+            if event == prev_event and values == prev_values:
+                customer_idx = values['_CUSTOMERS_LIST_'][0]
+                self.__ui.customer_line_to_elements(customer_idx)
+                self.__customer_number = self.__ui.customer_number
+                self.__mobile_number = self.__ui.mobile_number
+                break
+            
+            if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN'):               
+                prev_event = event
+            prev_values = values
+           
+        self.__db_conn.close()           
+        self.__window.close()    
+
+      
+    def get_customer_number(self):
+        return self.__customer_number
+
+    def get_mobile_number(self):
+        return self.__mobile_number
+
+    
+    customer_number = property(get_customer_number)
+    mobile_number = property(get_mobile_number)         

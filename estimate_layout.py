@@ -25,8 +25,8 @@ class EstimateCanvas:
             [
                 sg.Text('Estimate', **ap_style.page_title, pad=((0,0),(0,3))),
                 sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_ESTIMATE_NUMBER_'),
-                sg.Text('', **ap_style.page_title, pad=((0,300),(0,3)), key='_MOBILE_NUMBER_'),
-                sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.nav_button, pad = ((0,5),(0,0))),
+                sg.Text('', **ap_style.page_title, pad=((0,264),(0,3)), key='_MOBILE_NUMBER_'),
+                sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.action_button, pad = ((0,7),(0,0))),
                 sg.Button(key='_BEGIN_', button_text='BEGN\nPgUp',**ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_NEXT_', button_text='NEXT\n→', **ap_style.nav_button, pad = ((3,5),(0,0))),
@@ -58,23 +58,25 @@ class EstimateCanvas:
                      alternating_row_color='MistyRose2',
                      num_rows=18,
                      display_row_numbers=True,
+                     right_click_menu=["that",["Specs","Quantity","Weight", "Price", "---", "Delete"]],
+                     bind_return_key=True,
                      col_widths=[10, 13, 24, 5, 5, 8, 9, 8, 10, 10],
                 )            
-            ]        
+            ],
         ]
 
         ui_action_pane_layout = [
             [
-                sg.Button(key='F1',  button_text='\nF1', **ap_style.action_button),
-                sg.Button(key='F2',  button_text='\nF2', **ap_style.action_button),
-                sg.Button(key='F3',  button_text='\nF3', **ap_style.action_button),
-                sg.Button(key='F4',  button_text='\nF4', **ap_style.action_button),
-                sg.Button(key='F5',  button_text='\nF5', **ap_style.action_button),
-                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button),
-                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button),
-                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button),
-                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button),
-                sg.Button(key='ESC', button_text='Exit\nEsc', **ap_style.exit_button, pad=((65,0),(0,0))),
+                sg.Button(key='F1',  button_text='\nF1', **ap_style.action_button, pad=((3,5),(5,0))),
+                sg.Button(key='F2',  button_text='\nF2', **ap_style.action_button, pad=((0,5),(5,0))),
+                sg.Button(key='F3',  button_text='\nF3', **ap_style.action_button, pad=((0,5),(5,0))),
+                sg.Button(key='F4',  button_text='\nF4', **ap_style.action_button, pad=((0,5),(5,0))),
+                sg.Button(key='F5',  button_text='\nF5', **ap_style.action_button, pad=((0,55),(5,0))),
+                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button, pad=((0,5),(5,0))),
+                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button, pad=((0,5),(5,0))),
+                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button, pad=((0,5),(5,0))),
+                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button, pad=((0,5),(5,0))),
+                sg.Button(key='ESC', button_text='Exit\nEsc', **ap_style.exit_button, pad=((55,0),(5,0))),
             ]               
         ]
 

@@ -167,9 +167,9 @@ class ElementStyle:
                     }
 
     search_button:  dict = {
-                        'size':(13, 1), 
+                        'size':(7, 1), 
                         'font':('Calibri 11 bold'),
-                        'button_color':('grey20','chocolate2'),
+                        'button_color':('grey20','grey80'),
                         'use_ttk_buttons': True
                     }
 
@@ -251,7 +251,7 @@ class ConfirmMessageCanvas:
     
     layout = property(get_layout)      
 
-
+'''
 class ItemLookupCanvas:
     
     def __init__(self):
@@ -270,7 +270,7 @@ class ItemLookupCanvas:
         return self.__layout
     
     layout = property(get_layout)
-    
+'''    
     
 class KeypadCanvas:
     
@@ -352,4 +352,59 @@ class ItemListCanvas:
         return self.__layout
     
     layout = property(get_layout)         
+ 
+
+class CustomerListCanvas:
+    def __init__(self):
     
+        customer_list_layout = [
+            [
+                sg.Text('Customer No:', size=(12,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_CUSTOMER_NUMBER_SEARCH_',
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                ),
+                sg.Text('Mobile No:', size=(12,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_MOBILE_NUMBER_SEARCH_',
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                ),
+                sg.Button('Search-F11', **ElementStyle.search_button_short, key='_CUSTOMER_LIST_SEARCH_', pad=((35,0),(0,0))),                                
+            ],
+            [
+                sg.Table(values=[], 
+                     key='_CUSTOMERS_LIST_', 
+                     enable_events=True,
+                     headings= ['Customer-No', 'Mobile-No', 'Name', 'Type'],
+                     font=("Helvetica", 11),
+                     auto_size_columns=False,
+                     justification='right',
+                     row_height=25,
+                     alternating_row_color='MistyRose2',
+                     num_rows=10,
+                     display_row_numbers=False,
+                     bind_return_key = True,
+                     col_widths=[12, 12, 30, 15],
+                     pad=((5,0),(5,5))
+                )            
+            ],
+            [
+                sg.Button('Ok-F12', **ElementStyle.search_button_short, key='_CUSTOMER_LIST_OK_'),                
+                sg.Button('Exit-Esc', **ElementStyle.search_button_short, key='_CUSTOMER_LIST_ESC_'), 
+            ]             
+        ]
+        
+        self.__layout = [
+            [
+                sg.Column(customer_list_layout, vertical_alignment = 'top', pad = ((0,0),(0,0))),
+            ]
+        ]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)         
+
+ 

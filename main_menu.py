@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 import json
 from subprocess import run
 
+from alignpos_kv import KvConn
 from main_menu_layout import MainMenuCanvas
 from main_menu_ui import MainMenuUi
 from estimate import Estimate
@@ -14,11 +15,9 @@ class MainMenu():
     def __init__(self, user_id, terminal_id):
         self.__user_id = user_id
         self.__terminal_id = terminal_id
-    
-        with open('./alignpos.json') as file_config:
-          config = json.load(file_config)
 
-        self.__welcome_text = config["welcome_text"]
+        self.__kv = KvConn()
+        self.__welcome_text = self.__kv.get('welcome_text')   
                 
         w, h = sg.Window.get_screen_size()
         
