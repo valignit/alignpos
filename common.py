@@ -3,9 +3,7 @@ import json
 from pynput.keyboard import Key, Controller
 
 from alignpos_db import DbConn, DbTable, DbQuery
-#from common_layout import SigninCanvas, ConfirmMessageCanvas, ItemLookupCanvas, KeypadCanvas, ItemListCanvas
-#from common_ui import SigninUi, ItemLookupUi, KeypadUi, ItemListUi
-from common_layout import SigninCanvas, ConfirmMessageCanvas, KeypadCanvas, ItemListCanvas, CustomerListCanvas
+from common_layout import SigninCanvas, MessageCanvas, KeypadCanvas, ItemListCanvas, CustomerListCanvas
 from common_ui import SigninUi, KeypadUi, ItemListUi, CustomerListUi
 
 sg.theme('DefaultNoMoreNagging')
@@ -27,6 +25,7 @@ class Signin():
                         keep_on_top = True, 
                         return_keyboard_events = True, 
                         modal=True, 
+                        icon='images/favicon.ico',
                         finalize=True
                     )
 
@@ -89,15 +88,15 @@ class Signin():
                     if db_row[3] == 1:                    
                         return True
                     else:
-                        ConfirmMessage('OK', 'Inactive User')
+                        Message('STOP', 'Inactive User')
                         self.__ui.focus_signin_user_id()
                         return False                                   
                 else:
-                    ConfirmMessage('OK', 'Password mismatch')
+                    Message('STOP', 'Password mismatch')
                     self.__ui.focus_signin_passwd()
                     return False                
         else:
-            ConfirmMessage('OK', 'Invalid User')
+            Message('STOP', 'Invalid User')
             self.__ui.focus_signin_user_id()
             return False
    
@@ -115,16 +114,29 @@ class Signin():
     terminal_id = property(get_sign_in_terminal_id)         
 
     
-class ConfirmMessage():
+class Message():
     
     def __init__(self, type, message):
-        self.__canvas = ConfirmMessageCanvas()
+        self.__type = type
+        self.__message = message
 
-        self.__window = sg.Window("Confirm", 
+
+        switcher = {
+            'INFO': 'Information',
+            'OPT': 'Option',
+            'STOP': 'Error',
+            'WARN': 'Warning',
+        }
+        caption = switcher.get(type)
+        
+        self.__canvas = MessageCanvas(type)
+        self.__window = sg.Window(caption, 
                         self.__canvas.layout,
                         keep_on_top = True, 
                         return_keyboard_events = True, 
                         modal=True, 
+                        icon='images/favicon.ico',
+                        background_color = 'White',
                         finalize=True
                     )
 
@@ -135,14 +147,13 @@ class ConfirmMessage():
         self.__window["_OK_"].Widget.config(takefocus=0) 
         self.__window["_CANCEL_"].Widget.config(takefocus=0)
 
-        self.__type = type
-        self.__message = message
+
         self.__ok = False
 
-        if self.__type == 'OK':
-            self.__window.Element("_CANCEL_").update(visible=False)
-        else:
+        if self.__type == 'OPT':
             self.__window.Element("_CANCEL_").update(visible=True)
+        else:
+            self.__window.Element("_CANCEL_").update(visible=False)
             
         self.handler()
 
@@ -167,79 +178,6 @@ class ConfirmMessage():
     ok = property(get_ok)         
 
 
-'''    
-class ItemLookup():
-
-    def __init__(self, filter, lin, col):       
-        self.__item_code = None
-        self.__canvas = ItemLookupCanvas()
-        self.__window = sg.Window("Item Name",
-                        self.__canvas.layout,
-                        location=(lin,col), 
-                        size=(348,129), 
-                        modal=True, 
-                        finalize=True,
-                        return_keyboard_events=True, 
-                        no_titlebar = True, 
-                        element_padding=(0,0), 
-                        background_color = 'White',
-                        border_depth= 1,
-                        keep_on_top = True,                    
-                        margins=(0,0)
-                    )
-        self.__window.bind('<FocusIn>', '+FOCUS IN+')
-        self.__window.bind('<FocusOut>', '+FOCUS OUT+')    
-    
-        self.__ui = ItemLookupUi(self.__window)
-        
-        self.__db_conn = DbConn()
-        db_item_table = DbTable(self.__db_conn, 'tabItem')
-        db_item_cursor = db_item_table.list(filter)
-
-        if (len(db_item_cursor) == 0):
-            self.__window.close()           
-            return
-        
-        self.__ui.item_list = []
-        for db_item_row in db_item_cursor:
-            self.__ui.item_code = db_item_row.item_code
-            self.__ui.item_name = db_item_row.item_name
-            self.__ui.add_item_line()
-
-        self.__ui.idx = 0
-        self.__ui.focus_item_list()
-
-        self.handler()
-
-    def handler(self):
-        prev_event = ''    
-        while True:
-            event, values = self.__window.read()
-            print('item_name_popup=', event, prev_event, values)
-            if event == 'Down:40':
-                self.__ui.next_item_line()
-            if event == 'Up:38':
-                self.__ui.prev_item_line()            
-            if event in ("Exit", '_ITEM_NAME_ESC_', 'Escape:27', '+FOCUS OUT+') or event == sg.WIN_CLOSED:
-                break        
-            if event in ('\r'):
-                if values['_ITEM_NAME_LIST_']:
-                    self.__item_code =  values['_ITEM_NAME_LIST_'][0][0]
-                    break
-            if event in ('_ITEM_NAME_LIST_') and prev_event in ('_ITEM_NAME_LIST_'):
-                self.__item_code =  values['_ITEM_NAME_LIST_'][0][0]
-                break
-            prev_event = event
-            
-        self.__db_conn.close()           
-        self.__window.close()    
-      
-    def get_item_code(self):
-        return self.__item_code
-    
-    item_code = property(get_item_code)         
-'''
-
 class Keypad():
 
     def __init__(self, current_value):
@@ -257,6 +195,7 @@ class Keypad():
                         no_titlebar = True,                         
                         return_keyboard_events = False, 
                         modal=True, 
+                        icon='images/favicon.ico',
                         finalize=True
                     )
         self.__ui = KeypadUi(self.__window)
@@ -330,7 +269,7 @@ class ItemList:
         db_item_cursor = db_item_table.list(filter)
 
         if (len(db_item_cursor) == 0):
-            sg.popup('Item(s) not found', keep_on_top = True)
+            sg.popup('Item(s) not found', keep_on_top = True, icon='images/INFO.png')
             return
        
         kb = Controller()
@@ -345,6 +284,7 @@ class ItemList:
                         finalize=True,
                         return_keyboard_events=True,
                         no_titlebar = False,
+                        icon='images/favicon.ico',
                         keep_on_top = True,                    
                     )
     
@@ -370,7 +310,6 @@ class ItemList:
         item_idx  = 0    
         while True:
             event, values = self.__window.read()
-            print('item_list=', event, prev_event, values)
                 
             if event in ("Exit", '_ITEM_LIST_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
                 break
@@ -417,7 +356,7 @@ class CustomerList:
         db_customer_cursor = db_customer_table.list(filter)
 
         if (len(db_customer_cursor) == 0):
-            sg.popup('Customer(s) not found', keep_on_top = True)                    
+            sg.popup('Customer(s) not found', keep_on_top = True, icon='images/INFO.png')                    
             return
        
         kb = Controller()
@@ -431,6 +370,7 @@ class CustomerList:
                         modal=True, 
                         finalize=True,
                         return_keyboard_events=True, 
+                        icon='images/favicon.ico',
                         keep_on_top = True,                    
                     )
     

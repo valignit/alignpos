@@ -32,6 +32,7 @@ class MainMenu():
                         keep_on_top=False, 
                         resizable=False,
                         return_keyboard_events=True, 
+                        icon='images/favicon.ico',
                         use_default_focus=False,
                  )        
      

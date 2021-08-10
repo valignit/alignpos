@@ -79,8 +79,8 @@ class EstimateUi:
         self.__window['_ESTIMATE_AMOUNT_'].Widget.config(takefocus=0)
 
         # Unfocus Favorite Pane        
-        self.__window['_ADDON_'].Widget.config(takefocus=0)
-        self.__window['_BUNDLE_'].Widget.config(takefocus=0)
+        self.__window['Addon'].Widget.config(takefocus=0)
+        self.__window['Bundle'].Widget.config(takefocus=0)
 
         # Unfocus Action Pane
         self.__window['F1'].Widget.config(takefocus=0)

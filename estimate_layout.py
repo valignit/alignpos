@@ -15,8 +15,8 @@ class EstimateCanvas:
         rh = h
 
         menu_def = [
-                ['&File', ['&New', '&Delete', '&Save', 'S&ubmit', '&Print', 'E&xit']],      
-                ['&Edit', ['&Specs', '&Quantity', '&Weight', '&Price', '&Addon', '&Bundle' ]],      
+                ['&File', ['&New', '&Delete', '&Save', 'S&ubmit', '&Print', '---', 'E&xit']],      
+                ['&Edit', ['&Specs', '&Quantity', '&Weight', '&Price', '---', 'Add', 'Less', '---', 'Addon', 'Bundle' ]],      
                 ['&View', ['&First', '&Previous', '&Next',  '&Last']],      
                 ['&Help', '&About'], 
         ]
@@ -27,10 +27,10 @@ class EstimateCanvas:
                 sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_ESTIMATE_NUMBER_'),
                 sg.Text('', **ap_style.page_title, pad=((0,264),(0,3)), key='_MOBILE_NUMBER_'),
                 sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.action_button, pad = ((0,7),(0,0))),
-                sg.Button(key='_BEGIN_', button_text='BEGN\nPgUp',**ap_style.nav_button, pad = ((3,5),(0,0))),
+                sg.Button(key='_BEGIN_', button_text='BEGN\nHome',**ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_NEXT_', button_text='NEXT\n→', **ap_style.nav_button, pad = ((3,5),(0,0))),
-                sg.Button(key='_END_', button_text='END\nPgDn', **ap_style.nav_button, pad = ((3,3),(0,0))),                    
+                sg.Button(key='_END_', button_text='END\nEnd', **ap_style.nav_button, pad = ((3,3),(0,0))),                    
             ]
         ]
 
@@ -47,6 +47,16 @@ class EstimateCanvas:
             ]
         ]
 
+        ui_scroll_pane_layout = [
+            [
+                sg.Image(filename='images/image_1.png', key='Image1', enable_events = True, pad=((10,5),(10,10))),
+                sg.Image(filename='images/image_2.png', key='Image2', enable_events = True, pad=((5,5),(10,10))),
+                sg.Image(filename='images/image_3.png', key='Image3', enable_events = True, pad=((5,5),(10,10))),
+                sg.Image(filename='images/image_4.png', key='Image4', enable_events = True, pad=((5,5),(10,10))),
+                sg.Image(filename='images/image_5.png', key='Image5', enable_events = True, pad=((5,5),(10,10))),
+            ]
+        ]
+
         ui_detail_pane_layout = [
             [
                 sg.Table(values=[], key='_ITEMS_LIST_', enable_events=True,
@@ -54,11 +64,11 @@ class EstimateCanvas:
                      font=(("Helvetica", 11)),
                      auto_size_columns=False,
                      justification='right',
-                     row_height=25,
+                     row_height=24,
                      alternating_row_color='MistyRose2',
-                     num_rows=18,
+                     num_rows=13,
                      display_row_numbers=True,
-                     right_click_menu=["that",["Specs","Quantity","Weight", "Price", "---", "Delete"]],
+                     right_click_menu=["that",["Specs","Quantity","Weight", "Price", "---", "Add", "Less", "---", "Delete"]],
                      bind_return_key=True,
                      col_widths=[10, 13, 24, 5, 5, 8, 9, 8, 10, 10],
                 )            
@@ -71,12 +81,14 @@ class EstimateCanvas:
                 sg.Button(key='F2',  button_text='\nF2', **ap_style.action_button, pad=((0,5),(5,0))),
                 sg.Button(key='F3',  button_text='\nF3', **ap_style.action_button, pad=((0,5),(5,0))),
                 sg.Button(key='F4',  button_text='\nF4', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F5',  button_text='\nF5', **ap_style.action_button, pad=((0,55),(5,0))),
-                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='ESC', button_text='Exit\nEsc', **ap_style.exit_button, pad=((55,0),(5,0))),
+                sg.Button(key='F5',  button_text='\nF5', **ap_style.action_button, pad=((0,25),(5,0))),
+                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button_small, pad=((0,5),(5,0))),
+                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button_small, pad=((0,5),(5,0))),
+                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button_small, pad=((0,5),(5,0))),
+                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button_small, pad=((0,5),(5,0))),
+                sg.Button(key='+',  button_text='\n+', **ap_style.action_button_small, pad=((20,5),(5,0))),
+                sg.Button(key='-',  button_text='\n-', **ap_style.action_button_small, pad=((0,5),(5,0))),
+                sg.Button(key='ESC', button_text='Exit\nEsc', **ap_style.exit_button, pad=((20,0),(5,0))),
             ]               
         ]
 
@@ -93,7 +105,7 @@ class EstimateCanvas:
 
         ui_top_pane_layout = [
             [
-                sg.Image(filename = 'al_fareeda_logo.PNG', background_color = 'white', pad = ((55,55),(0,0)))
+                sg.Image(filename = 'images/al_fareeda_logo.PNG', background_color = 'white', pad = ((55,55),(0,0)))
             ],
         ]
 
@@ -130,10 +142,10 @@ class EstimateCanvas:
         
         ui_favorite1_pane_layout = [
             [
-                sg.Button('ADDON  (Alt-A)', key='_ADDON_', **ap_style.search_button_wide)
+                sg.Button('ADDON  (Alt-A)', key='Addon', **ap_style.search_button_wide)
             ],
             [
-                sg.Button('BUNDLE  (Alt-B)', key='_BUNDLE_', **ap_style.search_button_wide)
+                sg.Button('BUNDLE  (Alt-B)', key='Bundle', **ap_style.search_button_wide)
             ]
         ]
 
@@ -143,7 +155,7 @@ class EstimateCanvas:
         
         ui_bottom_pane_layout = [
             [
-                sg.Image(filename = 'alignpos_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
+                sg.Image(filename = 'images/alignpos_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
             ]
         ]
 
@@ -162,6 +174,15 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(7,5)),
+                )     
+            ],
+            [
+                sg.Column(
+                    ui_scroll_pane_layout, 
+                    size=(959, 112), 
+                    scrollable=True,
+                    background_color='Grey',
+                    pad = ((10,0),(0,0)),
                 )     
             ],
             [

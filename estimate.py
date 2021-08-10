@@ -7,8 +7,7 @@ from alignpos_kv import KvConn
 from alignpos_db import DbConn, DbTable, DbQuery
 from estimate_layout import EstimateCanvas, ChangeQtyCanvas, EstimateListCanvas
 from estimate_ui import EstimateUi, ChangeQtyUi, EstimateListUi
-#from common import ItemLookup, ConfirmMessage, Keypad, ItemList
-from common import ConfirmMessage, Keypad, ItemList, CustomerList
+from common import Message, Keypad, ItemList, CustomerList
 
 
 class Estimate():
@@ -56,6 +55,7 @@ class Estimate():
                         resizable=False,
                         return_keyboard_events=True, 
                         use_default_focus=False,
+                        icon='images/favicon.ico',
                         modal=True
                     )
 
@@ -142,30 +142,30 @@ class Estimate():
                 self.__kb.press(Key.backspace)
                 self.__kb.release(Key.backspace)
 
-            if event in ('Prior:33', '_BEGIN_'):
+            if event in ('Home:36', '_BEGIN_'):
                 if not self.__actual_items_list == self.__ui.items_list:
-                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                    confirm_save = Message('OPT', 'Save current Estimate?')
                     if confirm_save.ok:
                         self.save_estimate()            
                 self.goto_first_row()
                 
             if event in ('Left:37', '_PREVIOUS_'):
                 if not self.__actual_items_list == self.__ui.items_list:
-                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                    confirm_save = Message('OPT', 'Save current Estimate?')
                     if confirm_save.ok:
                         self.save_estimate()            
                 self.goto_previous_row()
                 
             if event in ('Right:39', '_NEXT_'):
                 if not self.__actual_items_list == self.__ui.items_list:
-                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                    confirm_save = Message('OPT', 'Save current Estimate?')
                     if confirm_save.ok:
                         self.save_estimate()            
                 self.goto_next_row()
 
-            if event in ('Next:34', '_END_'):
+            if event in ('End:35', '_END_'):
                 if not self.__actual_items_list == self.__ui.items_list:
-                    confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                    confirm_save = Message('OPT', 'Save current Estimate?')
                     if confirm_save.ok:
                         self.save_estimate()            
                 self.goto_last_row()
@@ -175,7 +175,6 @@ class Estimate():
                     if len(self.__ui.items_list) > 0:
                         self.__ui.focus_items_list_row(len(self.__ui.items_list)-1)
                 else:
-                    #self.__ui.unfocus_items_list()
                     prev_item_idx = '' 
  
             if event in ('_BARCODE_+CLICK+', '_SEARCH_NAME_+CLICK+', '_ITEM_GROUP_+CLICK+'):
@@ -189,48 +188,45 @@ class Estimate():
                     item_code = self.item_list(filter)
                     self.process_item_name(item_code)                    
                     self.__ui.focus_item_group_line(0)
-                    self.__ui.focus_items_list_last()          
+                    self.__ui.focus_items_list_last()
 
-            if event == '+' and focus == '_ITEMS_LIST_':
-                if focus == '_ITEMS_LIST_' :
-                    if values['_ITEMS_LIST_']:
-                        item_idx = values['_ITEMS_LIST_'][0]
-                        self.process_count(item_idx, '+')
-                        self.sum_item_list()
-                        prev_idx = ''
-                        item_idx = ''                
+            if event in ('+', 'Add') and focus in ('_ITEMS_LIST_', '+'):
+                if values['_ITEMS_LIST_']:
+                    item_idx = values['_ITEMS_LIST_'][0]
+                    self.process_count(item_idx, '+')
+                    self.sum_item_list()
+                    prev_idx = ''
+                    item_idx = ''                
 
-            if event == '-' and focus == '_ITEMS_LIST_':
-                if focus == '_ITEMS_LIST_' :
-                    if values['_ITEMS_LIST_']:
-                        item_idx = values['_ITEMS_LIST_'][0]
-                        self.process_count(item_idx, '-')
-                        self.sum_item_list()
-                        prev_idx = ''
-                        item_idx = ''                
+            if event in ('-', 'Less') and focus in ('_ITEMS_LIST_', '-'):
+                if values['_ITEMS_LIST_']:
+                    item_idx = values['_ITEMS_LIST_'][0]
+                    self.process_count(item_idx, '-')
+                    self.sum_item_list()
+                    prev_idx = ''
+                    item_idx = ''                
 
             if event in self.__fav_item_names_list:
                 item_code = self.__fav_item_codes_list[self.__fav_item_names_list.index(event)]
                 self.process_item_name(item_code)                    
-                self.__ui.focus_barcode()                   
+                self.__ui.focus_items_list_last()
 
             if event == 'Alt_L:18' and prev_event in ('1','2','3','4','5'):
                 item_code = self.__fav_item_codes_list[int(prev_event)-1]
                 self.process_item_name(item_code)             
-                self.__ui.focus_barcode()                                     
+                self.__ui.focus_items_list_last()
                        
             if event == '_ITEMS_LIST_' and prev_event == '_ITEMS_LIST_':
                  if focus == '_ITEMS_LIST_' :
                     item_idx = values['_ITEMS_LIST_'][0]
                     if item_idx == prev_item_idx:
-                        confirm_test = ConfirmMessage('OK', 'Specs Feature not yet implemented')
+                        Message('INFO', 'Specs Feature not yet implemented')
                         prev_item_idx = ''
                         item_idx = ''
                         
             if event == '_KEYPAD1_':        
                 result = self.keypad(self.__ui.barcode)
                 self.__ui.barcode = result
-                #self.process_barcode(self.__ui.barcode)
                 self.process_barcode()
                 self.initialize_search_pane()
 
@@ -250,7 +246,7 @@ class Estimate():
             if event in ('F2:113', 'F2', 'Delete:46', 'Delete'):
                 if focus == '_ITEMS_LIST_':
                     if values['_ITEMS_LIST_']:
-                        confirm_delete = ConfirmMessage('OK_CANCEL', 'Delete current Item?')
+                        confirm_delete = Message('OPT', 'Delete current Item?')
                         if not confirm_delete.ok:
                             continue
                         idx = values['_ITEMS_LIST_'][0]
@@ -258,7 +254,7 @@ class Estimate():
                         prev_idx = ''
                         item_idx = ''
                     else:
-                        confirm_test = ConfirmMessage('OK', 'Select an Item')
+                        Message('WARN', 'Select an Item')
                         self.__ui.focus_barcode()                                  
                         continue
                 elif focus == '_ITEM_GROUP_':
@@ -268,7 +264,7 @@ class Estimate():
                 else:
                     if not self.__ui.estimate_number or self.__ui.estimate_number == '':
                         continue
-                    confirm_delete = ConfirmMessage('OK_CANCEL', 'Delete current Estimate?')
+                    confirm_delete = Message('OPT', 'Delete current Estimate?')
                     if not confirm_delete.ok:
                         continue
                     estimate_number = self.__ui.estimate_number            
@@ -295,13 +291,13 @@ class Estimate():
                 if focus == '_ITEMS_LIST_' :        
                     if values['_ITEMS_LIST_']:
                         item_idx = values['_ITEMS_LIST_'][0]
-                        confirm_test = ConfirmMessage('OK', 'Feature not yet implemented')
+                        Message('INFO', 'Feature not yet implemented')
                         prev_idx = ''
                         item_idx = ''
                     else:
-                        confirm_test = ConfirmMessage('OK', 'Select an Item')                                
+                        Message('WARN', 'Select an Item')                                
                 else:
-                    confirm_test = ConfirmMessage('OK', 'Select an Item')                
+                    Message('WARN', 'Select an Item')                
 
             if event in ('F7:118', 'F7', 'Quantity'):
                 if focus == '_ITEMS_LIST_' :
@@ -312,9 +308,9 @@ class Estimate():
                         prev_idx = ''
                         item_idx = ''
                     else:
-                        confirm_test = ConfirmMessage('OK', 'Select an Item')                                
+                        Message('WARN', 'Select an Item')                                
                 else:
-                    confirm_test = ConfirmMessage('OK', 'Select an Item')                
+                    Message('WARN', 'Select an Item')                
                 
             if event in ('F8:119', 'F8', 'Weight'):
                 if focus == '_ITEMS_LIST_' :
@@ -325,42 +321,42 @@ class Estimate():
                         prev_idx = ''
                         item_idx = ''
                     else:
-                        confirm_test = ConfirmMessage('OK', 'Select an Item')                                
+                        Message('WARN', 'Select an Item')                                
                 else:
-                    confirm_test = ConfirmMessage('OK', 'Select an Item')                                
+                    Message('WARN', 'Select an Item')                                
 
             if event in ('F9:120', 'F9', 'Price'):
                 if focus == '_ITEMS_LIST_' :        
                     if values['_ITEMS_LIST_']:
-                        confirm_test = ConfirmMessage('OK', 'Feature not yet implemented')
+                        Message('INFO', 'Feature not yet implemented')
                         prev_idx = ''
                         item_idx = ''
                     else:
-                        confirm_test = ConfirmMessage('OK', 'Select an Item')                
+                        Message('WARN', 'Select an Item')                
                 else:
-                    confirm_test = ConfirmMessage('OK', 'Select an Item')                
+                    Message('WARN', 'Select an Item')                
 
             if event in ('F10', 'F10:121', '_FIND_'):
                 if len(self.__ui.items_list) > 0:
                     if not self.__actual_items_list == self.__ui.items_list:                
-                        confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+                        confirm_save = Message('OPT', 'Save current Estimate?')
                         if confirm_save.ok:
                             self.save_estimate()
                 estimate_number = self.estimate_list()
                 self.goto_this_row(estimate_number)
             
-            if (event == '_ADDON_') or (event == 'Alt_L:18' and prev_event in ('a', 'A')):
+            if (event == 'Addon') or (event == 'Alt_L:18' and prev_event in ('a', 'A')):
                 filter = "upper(item_code) like upper('ITEM-9%')"
                 item_code = self.item_list(filter)                
                 self.process_item_name(item_code)
                 self.initialize_search_pane()
+                self.__ui.focus_items_list_last()
             
-            if (event == '_BUNDLE_') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
-                sg.popup('Feature not yet implemented', keep_on_top = True)
+            if (event == 'Bundle') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
+                Message('INFO', 'Feature not yet implemented')
                 self.__ui.focus_items_list_last()
             
             if event == 'v:86' and focus == '_BARCODE_':
-                #self.process_barcode(self.__ui.barcode)
                 self.process_barcode()
                 self.initialize_search_pane()
 
@@ -394,8 +390,15 @@ class Estimate():
                     self.__ui.focus_items_list_last()
                 
             if (event.isnumeric() or event in ('I', 'T', 'E', 'M', '-', 'i', 't', 'e', 'm')) and focus == '_ITEMS_LIST_':
-                self.__ui.barcode = event
-                self.__ui.focus_barcode()
+                if event == '-':
+                    if len(self.__ui.barcode) == 3:
+                        self.__ui.barcode = event
+                    else:
+                        None
+                else:
+                    self.__ui.barcode = event                
+                idx = values['_ITEMS_LIST_'][0]                
+                self.__ui.focus_items_list_row(idx)
            
             if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN', 'DEL', 'Delete:46'):
                 prev_event = event
@@ -487,9 +490,11 @@ class Estimate():
         self.__window.Element('F4').update(text='Submit\nF4')
         self.__window.Element('F5').update(text='Print\nF5')
         self.__window.Element('F6').update(text='Specs\nF6')
-        self.__window.Element('F7').update(text='Quantity\nF7')
+        self.__window.Element('F7').update(text='Qty\nF7')
         self.__window.Element('F8').update(text='Weight\nF8')
         self.__window.Element('F9').update(text='Price\nF9')
+        self.__window.Element('+').update(text='Add\n+')
+        self.__window.Element('-').update(text='Less\n-')
 
     def initialize_footer_pane(self):
         self.__ui.user_id = ''
@@ -570,7 +575,6 @@ class Estimate():
         if db_estimate_row:
             self.clear_ui()
             self.show_ui(db_estimate_row)
-            #self.__ui.focus_barcode()
             self.__ui.focus_items_list_last()
 
     def show_ui(self, db_estimate_row):
@@ -664,7 +668,6 @@ class Estimate():
         self.__ui.net_amount = net_amount
         self.__ui.total_cgst_amount = total_cgst_amount
         self.__ui.total_sgst_amount = total_sgst_amount
-        #estimate_actual_amount = net_amount - float(self.__ui.discount_amount)
         estimate_actual_amount = net_amount
         estimate_rounded_amount = round(net_amount, 0)
         self.__ui.estimate_amount = estimate_rounded_amount
@@ -688,7 +691,7 @@ class Estimate():
     def process_weight(self, idx):
         self.__ui.item_line_to_elements(idx)
         if not self.__ui.uom == 'Kg':
-            sg.popup('Not applicable to this UOM', keep_on_top = True)
+            Message('INFO', 'Not applicable to this UOM')
             return
         self.__ui.qty = 0.35
         self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
@@ -703,7 +706,7 @@ class Estimate():
     def process_count(self, idx, operator):
         self.__ui.item_line_to_elements(idx)
         if not self.__ui.uom == 'Nos':
-            sg.popup('Not applicable to this UOM', keep_on_top = True)
+            Message('INFO', 'Not applicable to this UOM')
             return
         qty = float(self.__ui.qty)
         if operator == '+':
@@ -719,25 +722,6 @@ class Estimate():
         self.sum_item_list()
         self.__ui.focus_items_list_row(idx)
 
-    '''
-    def process_barcode(self, barcode):
-        if not barcode:
-            return
-             
-        if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12):
-            filter = "barcode='{}'"
-            db_item_row = self.__db_item_table.first(filter.format(barcode))
-            if db_item_row:
-                self.move_db_item_to_ui_detail_pane(db_item_row)       
-        elif (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8):
-            filter = "item_code='{}'"   
-            db_item_row = self.__db_item_table.first(filter.format(barcode))
-            if db_item_row:
-                self.move_db_item_to_ui_detail_pane(db_item_row)
-        else:
-            return
-        self.sum_item_list()
-    '''
     
     def process_barcode(self):
         if not self.__ui.barcode:
@@ -773,7 +757,7 @@ class Estimate():
             return
 
         if not self.__actual_items_list == self.__ui.items_list:
-            confirm_save = ConfirmMessage('OK_CANCEL', 'Save current Estimate?')
+            confirm_save = ConfirmMessage('OPT', 'Save current Estimate?')
             if confirm_save.ok:
                 self.save_estimate()
             
@@ -915,7 +899,7 @@ class Estimate():
                     <table style="width:100%">
                         <tr>
                             <td>
-                                <img src="c:\\python-tkinter\\al-fareeda-logo.png" alt="al-fareeda" width="100" height="48">
+                                <img src="images/al-fareeda-logo.png" alt="al-fareeda" width="100" height="48">
                             </td>
                             <td>
                                 &nbsp
@@ -1024,6 +1008,7 @@ class ChangeQty:
                         modal=True, 
                         finalize=True,
                         keep_on_top = True,
+                        icon='images/favicon.ico',
                         return_keyboard_events=True,
                     )
 
@@ -1089,7 +1074,7 @@ class EstimateList:
         db_estimate_cursor = db_estimate_table.list(filter)
 
         if (len(db_estimate_cursor) == 0):
-            sg.popup('Estimate(s) not found', keep_on_top = True)                    
+            Message('INFO', 'Estimate(s) not found')
             return
        
         kb = Controller()
@@ -1103,6 +1088,7 @@ class EstimateList:
                         modal=True, 
                         finalize=True,
                         return_keyboard_events=True, 
+                        icon='images/favicon.ico',
                         keep_on_top = True,                    
                     )
     

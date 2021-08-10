@@ -50,6 +50,13 @@ class ElementStyle:
                         'use_ttk_buttons': True
                     }
 
+    action_button_small:  dict = {
+                        'size':(7, 1), 
+                        'font':('Calibri 11 bold'), 
+                        'button_color': ('grey20', 'grey80'),
+                        'use_ttk_buttons': True
+                    }
+
     exit_button:  dict = {
                         'size':(10, 1), 
                         'font':('Calibri 11 bold'), 
@@ -197,7 +204,7 @@ class SigninCanvas:
     def __init__(self):
         self.__layout = [
             [
-                sg.Image(filename = 'alignpos_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
+                sg.Image(filename = 'images/alignpos_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
             
             ],
             [
@@ -233,16 +240,20 @@ class SigninCanvas:
     layout = property(get_layout)      
 
 
-class ConfirmMessageCanvas:
+class MessageCanvas:
 
-    def __init__(self):
+    def __init__(self, type):
+        
         self.__layout = [
             [
-                sg.T(key='_MESSAGE_',size=(30,1))
+                sg.Image(filename = 'images/' + type + '.PNG', size=(25,25), pad = ((10,10),(0,5)))
+            ],
+            [
+                sg.T(key='_MESSAGE_',size=(30,1), background_color = 'White', pad = ((10,10),(5,15)))
             ], 
             [
-                sg.B(key='_OK_', button_text='Ok - Ent'), 
-                sg.B(key='_CANCEL_', button_text='Cancel - Esc', visible=True)
+                sg.B(key='_OK_', button_text='Ok - Ent', pad = ((10,10),(5,5))), 
+                sg.B(key='_CANCEL_', button_text='Cancel - Esc', visible=True, pad = ((10,10),(5,5)))
             ]
         ]
 
@@ -251,27 +262,7 @@ class ConfirmMessageCanvas:
     
     layout = property(get_layout)      
 
-'''
-class ItemLookupCanvas:
-    
-    def __init__(self):
-        self.__layout = [
-            [sg.Listbox(values=[], 
-                key='_ITEM_NAME_LIST_', 
-                size=(60,6),  
-                font=("Helvetica Bold", 11), 
-                select_mode='LISTBOX_SELECT_MODE_SINGLE', 
-                enable_events=True,
-                bind_return_key=True)
-            ]
-        ]
 
-    def get_layout(self):
-        return self.__layout
-    
-    layout = property(get_layout)
-'''    
-    
 class KeypadCanvas:
     
     def __init__(self):
