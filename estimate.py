@@ -2,6 +2,8 @@ import PySimpleGUI as sg
 from pynput.keyboard import Key, Controller
 import pdfkit
 import os
+from barcode import Code128
+from barcode.writer import ImageWriter
 
 from alignpos_kv import KvConn
 from alignpos_db import DbConn, DbTable, DbQuery
@@ -13,6 +15,7 @@ from common import Message, Keypad, ItemList, CustomerList
 class Estimate():
 
     def __init__(self, user_id, terminal_id):
+        
         w, h = sg.Window.get_screen_size()
         
         self.__kv = KvConn()
@@ -84,9 +87,12 @@ class Estimate():
         self.__window['_SEARCH_NAME_'].bind('<FocusIn>', '+CLICK+')
         self.__window['_ITEM_GROUP_'].bind('<FocusIn>', '+CLICK+')
 
-        self.__ui = EstimateUi(self.__window)       
+        self.__ui = EstimateUi(self.__window)
+    
         self.initialize_ui()        
-
+        self.__ui.user_id = user_id
+        self.__ui.terminal_id = terminal_id    
+        
         # Creating Item Groups list to populate search combo
         item_groups_list = ['None']
         db_query = DbQuery(self.__db_conn, 'select distinct(item_group) from tabItem where item_group <> "NULL"')        
@@ -110,11 +116,10 @@ class Estimate():
                 self.__window.Element(element).update(image_filename = file)                
             else:
                 self.__window.Element(element).update(image_filename = path + 'ITEM-0000.png')              
-            self.__window.Element(element).set_tooltip(item_code + ':' + self.__fav_item_names_list[ct])
+            self.__window.Element(element).set_tooltip(item_code + '\n' + self.__fav_item_names_list[ct] + '\n' + 'ALT-' + str( ct + 1))
             ct += 1
         
-        self.__ui.user_id = user_id
-        self.__ui.terminal_id = terminal_id        
+      
         self.goto_last_row()
         
         self.handler()
@@ -288,7 +293,7 @@ class Estimate():
                 self.process_item_name(item_code)
                 self.initialize_search_pane()
                 self.__ui.focus_items_list_last()
-            continue
+                continue
 
             if event == '_KEYPAD1_':        
                 result = self.keypad(self.__ui.barcode)
@@ -358,6 +363,7 @@ class Estimate():
                 continue
                 
             if event in ('F5:116', 'F5', 'Print'):
+                print('here')            
                 self.print_estimate()
                 self.__ui.focus_items_list_last()
                 continue
@@ -986,6 +992,12 @@ class Estimate():
     ######
     # Print Estimate into PDF file
     def print_estimate(self):
+        print('here1', 'term:', self.__ui.terminal_id)
+
+        barcode_file = 'barcode-' + self.__ui.terminal_id + '.jpeg'
+        with open(barcode_file, 'wb') as f:
+            Code128(self.__ui.estimate_number, writer=ImageWriter()).write(f)
+
         config = pdfkit.configuration(wkhtmltopdf = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
         options = {
             'page-height': '120mm',
@@ -997,8 +1009,17 @@ class Estimate():
             'enable-local-file-access': None,
             'quiet': None
         } 
+        print('here2')
 
         print_str = """
+                    <style>
+                        .aligncenter {
+                            text-align: center;
+                        }
+                    </style>
+                    """
+
+        print_str += """
                     <table style="width:100%">
                         <tr>
                             <td>
@@ -1023,6 +1044,12 @@ class Estimate():
                 """    
 
         print_str += """
+                <p  class="aligncenter" style="font-size:14px; font-weight: bold; font-family:Courier">
+                    <img src="c:\\alignpos\\{}" alt="barcode" width="125" height="60" alt="centered image">
+                </p>            
+                """.format(barcode_file)  
+
+        print_str += """
                 <p  style="font-size:14px; font-weight: bold; font-family:Courier">
                     Estimate No: {}<br>
                     Date: {}<br>
@@ -1040,6 +1067,7 @@ class Estimate():
                 </p>
                 <hr style="width:95%;text-align:left;margin-left:0">
             """
+        print('here3')
             
         for idx in range(len(self.__ui.items_list)): 
             self.__ui.item_line_to_elements(idx)        
@@ -1087,11 +1115,15 @@ class Estimate():
                 Net&nbspAmt&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
             </p>
             """.format(self.__ui.estimate_amount.rjust(10,'*').replace('*', '&nbsp'))
+        print('here4')
+        print_file = 'print-' + self.__ui.terminal_id + '.pdf'
         
         try:    
-            pdfkit.from_string(print_str, 'micro.pdf', options=options)   
-            os.startfile('micro.pdf')
+            pdfkit.from_string(print_str, print_file, options=options)
+            print('here6')            
+            os.startfile(print_file)
         except:
+            print('hereE')                    
             pass
 
     

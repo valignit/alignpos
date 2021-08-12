@@ -1,30 +1,17 @@
-class ItemListCanvas:
-    def __init__(self):
-    
-        item_list_layout = [
-            [
-                sg.Table(values=[], key='_ITEMS_LIST_', enable_events=True,
-                     headings= ['Item-code', 'Item-Name', 'Stock', 'Price'],
-                     font=(("Helvetica", 11)),
-                     auto_size_columns=False,
-                     justification='right',
-                     row_height=25,
-                     alternating_row_color='MistyRose2',
-                     num_rows=10,
-                     display_row_numbers=True,
-                     col_widths=[10, 20, 9, 12],
-                     pad=((5,0),(5,5))
-                )            
-            ],
-        ]
-        
-        self.__layout = [
-            [
-                sg.Column(item_list_layout, vertical_alignment = 'top', pad = ((0,0),(0,0))),
-            ]
-        ]
+from barcode import EAN13
+from barcode.writer import ImageWriter
 
-    def get_layout(self):
-        return self.__layout
-    
-    layout = property(get_layout)         
+# print to a file-like object:
+rv = BytesIO()
+EAN13(str(100000902922), writer=ImageWriter()).write(rv)
+
+# or sure, to an actual file:
+with open('somefile.jpeg', 'wb') as f:
+    EAN13('100000011111', writer=ImageWriter()).write(f)
+	
+
+
+import qrcode
+img = qrcode.make('Some data here')
+type(img)  # qrcode.image.pil.PilImage
+img.save("some_file.png")
