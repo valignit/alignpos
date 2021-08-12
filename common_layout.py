@@ -186,12 +186,20 @@ class ElementStyle:
                         'button_color': ('grey20', 'grey80'),
                         'use_ttk_buttons': True
                     }
+
     search_button_short:  dict = {
                         'size':(12, 1), 
+                        'font':('Calibri 12 bold'), 
+                        'button_color': ('grey20', 'grey80'),
+                        'use_ttk_buttons': True
+                    }
+
+    fav_button:  dict = {
                         'font':('Calibri 11 bold'), 
                         'button_color': ('grey20', 'grey80'),
                         'use_ttk_buttons': True
                     }
+
     welcome_text:  dict = {           
                         'font':("Calibri 13"),
                         'size':(20,15),

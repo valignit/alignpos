@@ -98,29 +98,31 @@ except requests.exceptions.RequestException as ws_err:
 ######
 # Fetch Alignpos Settings from ERP
 ws_settings_row = ws_erp_resp_json["data"]
-welcome_text = ws_settings_row["welcome_text"]
 walk_in_customer = ws_settings_row["walk_in_customer"]
-favorite_items = ws_settings_row["favorite_items"]
-if favorite_items:
-    ct = 0
-    for item in favorite_items:
-        ct += 1
-        key = 'favorite_item_' + str(ct)
-        kv.set(key, item["name"])
-        
-fast_moving_items = ws_settings_row["fast_moving_items"]
-if fast_moving_items:
-    ct = 0
-    for item in fast_moving_items:
-        ct += 1
-        key = 'fast_moving_item_' + str(ct)
-        kv.set(key, item["name"])
+favorite_item_1 = ws_settings_row["favorite_item_1"]
+favorite_item_2 = ws_settings_row["favorite_item_2"]
+favorite_item_3 = ws_settings_row["favorite_item_3"]
+favorite_item_4 = ws_settings_row["favorite_item_4"]
+favorite_item_5 = ws_settings_row["favorite_item_5"]
+welcome_text = ws_settings_row["welcome_text"]
+
+kv.set('walk_in_customer', walk_in_customer)
+kv.set('favorite_item_1', favorite_item_1)
+kv.set('favorite_item_2', favorite_item_2)
+kv.set('favorite_item_3', favorite_item_3)
+kv.set('favorite_item_4', favorite_item_4)
+kv.set('favorite_item_5', favorite_item_5)
+kv.set('welcome_text', welcome_text)
 
 ######    
 # Closing DB connection
-for key in kv.getall():
-    if not key == 'welcome_text':
-        print('Loaded', key, ':', kv.get(key))
+print('Loaded walk_in_customer: ', kv.get('walk_in_customer'))
+print('Loaded favorite_item_1: ', kv.get('favorite_item_1'))
+print('Loaded favorite_item_2: ', kv.get('favorite_item_2'))
+print('Loaded favorite_item_3: ', kv.get('favorite_item_3'))
+print('Loaded favorite_item_4: ', kv.get('favorite_item_4'))
+print('Loaded favorite_item_5: ', kv.get('favorite_item_5'))
+#print('Loaded welcome_text: ', kv.get('welcome_text'))
 
 kv.dump()
 

@@ -11,11 +11,7 @@
 
 	"kv_pos_database" : "alignpos_settings",
 	    
-	"welcome_text": "Welcome to AlignPos - Point Of Sale - Client application.\n\nThis application facilitates preparing estimates and invoices.\n\nPlease choose the required option from the menu.\n\nPress Escape to terminate the application.",
-	"ui_f1_tooltip": "Click here to display the help document\nexplaining all the functions, actions\nand navigations",
-
 	"log_folder_path": "logs/",
 	
-	"terminal_id" : "01",
-	"walk_in_customer" : "CUST-00000"
+	"terminal_id" : "01"
 }

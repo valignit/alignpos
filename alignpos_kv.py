@@ -23,9 +23,11 @@ class KvConn():
         self.__kv.dump()        
         
     def get(self, key):
-        print(self.__kv.get(key))
+        #print(self.__kv.get(key))
         return self.__kv.get(key)
-   
+ 
+    def getall(self):
+        return self.__kv.getall()
 
 ######
 if __name__ == "__main__":

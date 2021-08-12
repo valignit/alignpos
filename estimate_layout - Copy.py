@@ -15,10 +15,10 @@ class EstimateCanvas:
         rh = h
 
         menu_def = [
-                ['&File', ['New', 'Delete', 'Save', 'Submit', 'Print', '---', 'Exit']],      
-                ['&Edit', ['Specs', 'Quantity', 'Weight', 'Price', '---', 'Add', 'Less', '---', 'Addon', 'Bundle' ]],      
-                ['&View', ['First', 'Previous', 'Next',  'Last']],      
-                ['&Help', 'About'], 
+                ['&File', ['&New', '&Delete', '&Save', 'S&ubmit', '&Print', '---', 'E&xit']],      
+                ['&Edit', ['&Specs', '&Quantity', '&Weight', '&Price', '---', 'Add', 'Less', '---', 'Addon', 'Bundle' ]],      
+                ['&View', ['&First', '&Previous', '&Next',  '&Last']],      
+                ['&Help', '&About'], 
         ]
         
         ui_header_pane_layout = [
@@ -49,18 +49,11 @@ class EstimateCanvas:
 
         ui_favorite_pane_layout = [
             [
-                sg.Column(
-                    [ 
-                        [
-                            sg.Button(fav_item_codes_list[fav_count] + ' (Alt-' + str(fav_count) + ')', 
-                                key='FAV_'+fav_item_codes_list[fav_count], 
-                                **ap_style.fav_button, 
-                                pad=((0,0),(0,0)),
-                            ) for fav_count, fav_item_name in enumerate(fav_item_names_list, start=0)
-                        ] 
-                    ],
-                    scrollable=True,vertical_scroll_only=False, size=(956,100) 
-                )
+                sg.Button(fav_item_codes_list[fav_count] + ' (Alt-' + str(fav_count) + ')', 
+                    key='FAV_'+fav_item_codes_list[fav_count], 
+                    **ap_style.fav_button, 
+                    pad=((0,0),(2,0)),
+                ) for fav_count, fav_item_name in enumerate(fav_item_names_list, start=0)            
             ]
         ]
 
@@ -157,7 +150,7 @@ class EstimateCanvas:
         ]
 
         ui_fast_pane_layout = [
-            [sg.Button(fast_item + '  (Alt-' + chr(count + 73) + ')', key='FAST_'+fast_item_codes_list[count], **ap_style.search_button_wide)] for count, fast_item in enumerate(fast_item_names_list, start=0)
+            [sg.Button(fast_item + '  (Alt-' + chr(count + 67) + ')', key='FAST_'+fast_item_codes_list[count], **ap_style.search_button_wide)] for count, fast_item in enumerate(fast_item_names_list, start=0)
         ]
         
         ui_bottom_pane_layout = [
@@ -184,13 +177,16 @@ class EstimateCanvas:
                 )     
             ],
             [
-                sg.Frame('',
-                    ui_favorite_pane_layout,
-                    vertical_alignment = 'top',
-                    border_width = 0,                   
-                    pad = ((5,0),(0,0)),
+                sg.Column(
+                    ui_favorite_pane_layout, 
+                    size=(959, 103), 
+                    background_color='Grey',
+                    vertical_alignment = 'Top',
+                    scrollable=True,
+                    vertical_scroll_only = False,
+                    pad = ((10,0),(0,0)),
                 )     
-             ],
+            ],
             [
                 sg.Frame('',
                     ui_detail_pane_layout,
