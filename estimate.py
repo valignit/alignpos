@@ -796,6 +796,7 @@ class Estimate():
     def process_change_qty(self, new_qty, item_idx):
         if not new_qty:
             return
+            
         if not float(new_qty) > 0:
             return
         self.__ui.fetch_item_line(item_idx)
