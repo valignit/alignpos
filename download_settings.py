@@ -75,7 +75,7 @@ kv = pickledb.load('alignpos_settings', False)
 
 ######
 # Fetch Created list of Customers from ERP
-ws_erp_method = 'api/resource/Alignpos Settings/Alignpos Settings'
+ws_erp_method = 'api/resource/Alignpos Parameters/Alignpos Parameters'
 try:
     ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
     ws_erp_resp.raise_for_status()   
@@ -95,11 +95,23 @@ except requests.exceptions.RequestException as ws_err:
     print_log(f"ERP web service error 202d: {ws_err}")
     sys.exit(1)
 
+
+######
+# Cleanup Alignpos Settings from ERP
+kv.deldb()
+   
 ######
 # Fetch Alignpos Settings from ERP
 ws_settings_row = ws_erp_resp_json["data"]
+
+tax_included = ws_settings_row["tax_included"]
 welcome_text = ws_settings_row["welcome_text"]
 walk_in_customer = ws_settings_row["walk_in_customer"]
+
+kv.set('tax_included', tax_included)
+kv.set('walk_in_customer', walk_in_customer)
+kv.set('welcome_text', welcome_text)
+
 favorite_items = ws_settings_row["favorite_items"]
 if favorite_items:
     ct = 0

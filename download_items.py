@@ -22,7 +22,7 @@ item_count = 0
 # Print and Log
 ##############################
 def print_log(msg):
-    #print(msg)
+    print(msg)
     msg = str(now) + ': ' + msg + '\n'
     file_log.write(msg)
 
@@ -324,6 +324,60 @@ for ws_item_row in ws_erp_resp_json["items"]:
         sys.exit(1)
 
 print_log(f"Total Items Updated: {item_update_count}")
+
+ws_erp_method = 'api/resource/Product Bundle?limit_page_length=None'
+try:
+    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
+    ws_erp_resp.raise_for_status()   
+    ws_erp_resp_text = ws_erp_resp.text
+    ws_erp_resp_json = json.loads(ws_erp_resp_text)
+    #print_log(ws_erp_resp_text)
+except requests.exceptions.HTTPError as ws_err:
+    print_log(f"ERP web service error 204a: {ws_err}")
+    sys.exit(1)
+except requests.exceptions.ConnectionError as ws_err:
+    print_log(f"ERP web service error 204b: {ws_err}")
+    sys.exit(1)
+except requests.exceptions.Timeout as ws_err:
+    print_log(f"ERP web service error 204c: {ws_err}")
+    sys.exit(1)
+except requests.exceptions.RequestException as ws_err:
+    print_log(f"ERP web service error 204d: {ws_err}")
+    sys.exit(1)
+
+######
+# Update Product Bundle indicator
+db_pos_sql_stmt = (
+   "UPDATE tabItem SET bundle = 0"
+)
+
+try:
+    db_pos_cur.execute(db_pos_sql_stmt)
+    db_pos_conn.commit()
+except mariadb.Error as db_err:
+    print_log(f"POS database error 104: {db_err}")
+    db_pos_conn.rollback()
+    sys.exit(1)
+
+for ws_item_row in ws_erp_resp_json["data"]:
+    item_code = ws_item_row["name"]
+    db_pos_sql_stmt = (
+       "UPDATE tabItem SET bundle = 1, \
+                           modified = now(), \
+                           modified_by = %s \
+            WHERE item_code = %s"
+    )
+    db_pos_sql_data = (ws_erp_user, item_code)
+
+    try:
+        db_pos_cur.execute(db_pos_sql_stmt, db_pos_sql_data)        
+        db_pos_conn.commit()
+        print('bundle:', item_code)
+        
+    except mariadb.Error as db_err:
+        print_log(f"POS database error 105: {db_err}")
+        db_pos_conn.rollback()
+        sys.exit(1)
 
 
 ######

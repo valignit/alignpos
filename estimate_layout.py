@@ -257,7 +257,7 @@ class EstimateCanvas:
                     background_color = 'grey90',
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((4,0),(2,3)),
+                    pad = ((4,0),(2,20)),
                 )     
             ],            
             [

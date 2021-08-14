@@ -95,7 +95,7 @@ db_pos_cur = db_pos_conn.cursor()
 ######
 # Delete old Customer records
 db_pos_sql_stmt = (
-    "DELETE FROM `tabExchange Adjustment`"
+    "DELETE FROM `tabExchange`"
 )
 
 try:

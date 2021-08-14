@@ -31,6 +31,7 @@ CREATE TABLE `tabItem` (
 	`maximum_retail_price` DECIMAL(18,6) NULL DEFAULT NULL,
 	`cgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
+	`bundle` INT(1) NULL DEFAULT NULL,
 	`creation` DATETIME(6) NULL DEFAULT NULL,
 	`modified` DATETIME(6) NULL DEFAULT NULL,
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',

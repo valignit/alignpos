@@ -22,7 +22,7 @@ customer_count = 0
 # Print and Log
 ##############################
 def print_log(msg):
-    #print(msg)
+    print(msg)
     msg = str(now) + ': ' + msg + '\n'
     file_log.write(msg)
 

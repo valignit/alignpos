@@ -20,6 +20,8 @@ class Estimate():
         
         self.__kv = KvConn()
 
+        self.tax_included = self.__kv.get('tax_included')
+        
         kb = Controller()
         self.__kb = kb
         
@@ -440,6 +442,14 @@ class Estimate():
                 continue
             
             if (event == 'Bundle') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
+                filter = "bundle = 1"
+                item_code = self.item_list(filter)                
+                self.process_item_name(item_code)
+                self.initialize_search_pane()
+                self.__ui.focus_items_list_last()
+                continue
+            
+            if (event == 'Bundle') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
                 Message('INFO', 'Feature not yet implemented')
                 self.__ui.focus_items_list_last()
                 continue
@@ -514,13 +524,6 @@ class Estimate():
        
     
     ######
-    # Wrapper function for Item Lookup
-    def item_lookup(self, filter, lin, col):
-        item_lookup = ItemLookup(filter, lin, col)
-        return item_lookup.item_code
-
-
-    ######
     # Wrapper function for Change Qty
     #      whole line is sent as parameter so that item_name and old_qty also can be used
     def change_qty(self, item_line):
@@ -559,7 +562,7 @@ class Estimate():
     def initialize_header_pane(self):
         self.__ui.estimate_number = ''
         self.__ui.payment_status = ''
-        walk_in_customer = self.__kv.get('walk_in_customer')   
+        walk_in_customer = self.__kv.get('walk_in_customer')  
         db_customer_row = self.__db_customer_table.get_row(walk_in_customer)
         if db_customer_row:        
             self.__ui.mobile_number = db_customer_row.mobile_number
@@ -635,7 +638,6 @@ class Estimate():
     def goto_this_row(self, estimate_number):
         if estimate_number:
             filter = "name = '{}'"
-            #db_estimate_row = self.__db_estimate_table.last(filter.format(estimate_number))
             db_estimate_row = self.__db_estimate_table.get_row(estimate_number)
             if db_estimate_row:
                 self.clear_ui()    
@@ -708,22 +710,28 @@ class Estimate():
             self.__ui.discount_amount = 0.00       
         self.__ui.estimate_amount = db_estimate_row.estimate_amount
         self.__actual_items_list = self.__ui.items_list.copy()
-
+    
     def move_db_item_to_ui_detail_pane(self, db_item_row):
         self.__ui.item_code = db_item_row.name
         self.__ui.item_barcode = db_item_row.barcode
         self.__ui.item_name = db_item_row.item_name
         self.__ui.uom = db_item_row.uom
         self.__ui.qty = 1
-        self.__ui.selling_price = db_item_row.selling_price
         self.__ui.cgst_tax_rate = db_item_row.cgst_tax_rate
         self.__ui.sgst_tax_rate = db_item_row.sgst_tax_rate
-        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
-        tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
-        self.__ui.tax_amount = round(tax_amount, 2)
-        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
         
+        if self.tax_included == 0:
+            self.__ui.selling_price = db_item_row.selling_price
+            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+            tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+            self.__ui.tax_amount = round(tax_amount, 2)
+            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        else:
+            self.__ui.item_net_amount = db_item_row.selling_price
+            self.__ui.selling_amount = float(self.__ui.item_net_amount) / ( 1 + (float(self.__ui.tax_rate)/100))
+            self.__ui.selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
+            self.__ui.tax_amount = float(self.__ui.item_net_amount) - float(self.__ui.selling_amount)                
         self.__ui.add_item_line()    
 
     def move_db_estimate_item_to_ui_detail_pane(self, db_estimate_item_row):
@@ -734,18 +742,25 @@ class Estimate():
             self.__ui.item_barcode = db_item_row.barcode
             self.__ui.item_name = db_item_row.item_name
             self.__ui.uom = db_item_row.uom
-            self.__ui.selling_price = db_item_row.selling_price
 
         self.__ui.qty = db_estimate_item_row.qty
         self.__ui.cgst_tax_rate = db_estimate_item_row.cgst_tax_rate
         self.__ui.sgst_tax_rate = db_estimate_item_row.sgst_tax_rate
-        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
-        self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
-        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        
+        if self.tax_included == 0:
+            self.__ui.selling_price = db_item_row.selling_price
+            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+            self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        else:
+            self.__ui.item_net_amount = float(db_item_row.selling_price) * float(self.__ui.qty)
+            self.__ui.selling_amount = float(self.__ui.item_net_amount) / ( 1 + (float(self.__ui.tax_rate)/100))
+            self.__ui.selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
+            self.__ui.tax_amount = float(self.__ui.item_net_amount) - float(self.__ui.selling_amount)                
         
         self.__ui.add_item_line()    
-
+   
     def sum_item_list(self):
         line_items = 0
         total_amount = 0.00
@@ -887,6 +902,7 @@ class Estimate():
         for db_row in db_query.result:
             self.__ui.estimate_number = db_row[0]
 
+        print('here1')
         customer_number = 'CUST-00000'
         db_customer_row = self.__db_customer_table.get_row(customer_number)
         if db_customer_row:
@@ -992,6 +1008,10 @@ class Estimate():
     ######
     # Print Estimate into PDF file
     def print_estimate(self):
+        if not self.__ui.estimate_number:
+            Message('INFO', 'Plese save the estimate before printing.')
+            return
+        
         print('here1', 'term:', self.__ui.terminal_id)
 
         barcode_file = 'barcode-' + self.__ui.terminal_id + '.jpeg'

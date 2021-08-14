@@ -29,6 +29,9 @@ class KvConn():
     def getall(self):
         return self.__kv.getall()
 
+    def truncate(self):
+        self.__kv.deldb()
+
 ######
 if __name__ == "__main__":
     print('***Not an executable module, please call the main script')
