@@ -4,7 +4,7 @@ import PySimpleGUI as sg
 ###
 # Common UI Styles             
 class ElementStyle:
-    
+   
     page_title:  dict = {           
                         'font':("Calibri 18 bold"),
                         'size':(10,1),
@@ -148,7 +148,7 @@ class ElementStyle:
     footer_text:  dict = {           
                         'font':("Helvetica 9"),
                         'size':(9,1),
-                        'justification': 'left'
+                        'justification': 'left',
                     }    
 
     footer_input:  dict = {           

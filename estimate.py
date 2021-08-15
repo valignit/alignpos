@@ -37,17 +37,24 @@ class Estimate():
         # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
         self.__fav_item_codes_list = []
         self.__fast_item_codes_list = []
+
+        max_fav_ct = 9
+        max_fast_ct = 4
         fav_ct = 0
         fast_ct = 0
         for key in self.__kv.getall():
             if key[:13] == 'favorite_item':
                 fav_ct += 1
+                if fav_ct > max_fav_ct:
+                    continue
                 item_key = 'favorite_item_' + str(fav_ct)
                 self.__fav_item_codes_list.append(self.__kv.get(item_key))
+
             elif key[:16] == 'fast_moving_item':
                 fast_ct += 1
+                if fast_ct > max_fast_ct:
+                    continue
                 item_key = 'fast_moving_item_' + str(fast_ct)
-                print(item_key)
                 self.__fast_item_codes_list.append(self.__kv.get(item_key))
 
         self.__fav_item_names_list = []
@@ -226,11 +233,10 @@ class Estimate():
                 continue
 
             if event == '\t':
+                print('here')
                 if focus == '_ITEMS_LIST_':
                     if len(self.__ui.items_list) > 0:
                         self.__ui.focus_items_list_row(len(self.__ui.items_list)-1)
-                else:
-                    self.__ui.focus_items_list()
                 continue
              
             if event == '_ITEM_GROUP_+CLICK+':
@@ -521,7 +527,6 @@ class Estimate():
                     self.process_barcode()
                     self.initialize_search_pane()
                 continue
-       
     
     ######
     # Wrapper function for Change Qty
@@ -595,7 +600,7 @@ class Estimate():
         self.__window.Element('F1').update(text='New\nF1')    
         self.__window.Element('F2').update(text='Delete\nF2')
         self.__window.Element('F3').update(text='Save\nF3')
-        self.__window.Element('F4').update(text='Submit\nF4')
+        self.__window.Element('F4').update(text='Customer\nF4')
         self.__window.Element('F5').update(text='Print\nF5')
         self.__window.Element('F6').update(text='Specs\nF6')
         self.__window.Element('F7').update(text='Qty\nF7')

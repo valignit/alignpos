@@ -6,6 +6,7 @@ from alignpos_kv import KvConn
 from main_menu_layout import MainMenuCanvas
 from main_menu_ui import MainMenuUi
 from estimate import Estimate
+from invoice import Invoice
 
 sg.theme('DefaultNoMoreNagging')
 
@@ -83,7 +84,7 @@ class MainMenu():
     ######
     # Wrapper function for Invoice window
     def invoice_window(self, user_id, terminal_id):
-        None
+        invoice = Invoice(user_id, terminal_id)
           
     def initialize_ui_detail_pane(self):
         None

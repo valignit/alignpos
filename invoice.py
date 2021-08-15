@@ -1,194 +1,803 @@
+import PySimpleGUI as sg
+from pynput.keyboard import Key, Controller
+import pdfkit
+import os
+from barcode import Code128
+from barcode.writer import ImageWriter
+
+from alignpos_kv import KvConn
 from alignpos_db import DbConn, DbTable, DbQuery
-from invoice_ui import UiHeaderPane, UiSearchPane, UiDetailPane, UiActionPane, UiFooterPane, UiSummaryPane, UiKeypadPane
+from invoice_layout import InvoiceCanvas, ChangeQtyCanvas, InvoiceListCanvas
+from invoice_ui import InvoiceUi, ChangeQtyUi, InvoiceListUi
+from common import Message, Keypad, ItemList, CustomerList
 
 
 class Invoice():
-    db_conn = None
-    ui_window = None
-    
-    ui_header_pane = None
-    ui_search_pane = None
-    ui_detail_pane = None
-    ui_action_pane = None
-    ui_footer_pane = None
-    ui_summary_pane = None
-    
-    db_customer_table = None
-    db_item_table = None
-    db_invoice_table = None
-    db_invoice_item_table = None
 
-    
-    def __init__(invoice, db_conn, ui_window):
-        invoice.db_conn = db_conn
-        invoice.ui_window = ui_window
+    def __init__(self, user_id, terminal_id):
         
-        invoice.ui_header_pane = UiHeaderPane(ui_window)
-        invoice.ui_search_pane = UiSearchPane(ui_window)
-        invoice.ui_detail_pane = UiDetailPane(ui_window)
-        invoice.ui_action_pane = UiActionPane(ui_window)
-        invoice.ui_footer_pane = UiFooterPane(ui_window)
-        invoice.ui_summary_pane = UiSummaryPane(ui_window)
-        invoice.ui_keypad_pane = UiKeypadPane(ui_window)
+        w, h = sg.Window.get_screen_size()
         
-        invoice.db_customer_table = DbTable(db_conn, 'tabCustomer')
-        invoice.db_item_table = DbTable(db_conn, 'tabItem')
-        invoice.db_invoice_table = DbTable(db_conn, 'tabInvoice')
-        invoice.db_invoice_item_table = DbTable(db_conn, 'tabInvoice_Item')
+        self.__kv = KvConn()
 
+        self.tax_included = self.__kv.get('tax_included')
+        
+        kb = Controller()
+        self.__kb = kb
+        
+        self.__actual_items_list = []
+        
+        self.__db_conn = DbConn()
+        self.__db_session = self.__db_conn.session
+        self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
+        self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
+        self.__db_invoice_table = DbTable(self.__db_conn, 'tabInvoice')
+        self.__db_invoice_item_table = DbTable(self.__db_conn, 'tabInvoice_Item')
+        self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
+        self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
+        
+        # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
+        self.__fav_item_codes_list = []
+        self.__fast_item_codes_list = []
+        max_fav_ct = 9
+        max_fast_ct = 3
+        fav_ct = 0
+        fast_ct = 0
+        for key in self.__kv.getall():
+            if key[:13] == 'favorite_item':
+                fav_ct += 1
+                if fav_ct > max_fav_ct:
+                    continue
+                item_key = 'favorite_item_' + str(fav_ct)
+                self.__fav_item_codes_list.append(self.__kv.get(item_key))
+
+            elif key[:16] == 'fast_moving_item':
+                fast_ct += 1
+                if fast_ct > max_fast_ct:
+                    continue
+                item_key = 'fast_moving_item_' + str(fast_ct)
+                self.__fast_item_codes_list.append(self.__kv.get(item_key))
+
+        self.__fav_item_names_list = []
+        for fav_item_code in self.__fav_item_codes_list:
+            db_item_row = self.__db_item_table.get_row(fav_item_code)
+            if db_item_row:
+                self.__fav_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
+                
+        self.__fast_item_names_list = []
+        for fast_item_code in self.__fast_item_codes_list:
+            db_item_row = self.__db_item_table.get_row(fast_item_code)
+            if db_item_row:
+                self.__fast_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
+
+        self.__canvas = InvoiceCanvas( self.__fav_item_codes_list,
+                                        self.__fav_item_names_list,
+                                        self.__fast_item_codes_list,                                  
+                                        self.__fast_item_names_list)
+        
+        self.__window = sg.Window('Bill', 
+                        self.__canvas.layout,
+                        font='Helvetica 11', 
+                        finalize=True, 
+                        location=(0,0), 
+                        size=(w,h),
+                        keep_on_top=False, 
+                        resizable=False,
+                        return_keyboard_events=True, 
+                        use_default_focus=False,
+                        icon='images/favicon.ico',
+                        modal=True
+                    )
+
+        self.__window.maximize()
+        
+        self.__window['_LEFT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+        self.__window['_RIGHT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+        self.__window['_BARCODE_'].bind('<FocusIn>', '+CLICK+')
+        self.__window['_SEARCH_NAME_'].bind('<FocusIn>', '+CLICK+')
+        self.__window['_ITEM_GROUP_'].bind('<FocusIn>', '+CLICK+')
+
+        self.__ui = InvoiceUi(self.__window)
     
-    def initialize_ui_header_pane(invoice):
-        invoice.ui_header_pane.invoice_number = ''
-        invoice.ui_header_pane.payment_status = ''
-        invoice.ui_header_pane.mobile_number = '0000000000'
-        invoice.ui_header_pane.customer_number = ''
-        invoice.ui_header_pane.customer_name = ''
-        invoice.ui_header_pane.customer_address = ''
+        self.initialize_ui()        
+        self.__ui.user_id = user_id
+        self.__ui.terminal_id = terminal_id    
+        
+        # Creating Item Groups list to populate search combo
+        item_groups_list = ['None']
+        db_query = DbQuery(self.__db_conn, 'select distinct(item_group) from tabItem where item_group <> "NULL"')        
+        if  db_query.result:
+            for db_row in db_query.result:
+                item_groups_list.append(db_row[0])
+
+        self.__ui.item_groups_list = item_groups_list
+        self.__ui.focus_item_group_line(0)
+        self.__ui.unfocus_tools_pane()
+        self.__ui.unfocus_fast_pane(self.__fast_item_codes_list)
+        self.__ui.unfocus_favorite_pane(self.__fav_item_codes_list)
+
+        ct = 0
+        
+        for item_code in self.__fav_item_codes_list:
+            path = 'images/'
+            file = path + item_code + '.png'
+            element = 'FAV_' + item_code            
+            if os.path.isfile(file):
+                self.__window.Element(element).update(image_filename = file)                
+            else:
+                self.__window.Element(element).update(image_filename = path + 'ITEM-0000.png')              
+            self.__window.Element(element).set_tooltip(item_code + '\n' + self.__fav_item_names_list[ct] + '\n' + 'ALT-' + str( ct + 1))
+            ct += 1
+        
+      
+        self.goto_last_row()
+        
+        self.handler()
+        self.__db_conn.close()
+        self.__window.close()
+
+
+    def handler(self):
+        event = None
+        prev_event = None 
+        item_idx = '' 
+        focus = None    
+        while True:
+            prev_event = event
+
+            event, values = self.__window.read()
+            
+            if self.__window.FindElementWithFocus():
+                focus = self.__window.FindElementWithFocus().Key
+                
+            #print('---main---', '\nevent=', event, '\nprev=', prev_event, '\nfocus=', focus, '\nval=', values)
+            print('---main---', '\nevent=', event, '\nprev=', prev_event, '\nfocus=', focus)
+
+            if event in (sg.WIN_CLOSED, 'Escape:27', 'Escape', 'Exit'):
+                break
+
+            if event == 'ENTER':        
+                self.__kb.press(Key.enter)
+                self.__kb.release(Key.enter)
+                continue
+                
+            if event == 'ESC':
+                self.__kb.press(Key.esc)
+                self.__kb.release(Key.esc)
+                continue
+                
+            if event == 'TAB':        
+                self.__kb.press(Key.tab)
+                self.__kb.release(Key.tab)
+                continue
+                
+            if event == 'DEL':
+                self.__kb.press(Key.delete)
+                self.__kb.release(Key.delete)
+                continue
+                
+            if event == 'UP':        
+                self.__kb.press(Key.up)
+                self.__kb.release(Key.up)
+                continue
+                
+            if event == 'DOWN':
+                self.__kb.press(Key.down)
+                self.__kb.release(Key.down)
+                continue
+                
+            if event == 'RIGHT':
+                self.__kb.press(Key.right)
+                self.__kb.release(Key.right)
+                continue
+                
+            if event == 'LEFT':
+                self.__kb.press(Key.left)
+                self.__kb.release(Key.left)
+                continue
+                
+            if event == 'BACKSPACE':
+                self.__kb.press(Key.backspace)
+                self.__kb.release(Key.backspace)
+                continue
+
+            if event in ('Home:36', '_BEGIN_'):
+                if not self.__actual_items_list == self.__ui.items_list:
+                    confirm_save = Message('OPT', 'Save current Invoice?')
+                    if confirm_save.ok:
+                        self.save_invoice()            
+                self.goto_first_row()
+                continue
+                
+            if event in ('Left:37', '_PREVIOUS_'):
+                if not self.__actual_items_list == self.__ui.items_list:
+                    confirm_save = Message('OPT', 'Save current Invoice?')
+                    if confirm_save.ok:
+                        self.save_invoice()            
+                self.goto_previous_row()
+                continue
+                
+            if event in ('Right:39', '_NEXT_'):
+                if not self.__actual_items_list == self.__ui.items_list:
+                    confirm_save = Message('OPT', 'Save current Invoice?')
+                    if confirm_save.ok:
+                        self.save_invoice()            
+                self.goto_next_row()
+                continue
+
+            if event in ('End:35', '_END_'):
+                if not self.__actual_items_list == self.__ui.items_list:
+                    confirm_save = Message('OPT', 'Save current Invoice?')
+                    if confirm_save.ok:
+                        self.save_invoice()            
+                self.goto_last_row()
+                continue
+
+            if event == '\t':
+                print('here')
+                if focus == '_ITEMS_LIST_':
+                    if len(self.__ui.items_list) > 0:
+                        self.__ui.focus_items_list_row(len(self.__ui.items_list)-1)
+                continue
+             
+            if event == '_ITEM_GROUP_+CLICK+':
+                selected_group = values['_ITEM_GROUP_']
+                if not selected_group == 'None':
+                    filter = 'item_group = "{}"'.format(selected_group)
+                    item_code = self.item_list(filter)
+                    self.process_item_name(item_code)                    
+                    self.__ui.focus_item_group_line(0)
+                    self.__ui.focus_items_list_last()
+                continue
+
+            if event in ('+', 'Add') and focus in ('_ITEMS_LIST_', '+'):
+                if values['_ITEMS_LIST_']:
+                    item_idx = values['_ITEMS_LIST_'][0]
+                    self.process_count(item_idx, '+')
+                    self.sum_item_list()
+                    continue
+
+            if event in ('-', 'Less') and focus in ('_ITEMS_LIST_', '-'):
+                if values['_ITEMS_LIST_']:
+                    item_idx = values['_ITEMS_LIST_'][0]
+                    self.process_count(item_idx, '-')
+                    self.sum_item_list()
+                    continue
+
+            if event[4:] in self.__fav_item_codes_list:
+                item_code = event[4:]
+                self.process_item_name(item_code)                    
+                self.__ui.focus_items_list_last()
+                continue
+                
+            if event[5:] in self.__fast_item_codes_list:
+                item_code = event[5:]
+                self.process_item_name(item_code)                    
+                self.__ui.focus_items_list_last()
+                continue
+
+            if prev_event == 'Alt_L:18' and event.upper() in ('I', 'J', 'K', 'L', 'M'):
+                item_code = self.__fast_item_codes_list[ord(event.upper()) - 73]
+                self.process_item_name(item_code)             
+                self.__ui.focus_items_list_last()
+                continue
+                
+            if event == 'Alt_L:18' and prev_event.upper() in ('I', 'J', 'K', 'L', 'M'):
+                item_code = self.__fast_item_codes_list[ord(prev_event.upper()) - 73]
+                self.process_item_name(item_code)
+                self.initialize_search_pane()
+                self.__ui.focus_items_list_last()
+                continue
+
+            if prev_event == 'Alt_L:18' and event.isnumeric():
+                print('here1')
+                item_code = self.__fav_item_codes_list[int(event)-1]
+                self.process_item_name(item_code)             
+                self.__ui.focus_items_list_last()
+                continue
+                
+            if event == 'Alt_L:18' and prev_event.isnumeric():
+                print('here2')
+                item_code = self.__fav_item_codes_list[int(prev_event)-1]
+                self.process_item_name(item_code)
+                self.initialize_search_pane()
+                self.__ui.focus_items_list_last()
+                continue
+
+            if event == '_KEYPAD1_':        
+                result = self.keypad(self.__ui.barcode)
+                self.__ui.barcode = result
+                self.process_barcode()
+                self.initialize_search_pane()
+                continue
+
+            if event == '_KEYPAD2_':        
+                result = self.keypad(self.__ui.search_name)
+                self.__ui.search_name = result
+                if len(self.__ui.search_name) > 2:
+                    filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
+                    item_code = self.item_list(filter)
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()            
+                continue
+            
+            if event in ('F1:112', 'F1', 'New'):
+                self.new_invoice()
+                self.__ui.focus_items_list()
+                continue
+
+            if event in ('F2:113', 'F2', 'Delete:46', 'Delete'):
+                if focus == '_ITEMS_LIST_':
+                    if values['_ITEMS_LIST_']:
+                        confirm_delete = Message('OPT', 'Delete current Item?')
+                        if not confirm_delete.ok:
+                            continue
+                        idx = values['_ITEMS_LIST_'][0]
+                        self.delete_item(idx)
+                        prev_idx = ''
+                        item_idx = ''
+                    else:
+                        Message('WARN', 'Select an Item')
+                        self.__ui.focus_barcode()                                  
+                        continue
+                elif focus == '_ITEM_GROUP_':
+                    self.__ui.focus_item_group_line(0)
+                    self.__ui.focus_barcode()                         
+                    continue
+                else:
+                    if not self.__ui.bill_number or self.__ui.bill_number == '':
+                        continue
+                    confirm_delete = Message('OPT', 'Delete current Invoice?')
+                    if not confirm_delete.ok:
+                        continue
+                    bill_number = self.__ui.bill_number            
+                    self.delete_invoice()
+                    self.clear_ui()
+                    self.__ui.bill_number = bill_number
+                    self.goto_previous_row()
+                    if self.__ui.bill_number == bill_number:
+                        self.__ui.bill_number = ''
+                continue
+               
+            if event in ('F3:114', 'F3', 'Save'):
+                if len(self.__ui.items_list) > 0:
+                    self.save_invoice()
+                    self.__ui.focus_items_list_last()
+                continue
+
+            if event in ('F4:115', 'F4', 'Submit'):
+                self.__ui.customer_number, self.__ui.mobile_number = self.customer_list()
+                self.save_invoice()
+                self.__ui.focus_items_list_last()
+                continue
+                
+            if event in ('F5:116', 'F5', 'Print'):
+                print('here')            
+                self.print_invoice()
+                self.__ui.focus_items_list_last()
+                continue
+
+            if event in ('F6:117', 'F6', 'Specs'):
+                if focus == '_ITEMS_LIST_' :        
+                    if values['_ITEMS_LIST_']:
+                        item_idx = values['_ITEMS_LIST_'][0]
+                        Message('INFO', 'Feature not yet implemented')
+                        prev_idx = ''
+                        item_idx = ''
+                    else:
+                        Message('WARN', 'Select an Item')                                
+                else:
+                    Message('WARN', 'Select an Item')                
+                continue
+
+            if event in ('F7:118', 'F7', 'Quantity'):
+                if focus == '_ITEMS_LIST_' :
+                    if values['_ITEMS_LIST_']:
+                        item_idx = values['_ITEMS_LIST_'][0]
+                        new_qty = self.change_qty(self.__ui.items_list[item_idx])
+                        self.process_change_qty(new_qty, item_idx)
+                        prev_idx = ''
+                        item_idx = ''
+                    else:
+                        Message('WARN', 'Select an Item')                                
+                else:
+                    Message('WARN', 'Select an Item')                
+                continue
+                
+            if event in ('F8:119', 'F8', 'Weight'):
+                if focus == '_ITEMS_LIST_' :
+                    if values['_ITEMS_LIST_']:
+                        item_idx = values['_ITEMS_LIST_'][0]
+                        self.process_weight(item_idx)
+                        self.sum_item_list()
+                        prev_idx = ''
+                        item_idx = ''
+                    else:
+                        Message('WARN', 'Select an Item')                                
+                else:
+                    Message('WARN', 'Select an Item')                                
+                continue
+
+            if event in ('F9:120', 'F9', 'Price'):
+                if focus == '_ITEMS_LIST_' :        
+                    if values['_ITEMS_LIST_']:
+                        Message('INFO', 'Feature not yet implemented')
+                        prev_idx = ''
+                        item_idx = ''
+                    else:
+                        Message('WARN', 'Select an Item')                
+                else:
+                    Message('WARN', 'Select an Item')                
+                continue
+
+            if event in ('F10', 'F10:121', '_FIND_'):
+                if len(self.__ui.items_list) > 0:
+                    if not self.__actual_items_list == self.__ui.items_list:                
+                        confirm_save = Message('OPT', 'Save current Invoice?')
+                        if confirm_save.ok:
+                            self.save_invoice()
+                bill_number = self.invoice_list()
+                self.goto_this_row(bill_number)
+                continue
+            
+            if (event == 'Addon') or (event == 'Alt_L:18' and prev_event in ('a', 'A')):
+                filter = "upper(item_code) like upper('ITEM-9%')"
+                item_code = self.item_list(filter)                
+                self.process_item_name(item_code)
+                self.initialize_search_pane()
+                self.__ui.focus_items_list_last()
+                continue
+            
+            if (event == 'Bundle') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
+                filter = "bundle = 1"
+                item_code = self.item_list(filter)                
+                self.process_item_name(item_code)
+                self.initialize_search_pane()
+                self.__ui.focus_items_list_last()
+                continue
+            
+            if (event == 'Bundle') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
+                Message('INFO', 'Feature not yet implemented')
+                self.__ui.focus_items_list_last()
+                continue
+            
+            if event == 'v:86' and focus == '_BARCODE_':
+                self.process_barcode()
+                self.initialize_search_pane()
+                continue
+
+            if event == 'v:86' and focus == '_ITEMS_LIST_':
+                self.process_barcode()
+                self.initialize_search_pane()
+                continue
+
+            if event == 'v:86' and focus == '_SEARCH_NAME_':
+                if len(self.__ui.search_name) > 2:
+                    filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
+                    item_code = self.item_list(filter)
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()
+                    self.__ui.focus_items_list_last()
+                continue
+                
+            if event.isnumeric() and focus == '_BARCODE_':
+                if self.__ui.barcode:
+                    self.__ui.barcode = self.__ui.barcode.upper()
+                    if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12) or \
+                       (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8) or \
+                       (self.__ui.barcode[0] == 'E' and len(self.__ui.barcode) > 8):
+                        self.process_barcode()
+                        self.initialize_search_pane()
+                continue
+
+            if event.isalnum() and focus == '_SEARCH_NAME_':
+                if len(self.__ui.search_name) > 2:
+                    filter = "upper(item_name) like upper('%{}%')".format(self.__ui.search_name)
+                    item_code = self.item_list(filter)                    
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()
+                    self.__ui.focus_items_list_last()
+                continue
+            
+            if (event.isnumeric() or event == 'BackSpace:8' or event in ('I', 'T', 'E', 'M', '-', 'i', 't', 'e', 'm')) and focus == '_ITEMS_LIST_':
+                if event.isnumeric(): 
+                    if prev_event == 'Alt_L:18':
+                        continue
+                        
+                if event == 'BackSpace:8':
+                    if len(self.__ui.barcode) > 0:
+                        self.__ui.barcode = self.__ui.barcode[:-1]
+                    continue
+
+                if event == '-':
+                    if len(self.__ui.barcode) == 4:
+                        self.__ui.barcode = self.__ui.barcode + event
+                    else:                    
+                        if values['_ITEMS_LIST_']:
+                            item_idx = values['_ITEMS_LIST_'][0]
+                            self.process_count(item_idx, '-')
+                            self.sum_item_list()
+                    continue                        
+                                    
+                self.__ui.barcode = self.__ui.barcode + event
+
+                self.__ui.barcode = self.__ui.barcode.upper()
+                if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12) or \
+                   (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8) or \
+                   (self.__ui.barcode[0] == 'E' and len(self.__ui.barcode) > 8):
+                    self.process_barcode()
+                    self.initialize_search_pane()
+                continue
+    
+    ######
+    # Wrapper function for Change Qty
+    #      whole line is sent as parameter so that item_name and old_qty also can be used
+    def change_qty(self, item_line):
+        change_qty = ChangeQty(item_line)
+        return(change_qty.new_qty)
+
+
+    ######
+    # Wrapper function for Invoice List
+    def invoice_list(self):
+        invoice_list = InvoiceList()
+        return invoice_list.bill_number
+
+
+    ######
+    # Wrapper function for Customer List
+    def customer_list(self):
+        customer_list = CustomerList()
+        return customer_list.customer_number, customer_list.mobile_number
+
+
+    ######
+    # Wrapper function for Item List
+    def item_list(self, filter):
+        item_list = ItemList(filter)
+        return(item_list.item_code)
+
+
+    ######
+    # Wrapper function for Keypad
+    def keypad(self, current_value):
+        keypad = Keypad(current_value)
+        return(keypad.input_value)
+
+
+    def initialize_header_pane(self):
+        self.__ui.bill_number = ''
+        self.__ui.payment_status = ''
+        walk_in_customer = self.__kv.get('walk_in_customer')  
+        db_customer_row = self.__db_customer_table.get_row(walk_in_customer)
+        if db_customer_row:        
+            self.__ui.mobile_number = db_customer_row.mobile_number
+        self.__ui.customer_number = ''
+        self.__ui.customer_name = ''
+        self.__ui.customer_address = ''
  
- 
-    def initialize_ui_search_pane(invoice):
-        invoice.ui_search_pane.barcode = ''
-        invoice.ui_search_pane.item_name = ''
+    def initialize_search_pane(self):
+        self.__ui.barcode = ''
+        self.__ui.search_name = ''
+        self.__ui.focus_item_group_line(0)
 
+    def initialize_detail_pane(self):
+        self.__ui.items_list = []
+        self.__ui.item_code = str('')
+        self.__ui.barcode = str('')
+        self.__ui.item_name = str('')
+        self.__ui.uom = str('')
+        self.__ui.qty = float(0.0)
+        self.__ui.selling_price = float(0.00)
+        self.__ui.selling_amount = float(0.00)
+        self.__ui.tax_rate = float(0.00)
+        self.__ui.tax_amount = float(0.00)
+        self.__ui.net_amount = float(0.00)
+        self.__ui.cgst_tax_rate = float(0.00)
+        self.__ui.sgst_tax_rate = float(0.00)
+        self.__ui.item_line = [] 
 
-    def initialize_ui_detail_pane(invoice):
-        invoice.ui_detail_pane.items_list = []
-        invoice.ui_detail_pane.item_code = str('')
-        invoice.ui_detail_pane.barcode = str('')
-        invoice.ui_detail_pane.item_name = str('')
-        invoice.ui_detail_pane.uom = str('')
-        invoice.ui_detail_pane.qty = float(0.0)
-        invoice.ui_detail_pane.selling_price = float(0.00)
-        invoice.ui_detail_pane.selling_amount = float(0.00)
-        invoice.ui_detail_pane.tax_rate = float(0.00)
-        invoice.ui_detail_pane.tax_amount = float(0.00)
-        invoice.ui_detail_pane.net_amount = float(0.00)
-        invoice.ui_detail_pane.cgst_tax_rate = float(0.00)
-        invoice.ui_detail_pane.sgst_tax_rate = float(0.00)
-        invoice.ui_detail_pane.item_line = [] 
+    def initialize_action_pane(self):
+        self.__window.Element('F1').update(text='New\nF1')    
+        self.__window.Element('F2').update(text='Delete\nF2')
+        self.__window.Element('F3').update(text='Save\nF3')
+        self.__window.Element('F4').update(text='Invoice\nF4')
+        self.__window.Element('F5').update(text='Print\nF5')
+        self.__window.Element('F6').update(text='Specs\nF6')
+        self.__window.Element('F7').update(text='Qty\nF7')
+        self.__window.Element('F8').update(text='Weight\nF8')
+        self.__window.Element('F9').update(text='Price\nF9')
+        self.__window.Element('+').update(text='Add\n+')
+        self.__window.Element('-').update(text='Less\n-')
 
+    def initialize_footer_pane(self):
+        self.__ui.user_id = ''
+        self.__ui.terminal_id = ''
+        self.__ui.current_date = '2021/06/13'
 
-    def initialize_ui_action_pane(invoice):
-        invoice.ui_window.Element('F1').update(text='New\nF1')    
-        invoice.ui_window.Element('F2').update(text='Specs\nF2')
-        invoice.ui_window.Element('F3').update(text='Quantity\nF3')
-        invoice.ui_window.Element('F4').update(text='Weight\nF4')
-        invoice.ui_window.Element('F5').update(text='Price\nF5')
-        invoice.ui_window.Element('F6').update(text='Save\nF6')
-        invoice.ui_window.Element('F7').update(text='Delete\nF7')
-        invoice.ui_window.Element('F8').update(text='Submit\nF8')
-        invoice.ui_window.Element('F9').update(text='Print\nF9')
+    def initialize_summary_pane(self):
+        self.__ui.line_items = 0
+        self.__ui.total_amount = 0.00
+        self.__ui.total_tax_amount = 0.00
+        self.__ui.net_amount = 0.00
+        self.__ui.total_cgst_amount = 0.00
+        self.__ui.total_sgst_amount = 0.00
+        self.__ui.total_tax_amount = 0.00
+        self.__ui.discount_amount = 0.00          
+        self.__ui.roundoff_amount = 0.00          
+        self.__ui.invoice_amount = 0.00
+        self.__ui.paid_amount = 0.00
 
+    def initialize_ui(self):
+        self.initialize_header_pane()
+        self.initialize_search_pane()
+        self.initialize_detail_pane()
+        self.initialize_action_pane()
+        self.initialize_footer_pane()
+        self.initialize_summary_pane()
 
-    def initialize_ui_footer_pane(invoice):
-        invoice.ui_footer_pane.user_id = 'XXX'
-        invoice.ui_footer_pane.terminal_id = '101'
-        invoice.ui_footer_pane.current_date = '2021/06/13'
-
-
-    def initialize_ui_summary_pane(invoice):
-        invoice.ui_summary_pane.line_items = 0
-        invoice.ui_summary_pane.total_amount = 0.00
-        invoice.ui_summary_pane.total_tax_amount = 0.00
-        invoice.ui_summary_pane.net_amount = 0.00
-        invoice.ui_summary_pane.total_cgst_amount = 0.00
-        invoice.ui_summary_pane.total_sgst_amount = 0.00
-        invoice.ui_summary_pane.total_tax_amount = 0.00
-        invoice.ui_summary_pane.discount_amount = 0.00          
-        invoice.ui_summary_pane.roundoff_amount = 0.00          
-        invoice.ui_summary_pane.invoice_amount = 0.00
-
-
-    def initialize_ui(invoice):
-        invoice.initialize_ui_header_pane()
-        invoice.initialize_ui_search_pane()
-        invoice.initialize_ui_detail_pane()
-        invoice.initialize_ui_action_pane()
-        invoice.initialize_ui_footer_pane()
-        invoice.initialize_ui_summary_pane()
-
-
-    def clear_ui(invoice):
-        invoice.initialize_ui_header_pane()
-        invoice.initialize_ui_search_pane()    
-        invoice.initialize_ui_detail_pane()
-        invoice.initialize_ui_summary_pane()
+    def clear_ui(self):
+        self.initialize_header_pane()
+        self.initialize_search_pane()    
+        self.initialize_detail_pane()
+        self.initialize_summary_pane()
     
-    
-    def goto_last_row(invoice):
-        db_invoice_row = invoice.db_invoice_table.last('')
+    def goto_this_row(self, bill_number):
+        if bill_number:
+            filter = "name = '{}'"
+            db_invoice_row = self.__db_invoice_table.get_row(bill_number)
+            if db_invoice_row:
+                self.clear_ui()    
+                self.show_ui(db_invoice_row)
+                self.__ui.focus_items_list_last()                
+        else:
+            self.goto_last_row()
+
+    def goto_first_row(self):
+        filter = "invoice_number is null"    
+        db_invoice_row = self.__db_invoice_table.first(filter)
         if db_invoice_row:
-            invoice.clear_ui()
-            invoice.show_ui(db_invoice_row)
+            self.clear_ui()    
+            self.show_ui(db_invoice_row)
+            self.__ui.focus_items_list_last()            
 
+    def goto_previous_row(self):
+        if self.__ui.bill_number:
+            name = self.__ui.bill_number
+            filter = "name < '{}' and invoice_number is null"
+            db_invoice_row = self.__db_invoice_table.last(filter.format(name))
+            if db_invoice_row:
+                self.clear_ui()    
+                self.show_ui(db_invoice_row)
+                self.__ui.focus_items_list_last()                
+        else:
+            self.goto_last_row()
 
-    def show_ui(invoice, db_invoice_row):
+    def goto_next_row(self):
+        if self.__ui.bill_number:
+            name = self.__ui.bill_number
+            filter = "name > '{}' and invoice_number is null"
+            db_invoice_row = self.__db_invoice_table.first(filter.format(name))
+            if db_invoice_row:
+                self.clear_ui()    
+                self.show_ui(db_invoice_row)
+                self.__ui.focus_items_list_last()               
+        else:
+            self.goto_last_row()
+
+    def goto_last_row(self):
+        filter = "invoice_number is null"    
+        db_invoice_row = self.__db_invoice_table.last(filter)
+        if db_invoice_row:
+            self.clear_ui()
+            self.show_ui(db_invoice_row)
+            self.__ui.focus_items_list_last()
+
+    def show_ui(self, db_invoice_row):
         if not db_invoice_row:
             return
             
-        invoice.ui_header_pane.invoice_number = db_invoice_row.name
+        self.__ui.bill_number = db_invoice_row.name
 
         customer_number = db_invoice_row.customer
-        db_customer_row = invoice.db_customer_table.get_row(customer_number)
+        db_customer_row = self.__db_customer_table.get_row(customer_number)
         if db_customer_row:
-            invoice.ui_header_pane.mobile_number = db_customer_row.mobile_number
-            invoice.ui_header_pane.customer_number = db_customer_row.name
-            invoice.ui_header_pane.customer_name = db_customer_row.customer_name
-            invoice.ui_header_pane.customer_address = db_customer_row.address
+            self.__ui.mobile_number = db_customer_row.mobile_number
+            self.__ui.customer_number = db_customer_row.name
+            self.__ui.customer_name = db_customer_row.customer_name
+            self.__ui.customer_address = db_customer_row.address
 
-        invoice.ui_detail_pane.item_line = []
+        self.__ui.item_line = []
         filter = "parent='{}'"
-        db_invoice_item_cursor = invoice.db_invoice_item_table.list(filter.format(invoice.ui_header_pane.invoice_number))    
+        db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__ui.bill_number))    
         for db_invoice_item_row in db_invoice_item_cursor:
-            invoice.move_db_invoice_item_to_ui_detail_pane(db_invoice_item_row)
-        invoice.sum_item_list()
+            self.move_db_invoice_item_to_ui_detail_pane(db_invoice_item_row)
+        self.sum_item_list()
         if (db_invoice_row.discount_amount):
-            invoice.ui_summary_pane.discount_amount = db_invoice_row.discount_amount
+            self.__ui.discount_amount = db_invoice_row.discount_amount
         else:
-            invoice.ui_summary_pane.discount_amount = 0.00       
-        invoice.ui_summary_pane.invoice_amount = db_invoice_row.invoice_amount
-
-
-    def move_db_item_to_ui_detail_pane(invoice, db_item_row):
-        invoice.ui_detail_pane.item_code = db_item_row.name
-        invoice.ui_detail_pane.barcode = db_item_row.barcode
-        invoice.ui_detail_pane.item_name = db_item_row.item_name
-        invoice.ui_detail_pane.uom = db_item_row.uom
-        invoice.ui_detail_pane.qty = 1
-        invoice.ui_detail_pane.selling_price = db_item_row.selling_price
-        invoice.ui_detail_pane.cgst_tax_rate = db_item_row.cgst_tax_rate
-        invoice.ui_detail_pane.sgst_tax_rate = db_item_row.sgst_tax_rate
-        invoice.ui_detail_pane.selling_amount = float(invoice.ui_detail_pane.qty) * float(invoice.ui_detail_pane.selling_price)
-        invoice.ui_detail_pane.tax_rate = float(invoice.ui_detail_pane.cgst_tax_rate) + float(invoice.ui_detail_pane.sgst_tax_rate)
-        invoice.tax_amount = float(invoice.ui_detail_pane.selling_amount) * float(invoice.ui_detail_pane.tax_rate) / 100
-        invoice.ui_detail_pane.tax_amount = round(tax_amount, 2)
-        invoice.ui_detail_pane.net_amount = float(invoice.ui_detail_pane.selling_amount) + float(invoice.ui_detail_pane.tax_amount)
+            self.__ui.discount_amount = 0.00       
+        self.__ui.invoice_amount = db_invoice_row.invoice_amount
+        self.__actual_items_list = self.__ui.items_list.copy()
+    
+    def move_db_item_to_ui_detail_pane(self, db_item_row):
+        self.__ui.item_code = db_item_row.name
+        self.__ui.item_barcode = db_item_row.barcode
+        self.__ui.item_name = db_item_row.item_name
+        self.__ui.uom = db_item_row.uom
+        self.__ui.qty = 1
+        self.__ui.cgst_tax_rate = db_item_row.cgst_tax_rate
+        self.__ui.sgst_tax_rate = db_item_row.sgst_tax_rate
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         
-        invoice.ui_detail_pane.add_item_line()    
+        if self.tax_included == 0:
+            self.__ui.selling_price = db_item_row.selling_price
+            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+            tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+            self.__ui.tax_amount = round(tax_amount, 2)
+            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        else:
+            self.__ui.item_net_amount = db_item_row.selling_price
+            self.__ui.selling_amount = float(self.__ui.item_net_amount) / ( 1 + (float(self.__ui.tax_rate)/100))
+            self.__ui.selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
+            self.__ui.tax_amount = float(self.__ui.item_net_amount) - float(self.__ui.selling_amount)                
+        self.__ui.add_item_line()    
 
- 
-    def move_db_invoice_item_to_ui_detail_pane(invoice, db_invoice_item_row):
-        invoice.ui_detail_pane.item_code = db_invoice_item_row.item
+    def move_db_invoice_item_to_ui_detail_pane(self, db_invoice_item_row):
+        self.__ui.item_code = db_invoice_item_row.item
         
-        db_item_row = invoice.db_item_table.get_row(db_invoice_item_row.item)
+        db_item_row = self.__db_item_table.get_row(db_invoice_item_row.item)
         if db_item_row:
-            invoice.ui_detail_pane.barcode = db_item_row.barcode
-            invoice.ui_detail_pane.item_name = db_item_row.item_name
-            invoice.ui_detail_pane.uom = db_item_row.uom
-            invoice.ui_detail_pane.selling_price = db_item_row.selling_price
+            self.__ui.item_barcode = db_item_row.barcode
+            self.__ui.item_name = db_item_row.item_name
+            self.__ui.uom = db_item_row.uom
 
-        invoice.ui_detail_pane.qty = db_invoice_item_row.qty
-        invoice.ui_detail_pane.cgst_tax_rate = db_invoice_item_row.cgst_tax_rate
-        invoice.ui_detail_pane.sgst_tax_rate = db_invoice_item_row.sgst_tax_rate
-        invoice.ui_detail_pane.selling_amount = float(invoice.ui_detail_pane.qty) * float(invoice.ui_detail_pane.selling_price)
-        invoice.ui_detail_pane.tax_rate = float(invoice.ui_detail_pane.cgst_tax_rate) + float(invoice.ui_detail_pane.sgst_tax_rate)
-        invoice.ui_detail_pane.tax_amount = float(invoice.ui_detail_pane.selling_amount) * float(invoice.ui_detail_pane.tax_rate) / 100
-        invoice.ui_detail_pane.net_amount = float(invoice.ui_detail_pane.selling_amount) + float(invoice.ui_detail_pane.tax_amount)
+        self.__ui.qty = db_invoice_item_row.qty
+        self.__ui.cgst_tax_rate = db_invoice_item_row.cgst_tax_rate
+        self.__ui.sgst_tax_rate = db_invoice_item_row.sgst_tax_rate
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         
-        invoice.ui_detail_pane.add_item_line()    
+        if self.tax_included == 0:
+            self.__ui.selling_price = db_item_row.selling_price
+            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+            self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        else:
+            self.__ui.item_net_amount = float(db_item_row.selling_price) * float(self.__ui.qty)
+            self.__ui.selling_amount = float(self.__ui.item_net_amount) / ( 1 + (float(self.__ui.tax_rate)/100))
+            self.__ui.selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
+            self.__ui.tax_amount = float(self.__ui.item_net_amount) - float(self.__ui.selling_amount)                
+        
+        self.__ui.add_item_line()    
+   
+    def move_db_estimate_item_to_ui_detail_pane(self, db_estimate_item_row):
+        self.__ui.item_code = db_estimate_item_row.item
+        
+        db_item_row = self.__db_item_table.get_row(db_estimate_item_row.item)
+        if db_item_row:
+            self.__ui.item_barcode = db_item_row.barcode
+            self.__ui.item_name = db_item_row.item_name
+            self.__ui.uom = db_item_row.uom
 
-
-    def sum_item_list(invoice):
+        self.__ui.qty = db_estimate_item_row.qty
+        self.__ui.cgst_tax_rate = db_estimate_item_row.cgst_tax_rate
+        self.__ui.sgst_tax_rate = db_estimate_item_row.sgst_tax_rate
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        
+        if self.tax_included == 0:
+            self.__ui.selling_price = db_item_row.selling_price
+            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+            self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        else:
+            self.__ui.item_net_amount = float(db_item_row.selling_price) * float(self.__ui.qty)
+            self.__ui.selling_amount = float(self.__ui.item_net_amount) / ( 1 + (float(self.__ui.tax_rate)/100))
+            self.__ui.selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
+            self.__ui.tax_amount = float(self.__ui.item_net_amount) - float(self.__ui.selling_amount)                
+        
+        self.__ui.add_item_line()    
+   
+    def sum_item_list(self):
         line_items = 0
         total_amount = 0.00
         total_tax_amount = 0.00
@@ -196,27 +805,587 @@ class Invoice():
         total_sgst_amount = 0.00
         net_amount = 0.00
        
-        for item_line in invoice.ui_detail_pane.items_list:
-            invoice.ui_detail_pane.item_line_to_elements(line_items)
-            total_amount += float(invoice.ui_detail_pane.selling_amount)
-            total_tax_amount += float(invoice.ui_detail_pane.tax_amount)
-            net_amount += float(invoice.ui_detail_pane.net_amount)
-            cgst_rate = float(invoice.ui_detail_pane.cgst_tax_rate)
-            sgst_rate = float(invoice.ui_detail_pane.sgst_tax_rate)
-            cgst_amount = float(invoice.ui_detail_pane.selling_amount) * cgst_rate / 100
-            sgst_amount = float(invoice.ui_detail_pane.selling_amount) * sgst_rate / 100       
+        for item_line in self.__ui.items_list:
+            self.__ui.item_line_to_elements(line_items)
+            total_amount += float(self.__ui.selling_amount)
+            total_tax_amount += float(self.__ui.tax_amount)
+            net_amount += float(self.__ui.item_net_amount)
+            cgst_rate = float(self.__ui.cgst_tax_rate)
+            sgst_rate = float(self.__ui.sgst_tax_rate)
+            cgst_amount = float(self.__ui.selling_amount) * cgst_rate / 100
+            sgst_amount = float(self.__ui.selling_amount) * sgst_rate / 100       
             total_cgst_amount += cgst_amount
             total_sgst_amount += sgst_amount
             line_items += 1
 
-        invoice.ui_summary_pane.line_items = line_items
-        invoice.ui_summary_pane.total_amount = total_amount
-        invoice.ui_summary_pane.total_tax_amount = total_tax_amount
-        invoice.ui_summary_pane.net_amount = net_amount
-        invoice.ui_summary_pane.total_cgst_amount = total_cgst_amount
-        invoice.ui_summary_pane.total_sgst_amount = total_sgst_amount
-        invoice_actual_amount = net_amount - float(invoice.ui_summary_pane.discount_amount)
-        invoice_rounded_amount = round(invoice_actual_amount, 0)
-        invoice.ui_summary_pane.invoice_amount = invoice_rounded_amount
-        invoice.ui_summary_pane.roundoff_amount = invoice_rounded_amount - invoice_actual_amount    
+        self.__ui.line_items = line_items
+        self.__ui.total_amount = total_amount
+        self.__ui.total_tax_amount = total_tax_amount
+        self.__ui.net_amount = net_amount
+        self.__ui.total_cgst_amount = total_cgst_amount
+        self.__ui.total_sgst_amount = total_sgst_amount
+        invoice_actual_amount = net_amount
+        invoice_rounded_amount = round(net_amount, 0)
+        self.__ui.invoice_amount = invoice_rounded_amount
+        self.__ui.roundoff_amount = invoice_rounded_amount - invoice_actual_amount    
+
+    def process_change_qty(self, new_qty, item_idx):
+        if not new_qty:
+            return
+            
+        if not float(new_qty) > 0:
+            return
+        self.__ui.fetch_item_line(item_idx)
+        self.__ui.qty = new_qty
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)        
+        self.__ui.update_item_line(item_idx)
+        self.sum_item_list()
+        self.__ui.focus_items_list_row(item_idx)
        
+    def process_weight(self, idx):
+        self.__ui.item_line_to_elements(idx)
+        if not self.__ui.uom == 'Kg':
+            Message('INFO', 'Not applicable to this UOM')
+            return
+        self.__ui.qty = 0.35
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        self.__ui.update_item_line(idx)
+        self.sum_item_list()
+        self.__ui.focus_items_list_row(idx)
+        
+
+    def process_count(self, idx, operator):
+        self.__ui.item_line_to_elements(idx)
+        if not self.__ui.uom == 'Nos':
+            Message('INFO', 'Not applicable to this UOM')
+            return
+        qty = float(self.__ui.qty)
+        if operator == '+':
+            self.__ui.qty = qty + 1
+        else:
+            if qty > 1:
+                self.__ui.qty = qty - 1            
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        self.__ui.update_item_line(idx)
+        self.sum_item_list()
+        self.__ui.focus_items_list_row(idx)
+
+    
+    def process_barcode(self):
+        if not self.__ui.barcode:
+            return
+        
+        self.__ui.barcode = self.__ui.barcode.upper()
+        if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12):
+            filter = "barcode='{}'"
+            db_item_row = self.__db_item_table.first(filter.format(self.__ui.barcode))
+            if db_item_row:
+                self.move_db_item_to_ui_detail_pane(db_item_row)       
+        elif (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8):
+            filter = "item_code='{}'"   
+            db_item_row = self.__db_item_table.first(filter.format(self.__ui.barcode))
+            if db_item_row:
+                self.move_db_item_to_ui_detail_pane(db_item_row)
+        elif (self.__ui.barcode[0] == 'E' and len(self.__ui.barcode) > 8):
+            filter = "parent='{}'"   
+            db_estimate_item_cursor = self.__db_estimate_item_table.list(filter.format(self.__ui.barcode))
+            for db_estimate_item_row in db_estimate_item_cursor:
+                self.move_db_estimate_item_to_ui_detail_pane(db_estimate_item_row)
+        else:
+            return
+        self.sum_item_list()
+        self.__ui.focus_items_list_last()
+
+    def process_item_name(self, item_code):
+        filter = "item_code='{}'"   
+        
+        db_item_row = self.__db_item_table.first(filter.format(item_code))
+        if db_item_row:
+            self.move_db_item_to_ui_detail_pane(db_item_row)
+            self.sum_item_list()
+
+    def new_invoice(self):
+        if not len(self.__ui.items_list) > 0:
+            return
+
+        if not self.__actual_items_list == self.__ui.items_list:
+            confirm_save = Message('OPT', 'Save current Invoice?')
+            if confirm_save.ok:
+                self.save_invoice()
+            
+        self.clear_ui()
+
+    def save_invoice(self):
+        if not len(self.__ui.items_list) > 0:
+            return    
+
+        if self.__ui.bill_number == '':
+            self.insert_invoice()        
+        else:
+            self.update_invoice()
+        self.__actual_items_list = self.__ui.items_list
+
+    def insert_invoice(self):
+        db_query = DbQuery(self.__db_conn, 'SELECT nextval("BILL_NUMBER")')
+        for db_row in db_query.result:
+            self.__ui.bill_number = db_row[0]
+
+        customer_number = 'CUST-00000'
+        db_customer_row = self.__db_customer_table.get_row(customer_number)
+        if db_customer_row:
+            self.__ui.mobile_number = db_customer_row.mobile_number
+            self.__ui.customer_number = db_customer_row.name
+            self.__ui.customer_name = db_customer_row.customer_name
+            self.__ui.customer_address = db_customer_row.address
+
+        db_invoice_row = self.__db_invoice_table.new_row()
+
+        db_invoice_row.name = self.__ui.bill_number
+        db_invoice_row.customer = customer_number
+        db_invoice_row.posting_date = self.__ui.current_date    
+        db_invoice_row.total_amount = self.__ui.total_amount
+        db_invoice_row.net_amount = self.__ui.net_amount
+        db_invoice_row.invoice_amount = self.__ui.invoice_amount
+        db_invoice_row.cgst_tax_amount = self.__ui.total_cgst_amount
+        db_invoice_row.sgst_tax_amount = self.__ui.total_sgst_amount
+        db_invoice_row.terminal_id = self.__ui.terminal_id  
+
+        self.__db_invoice_table.create_row(db_invoice_row)
+        
+        for idx in range(len(self.__ui.items_list)): 
+            self.__ui.item_line_to_elements(idx)
+
+            db_invoice_item_row = self.__db_invoice_item_table.new_row()
+            
+            db_invoice_item_row.name = self.__ui.bill_number + f"{idx:04d}"
+            db_invoice_item_row.parent = self.__ui.bill_number
+            db_invoice_item_row.item = self.__ui.item_code
+            db_invoice_item_row.qty = self.__ui.qty
+            db_invoice_item_row.standard_selling_price = self.__ui.selling_price
+            db_invoice_item_row.applied_selling_price = self.__ui.selling_price
+            db_invoice_item_row.cgst_tax_rate = self.__ui.cgst_tax_rate
+            db_invoice_item_row.sgst_tax_rate = self.__ui.sgst_tax_rate
+          
+            self.__db_invoice_item_table.create_row(db_invoice_item_row)
+
+        self.__db_session.commit()
+        
+    def update_invoice(self):
+        db_invoice_row = self.__db_invoice_table.get_row(self.__ui.bill_number)
+
+        if not db_invoice_row:
+            return
+        db_invoice_row.posting_date = self.__ui.current_date    
+        db_invoice_row.customer = self.__ui.customer_number
+        db_invoice_row.total_amount = self.__ui.total_amount
+        db_invoice_row.net_amount = self.__ui.net_amount
+        db_invoice_row.invoice_amount = self.__ui.invoice_amount
+        db_invoice_row.cgst_tax_amount = self.__ui.total_cgst_amount
+        db_invoice_row.sgst_tax_amount = self.__ui.total_sgst_amount
+        db_invoice_row.terminal_id = self.__ui.terminal_id  
+
+        filter = "parent='{}'"
+        db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__ui.bill_number))
+        for db_invoice_item_row in db_invoice_item_cursor:
+            self.__db_invoice_item_table.delete_row(db_invoice_item_row)
+
+        self.__db_session.flush()
+        
+        for idx in range(len(self.__ui.items_list)): 
+            self.__ui.item_line_to_elements(idx)
+            
+            db_invoice_item_row = self.__db_invoice_item_table.new_row()
+            
+            db_invoice_item_row.name = self.__ui.bill_number + f"{idx:04d}"
+            db_invoice_item_row.parent = self.__ui.bill_number
+            db_invoice_item_row.item = self.__ui.item_code
+            db_invoice_item_row.qty = self.__ui.qty
+            db_invoice_item_row.standard_selling_price = self.__ui.selling_price
+            db_invoice_item_row.applied_selling_price = self.__ui.selling_price
+            db_invoice_item_row.cgst_tax_rate = self.__ui.cgst_tax_rate
+            db_invoice_item_row.sgst_tax_rate = self.__ui.sgst_tax_rate
+          
+            self.__db_invoice_item_table.create_row(db_invoice_item_row)
+
+        self.__db_session.commit()
+    
+    def delete_invoice(self):
+        filter = "parent='{}'"
+        db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__ui.bill_number))
+        for db_invoice_item_row in db_invoice_item_cursor:
+            print(db_invoice_item_row.name)
+            self.__db_invoice_item_table.delete_row(db_invoice_item_row)
+
+        self.__db_session.flush()
+        
+        db_invoice_row = self.__db_invoice_table.get_row(self.__ui.bill_number)
+        if db_invoice_row:
+            self.__db_invoice_table.delete_row(db_invoice_row)
+        
+        self.__db_session.commit()
+
+    def delete_item(self, idx):            
+        self.__ui.delete_item_line(idx)
+        self.sum_item_list()
+        if len(self.__ui.items_list) == idx:
+            idx -= 1
+        if idx > -1:
+            self.__ui.focus_items_list_row(idx) 
+
+    ######
+    # Print Invoice into PDF file
+    def print_invoice(self):
+        if not self.__ui.bill_number:
+            Message('INFO', 'Plese save the invoice before printing.')
+            return
+        
+        barcode_file = 'barcode-' + self.__ui.terminal_id + '.jpeg'
+        with open(barcode_file, 'wb') as f:
+            Code128(self.__ui.bill_number, writer=ImageWriter()).write(f)
+
+        config = pdfkit.configuration(wkhtmltopdf = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
+        options = {
+            'page-height': '120mm',
+            'page-width': '60mm',
+            'margin-top': '3mm',
+            'margin-bottom': '3mm',
+            'margin-right': '3mm',
+            'margin-left': '3mm',
+            'enable-local-file-access': None,
+            'quiet': None
+        } 
+
+        print_str = """
+                    <style>
+                        .aligncenter {
+                            text-align: center;
+                        }
+                    </style>
+                    """
+
+        print_str += """
+                    <table style="width:100%">
+                        <tr>
+                            <td>
+                                <img src="c:\\alignpos\\images\\al_fareeda_logo.png" alt="al-fareeda" width="125" height="60">
+                            </td>
+                            <td>
+                                &nbsp
+                            </td>
+                            <td padding: 10px;>
+                                <p style="font-size:9px; font-family:Courier; text-align:left">
+                                    13/2947,<br>
+                                    Pattinamkathaan&nbspbus&nbspstop,<br>
+                                    Ramanathapuram, Tamil&nbspNadu<br>                        
+                                    GSTIN: 33ABMFA2300A12E<br>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>                       
+                    <p style="font-size:18px; font-weight: bold; font-family:Courier; text-align:center">
+                        Bill
+                    </p>            
+                """    
+
+        print_str += """
+                <p  class="aligncenter" style="font-size:14px; font-weight: bold; font-family:Courier">
+                    <img src="c:\\alignpos\\{}" alt="barcode" width="125" height="60" alt="centered image">
+                </p>            
+                """.format(barcode_file)  
+
+        print_str += """
+                <p  style="font-size:14px; font-weight: bold; font-family:Courier">
+                    Bill No: {}<br>
+                    Date: {}<br>
+                </p>            
+                """.format( self.__ui.bill_number, 
+                            self.__ui.current_date
+                    )    
+
+        print_str += """
+                <p style="font-size:12px; font-family:Courier; margin: 0px;">
+                    Code&nbspItem&nbsp
+                    Name&nbsp&nbsp&nbsp&nbsp&nbsp
+                    Qty&nbsp&nbsp&nbsp&nbsp
+                    Amount
+                </p>
+                <hr style="width:95%;text-align:left;margin-left:0">
+            """
+        print('here3')
+            
+        for idx in range(len(self.__ui.items_list)): 
+            self.__ui.item_line_to_elements(idx)        
+            print_str += """
+                <p style="font-size:12px; font-family:Courier; margin: 0px;";>
+                    {:^4s}&nbsp{:^10s}&nbsp&nbsp{}&nbsp&nbsp{}
+                </p>
+                """.format( self.__ui.item_code[5:], 
+                            self.__ui.item_name[0:10].ljust(10, ' ').replace(' ', ''),
+                            str(self.__ui.qty).rjust(5,'*').replace('*', '&nbsp'), 
+                            str(self.__ui.item_net_amount).rjust(8,'*').replace('*', '&nbsp')
+                    )
+     
+        print_str += """
+            <hr style="width:95%;text-align:left;margin-left:0">
+            """
+     
+        print_str += """
+            <p style="font-size:12px; font-family:Courier; margin: 0px;">
+                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+            </p>
+            <hr style="width:95%;text-align:left;margin-left:0">
+            <p style="font-size:12px; font-family:Courier; margin: 0px;">
+                &nbsp&nbsp&nbsp&nbsp&nbspCost&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+                &nbsp&nbsp&nbsp&nbsp&nbspCGS&nbspTax&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+                &nbsp&nbsp&nbsp&nbsp&nbspSGS&nbspTax&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+            </p>
+            <hr style="width:95%;text-align:left;margin-left:0">
+            <p style="font-size:12px; font-family:Courier; margin: 0px;">                    
+                &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br><br>
+                &nbspDiscount&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>
+                &nbspRoundoff&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{}<br>                    
+            </p>
+            <hr style="width:95%;text-align:left;margin-left:0">
+            """.format(str(self.__ui.net_amount).rjust(12,'*').replace('*', '&nbsp'), 
+                        str(self.__ui.total_amount).rjust(12,'*').replace('*', '&nbsp'), 
+                        str(self.__ui.total_cgst_amount).rjust(12,'*').replace('*', '&nbsp'), 
+                        str(self.__ui.total_sgst_amount).rjust(12,'*').replace('*', '&nbsp'),
+                        str(self.__ui.net_amount).rjust(12,'*').replace('*', '&nbsp'),                            
+                        str(self.__ui.discount_amount).rjust(12,'*').replace('*', '&nbsp'),                            
+                        str(self.__ui.roundoff_amount).rjust(12,'*').replace('*', '&nbsp')                           
+                )
+        print_str += """
+            <p style="font-size:15px; font-family:Courier; font-weight: bold">
+                Net&nbspAmt&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
+            </p>
+            """.format(self.__ui.invoice_amount.rjust(10,'*').replace('*', '&nbsp'))
+        print('here4')
+        print_file = 'print-' + self.__ui.terminal_id + '.pdf'
+        
+        try:    
+            pdfkit.from_string(print_str, print_file, options=options)
+            print('here6')            
+            os.startfile(print_file)
+        except:
+            print('hereE')                    
+            pass
+
+    
+class ChangeQty:
+
+    def __init__(self, item_line):
+        self.__kb = Controller()
+        
+        self.__new_qty = 0
+        
+        self.__canvas = ChangeQtyCanvas()
+        
+        self.__window = sg.Window("Change Quantity", 
+                        self.__canvas.layout, 
+                        location=(300,250), 
+                        size=(350,210), 
+                        modal=True, 
+                        finalize=True,
+                        keep_on_top = True,
+                        icon='images/favicon.ico',
+                        return_keyboard_events=True,
+                    )
+
+        self.__ui = ChangeQtyUi(self.__window)
+
+        self.__ui.item_name = item_line[2]
+        self.__ui.existing_qty = item_line[4]
+        
+        self.handler()
+        
+    def handler(self):
+        prev_event = '' 
+        focus = None
+        while True:
+            event, values = self.__window.read()
+            #print('change_qty_popup=', event)
+            
+            if self.__window.FindElementWithFocus():
+                focus = self.__window.FindElementWithFocus().Key
+            print('change_qty=', event, 'prev=', prev_event, 'focus:', focus)
+                            
+            if event == '_KEYPAD_':        
+                result = self.keypad(self.__ui.new_qty)
+                self.__ui.new_qty = result
+                self.__ui.new_qty_f = self.__ui.new_qty
+                self.__ui.focus_new_qty()
+
+            if event in ('Exit', '_CHANGE_QTY_ESC_', 'Escape:27', sg.WIN_CLOSED):
+                break             
+                
+            if event == '\t':
+                self.__ui.new_qty_f = self.__ui.new_qty
+ 
+            if event in ('_CHANGE_QTY_OK_', 'F12:123', '\r'):
+                self.__new_qty = self.__ui.new_qty
+                break
+
+        self.__window.close()
+
+    def set_new_qty(self, new_qty):
+        self.__new_qty = new_qty
+        
+    def get_new_qty(self):
+        return self.__new_qty
+
+    new_qty = property(get_new_qty, set_new_qty)
+
+    ######
+    # Wrapper function for Keypad
+    def keypad(self, current_value):
+        keypad = Keypad(current_value)
+        return(keypad.input_value)
+
+
+class InvoiceList:
+    def __init__(self):    
+        self.__bill_number = ''
+
+        self.__db_conn = DbConn()
+
+        db_invoice_table = DbTable(self.__db_conn, 'tabInvoice')
+        filter=''
+        db_invoice_cursor = db_invoice_table.list(filter)
+
+        if (len(db_invoice_cursor) == 0):
+            Message('INFO', 'Bill(s) not found')
+            return
+       
+        kb = Controller()
+        self.__kb = kb
+        
+        self.__canvas = InvoiceListCanvas()
+        self.__window = sg.Window("List Bill",
+                        self.__canvas.layout,
+                        location=(100,100), 
+                        size=(800,360), 
+                        modal=True, 
+                        finalize=True,
+                        return_keyboard_events=True, 
+                        icon='images/favicon.ico',
+                        keep_on_top = True,                    
+                    )
+    
+        self.__ui = InvoiceListUi(self.__window)
+        
+        
+        self.__ui.invoices_list = []
+
+        '''
+        self.__base_query = 'select tabCustomer.name, \
+            tabCustomer.mobile_number, \
+            tabCustomer.customer_name, \
+            tabCustomer.customer_type \
+            from tabCustomer \
+            where tabCustomer.name = tabCustomer.name'
+        '''
+        
+        self.__base_query = 'select tabInvoice.name, \
+tabInvoice.total_amount, \
+(tabInvoice.cgst_tax_amount + tabInvoice.sgst_tax_amount) as tax_amount, \
+(tabInvoice.total_amount + tabInvoice.cgst_tax_amount + tabInvoice.sgst_tax_amount) as net_amount,\
+ifnull(tabInvoice.discount_amount,0) as discount_amount,\
+tabInvoice.invoice_amount - ((tabInvoice.total_amount + tabInvoice.cgst_tax_amount + tabInvoice.sgst_tax_amount) - \
+(ifnull(tabInvoice.discount_amount,0))) as roundoff_amount, \
+tabInvoice.invoice_amount, \
+(select count(*) from tabInvoice_Item where tabInvoice_Item.parent = tabInvoice.name) as line_count, \
+tabCustomer.mobile_number \
+from tabInvoice, tabCustomer \
+where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is null'
+
+        db_query = DbQuery(self.__db_conn, self.__base_query)
+        if  db_query.result:
+            for db_row in db_query.result:
+                self.__ui.bill_number = db_row[0]
+                self.__ui.total_amount = db_row[1]
+                self.__ui.total_tax_amount = db_row[2]
+                self.__ui.net_amount = db_row[3]
+                self.__ui.discount_amount = db_row[4]
+                self.__ui.roundoff_amount = db_row[5]
+                self.__ui.invoice_amount = db_row[6]
+                self.__ui.line_items = db_row[7]
+                self.__ui.mobile_number = db_row[8]
+                self.__ui.add_invoice_line()
+
+        self.__ui.invoice_idx = 0
+        self.__ui.focus_invoices_list()
+       
+        self.handler()
+
+
+    def handler(self):  
+        prev_event = ''
+        prev_values = ''
+        
+        while True:
+            event, values = self.__window.read()
+            #print('invoice_list=', event, prev_event, values)
+            print('invoice_list=', event, prev_event)
+            if event in ("Exit", '_INVOICE_LIST_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
+                break
+
+            if event in ('_INVOICE_LIST_SEARCH_', 'F11', 'F11:122'):
+                this_query = ''
+                if self.__ui.bill_number_search:
+                    if not self.__ui.bill_number_search == '':
+                        this_query = ' and tabInvoice.name = "' + self.__ui.bill_number_search + '"'
+                if self.__ui.mobile_number_search:
+                    if not self.__ui.mobile_number_search == '':
+                        this_query = ' and tabCustomer.mobile_number = "' + self.__ui.mobile_number_search + '"'
+                db_query = DbQuery(self.__db_conn, self.__base_query + this_query)        
+                if  db_query.result:
+                    self.__ui.invoices_list = []                        
+                    for db_row in db_query.result:
+                        self.__ui.bill_number = db_row[0]
+                        self.__ui.total_amount = db_row[1]
+                        self.__ui.total_tax_amount = db_row[2]
+                        self.__ui.net_amount = db_row[3]
+                        self.__ui.discount_amount = db_row[4]
+                        self.__ui.roundoff_amount = db_row[5]
+                        self.__ui.invoice_amount = db_row[6]
+                        self.__ui.line_items = db_row[7]
+                        self.__ui.mobile_number = db_row[8]
+                        self.__ui.add_invoice_line()
+
+            if event in ('_INVOICE_LIST_OK_', '\r', 'F12', 'F12:123'):
+                invoice_idx = values['_INVOICES_LIST_'][0]
+                self.__ui.invoice_line_to_elements(invoice_idx)
+                self.__bill_number = self.__ui.bill_number
+                break
+            
+            if event == prev_event and values == prev_values:
+                invoice_idx = values['_INVOICES_LIST_'][0]
+                self.__ui.invoice_line_to_elements(invoice_idx)
+                self.__bill_number = self.__ui.bill_number
+                break
+            
+            if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN'):               
+                prev_event = event
+            prev_values = values
+           
+        self.__db_conn.close()           
+        self.__window.close()    
+
+      
+    def get_bill_number(self):
+        return self.__bill_number
+
+    
+    bill_number = property(get_bill_number)  
+
+
+    

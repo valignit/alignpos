@@ -13,6 +13,7 @@ class EstimateCanvas:
         rw = w*25/100                
         lh = h
         rh = h
+        background_color='seashell2',
 
         menu_def = [
                 ['&File', ['New', 'Delete', 'Save', 'Submit', 'Print', '---', 'Exit']],      
@@ -23,9 +24,9 @@ class EstimateCanvas:
         
         ui_header_pane_layout = [
             [
-                sg.Text('Estimate', **ap_style.page_title, pad=((0,0),(0,3))),
-                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_ESTIMATE_NUMBER_'),
-                sg.Text('', **ap_style.page_title, pad=((0,264),(0,3)), key='_MOBILE_NUMBER_'),
+                sg.Text('Estimate', **ap_style.page_title, pad=((0,0),(0,3)), background_color=background_color),
+                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_ESTIMATE_NUMBER_', background_color=background_color),
+                sg.Text('', **ap_style.page_title, pad=((0,264),(0,3)), key='_MOBILE_NUMBER_', background_color=background_color),
                 sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.action_button, pad = ((0,7),(0,0))),
                 sg.Button(key='_BEGIN_', button_text='BEGN\nHome',**ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **ap_style.nav_button, pad = ((3,5),(0,0))),
@@ -36,13 +37,13 @@ class EstimateCanvas:
 
         ui_search_pane_layout = [
             [
-                sg.Text('Barcode:', **ap_style.search_text),
+                sg.Text('Barcode:', **ap_style.search_text, background_color=background_color),
                 sg.Input(key='_BARCODE_', size=(15,1), **ap_style.search_input),
                 sg.Button(key='_KEYPAD1_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
-                sg.Text('Item Name:', **ap_style.search_text, pad=((25,0),(0,0))),
+                sg.Text('Item Name:', **ap_style.search_text, pad=((25,0),(0,0)), background_color=background_color),
                 sg.Input(key='_SEARCH_NAME_', size=(35,1), **ap_style.search_input),
                 sg.Button(key='_KEYPAD2_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))), 
-                sg.Text('Item Group:', **ap_style.search_text),
+                sg.Text('Item Group:', **ap_style.search_text, background_color=background_color),
                 sg.Combo([''], key='_ITEM_GROUP_',default_value = 'None'),                
             ]
         ]
@@ -59,7 +60,7 @@ class EstimateCanvas:
                             ) for fav_count, fav_item_name in enumerate(fav_item_names_list, start=0)
                         ] 
                     ],
-                    scrollable=True,vertical_scroll_only=False, size=(956,100) 
+                    size=(958,105), background_color=background_color 
                 )
             ]
         ]
@@ -73,7 +74,7 @@ class EstimateCanvas:
                      justification='right',
                      row_height=24,
                      alternating_row_color='MistyRose2',
-                     num_rows=13,
+                     num_rows=14,
                      display_row_numbers=True,
                      right_click_menu=["that",["Specs","Quantity","Weight", "Price", "---", "Add", "Less", "---", "Delete"]],
                      bind_return_key=True,
@@ -101,11 +102,11 @@ class EstimateCanvas:
 
         ui_footer_pane_layout = [
             [
-                sg.Text('USER:', **ap_style.footer_text),
+                sg.Text('USER:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_USER_ID_', **ap_style.footer_input),
-                sg.Text('COUNTER:', **ap_style.footer_text),
+                sg.Text('COUNTER:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_TERMINAL_ID_', **ap_style.footer_input),
-                sg.Text('DATE:', **ap_style.footer_text),
+                sg.Text('DATE:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_CURRENT_DATE_', **ap_style.footer_input)
             ]
         ]
@@ -173,6 +174,7 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(5,0)),
+                    background_color=background_color,
                 )     
             ],
             [
@@ -181,6 +183,7 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(7,5)),
+                    background_color=background_color,
                 )     
             ],
             [
@@ -188,7 +191,8 @@ class EstimateCanvas:
                     ui_favorite_pane_layout,
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((5,0),(0,0)),
+                    pad = ((2,0),(0,0)),
+                    background_color=background_color,
                 )     
              ],
             [
@@ -197,6 +201,7 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(0,0)),
+                    background_color=background_color,
                 )     
             ],
             [
@@ -205,6 +210,7 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(0,0)),
+                    background_color=background_color,
                 )     
             ],
             [
@@ -213,6 +219,7 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(5,0)),
+                    background_color=background_color,
                 )     
             ],
         ]
@@ -251,6 +258,7 @@ class EstimateCanvas:
                     pad = ((4,0),(2,9)),
                 )     
             ],
+            [sg.Text('Fast moving:', **ap_style.summary_text_bold, pad=((5,0),(10,0)))],                              
             [
                 sg.Frame('',
                     ui_fast_pane_layout, 
@@ -284,6 +292,7 @@ class EstimateCanvas:
                     justification = 'Left',
                     vertical_alignment = 'top', 
                     #pad = ((0,0),(0,0)), 
+                    background_color=background_color,
                 ),
                 sg.Column(
                     ui_right_panes_layout,
