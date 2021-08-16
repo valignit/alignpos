@@ -1258,13 +1258,6 @@ class EstimateList:
         
         self.__ui.estimates_list = []
 
-        self.__base_query = 'select tabCustomer.name, \
-            tabCustomer.mobile_number, \
-            tabCustomer.customer_name, \
-            tabCustomer.customer_type \
-            from tabCustomer \
-            where tabCustomer.name = tabCustomer.name'
-
         self.__base_query = 'select tabEstimate.name, \
 tabEstimate.total_amount, \
 (tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) as tax_amount, \
@@ -1319,7 +1312,8 @@ where tabEstimate.customer = tabCustomer.name '
                         this_query = ' and tabCustomer.mobile_number = "' + self.__ui.mobile_number_search + '"'
                 db_query = DbQuery(self.__db_conn, self.__base_query + this_query)        
                 if  db_query.result:
-                    self.__ui.estimates_list = []                        
+                    self.__ui.estimates_list = []
+                    self.__ui.clear_estimates_list()
                     for db_row in db_query.result:
                         self.__ui.estimate_number = db_row[0]
                         self.__ui.total_amount = db_row[1]
@@ -1333,17 +1327,20 @@ where tabEstimate.customer = tabCustomer.name '
                         self.__ui.add_estimate_line()
 
             if event in ('_ESTIMATE_LIST_OK_', '\r', 'F12', 'F12:123'):
-                estimate_idx = values['_ESTIMATES_LIST_'][0]
-                self.__ui.estimate_line_to_elements(estimate_idx)
-                self.__estimate_number = self.__ui.estimate_number
+                if len(self.__ui.estimates_list) > 0:
+                    estimate_idx = values['_ESTIMATES_LIST_'][0]
+                    self.__ui.estimate_line_to_elements(estimate_idx)
+                    self.__estimate_number = self.__ui.estimate_number
+                else:
+                    self.__estimate_number = ''                
                 break
-            
+            '''
             if event == prev_event and values == prev_values:
                 estimate_idx = values['_ESTIMATES_LIST_'][0]
                 self.__ui.estimate_line_to_elements(estimate_idx)
                 self.__estimate_number = self.__ui.estimate_number
                 break
-            
+            '''
             if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN'):               
                 prev_event = event
             prev_values = values

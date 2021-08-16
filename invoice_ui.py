@@ -741,9 +741,9 @@ class InvoiceListUi:
         self.__window['_INVOICES_LIST_'].Widget.focus(table_row)  # move focus
         self.__window['_INVOICES_LIST_'].Widget.see(table_row)  # scroll to show i
     
-    def clear_ui_invoices_list(self):
-        self.__ui_invoice_list.clear()
-        self.__window.Element('_INVOICES_LIST_').update(values = self.__ui_invoice_list)
+    def clear_invoices_list(self):
+        self.__invoices_list.clear()
+        self.__window.Element('_INVOICES_LIST_').update(values = self.__invoices_list)
 
     def elements_to_invoice_line(self):
         self.__invoice_line.append(self.__invoice_number)

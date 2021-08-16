@@ -719,9 +719,9 @@ class EstimateListUi:
         self.__window['_ESTIMATES_LIST_'].Widget.focus(table_row)  # move focus
         self.__window['_ESTIMATES_LIST_'].Widget.see(table_row)  # scroll to show i
     
-    def clear_ui_estimates_list(self):
-        self.__ui_estimate_list.clear()
-        self.__window.Element('_ESTIMATES_LIST_').update(values = self.__ui_estimate_list)
+    def clear_estimates_list(self):
+        self.__estimates_list.clear()
+        self.__window.Element('_ESTIMATES_LIST_').update(values = self.__estimates_list)
 
     def elements_to_estimate_line(self):
         self.__estimate_line.append(self.__estimate_number)

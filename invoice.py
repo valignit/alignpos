@@ -348,7 +348,7 @@ class Invoice():
 
             if event in ('F4:115', 'F4', 'Submit'):
                 self.payment()
-                self.save_invoice()
+                #self.save_invoice()
                 self.print_invoice()
                 self.clear_ui()
                 self.__actual_items_list = []                                
@@ -565,7 +565,7 @@ class Invoice():
         self.__ui.redeem_amount = payment.output_param['redeem_adjustment']
         self.__ui.paid_amount = payment.output_param['invoice_amount']
         self.__ui.exchange_voucher = payment.output_param['exchange_voucher']
-        print('pay:', self.__ui.cash_amount)
+        print('pay:', self.__ui.paid_amount)
         return 
 
 
@@ -1120,9 +1120,10 @@ class Invoice():
     ######
     # Print Invoice into PDF file
     def print_invoice(self):
-        if not self.__ui.draft_invoice_number:
-            Message('INFO', 'Plese save the invoice before printing.')
-            return
+        if self.__type == 'draft':
+            if not self.__ui.draft_invoice_number:
+                Message('INFO', 'Plese save the invoice before printing.')
+                return
 
         print('print:', self.__type, self.__ui.tax_invoice_number)
         if self.__type == 'draft':
@@ -1379,6 +1380,7 @@ tabInvoice.invoice_amount, \
 tabCustomer.mobile_number \
 from tabInvoice, tabCustomer \
 where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is null'
+            self.__order_by = ''
         else:
             self.__base_query = 'select tabInvoice.invoice_number, \
 tabInvoice.total_amount, \
@@ -1391,10 +1393,11 @@ tabInvoice.invoice_amount, \
 (select count(*) from tabInvoice_Item where tabInvoice_Item.parent = tabInvoice.name) as line_count, \
 tabCustomer.mobile_number \
 from tabInvoice, tabCustomer \
-where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is not null order by tabInvoice.invoice_number'
-            print(self.__base_query)
+where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is not null'
+            self.__order_by = ' order by tabInvoice.invoice_number'
+            print(self.__base_query + self.__order_by)
                 
-        db_query = DbQuery(self.__db_conn, self.__base_query)
+        db_query = DbQuery(self.__db_conn, self.__base_query + self.__order_by)
         if  db_query.result:
             for db_row in db_query.result:
                 self.__ui.invoice_number = db_row[0]
@@ -1433,9 +1436,12 @@ where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is no
                 if self.__ui.mobile_number_search:
                     if not self.__ui.mobile_number_search == '':
                         this_query = ' and tabCustomer.mobile_number = "' + self.__ui.mobile_number_search + '"'
-                db_query = DbQuery(self.__db_conn, self.__base_query + this_query)        
+                new_query = self.__base_query + this_query + self.__order_by
+                print('query:', self.__base_query + this_query + self.__order_by)
+                db_query = DbQuery(self.__db_conn, self.__base_query + this_query + self.__order_by)     
                 if  db_query.result:
-                    self.__ui.invoices_list = []                        
+                    self.__ui.invoices_list = [] 
+                    self.__ui.clear_invoices_list()                   
                     for db_row in db_query.result:
                         self.__ui.invoice_number = db_row[0]
                         self.__ui.total_amount = db_row[1]
@@ -1449,17 +1455,23 @@ where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is no
                         self.__ui.add_invoice_line()
 
             if event in ('_INVOICE_LIST_OK_', '\r', 'F12', 'F12:123'):
-                invoice_idx = values['_INVOICES_LIST_'][0]
-                self.__ui.invoice_line_to_elements(invoice_idx)
-                self.__invoice_number = self.__ui.invoice_number
+                if len(self.__ui.invoices_list) > 0:
+                    invoice_idx = values['_INVOICES_LIST_'][0]
+                    self.__ui.invoice_line_to_elements(invoice_idx)
+                    self.__invoice_number = self.__ui.invoice_number
+                else:
+                    self.__invoice_number = ''                
                 break
-            
+            '''
             if event == prev_event and values == prev_values:
-                invoice_idx = values['_INVOICES_LIST_'][0]
-                self.__ui.invoice_line_to_elements(invoice_idx)
-                self.__invoice_number = self.__ui.invoice_number
+                if len(self.__ui.invoices_list) > 0:
+                    invoice_idx = values['_INVOICES_LIST_'][0]
+                    self.__ui.invoice_line_to_elements(invoice_idx)
+                    self.__invoice_number = self.__ui.invoice_number
+                else:
+                    self.__invoice_number = ''                
                 break
-            
+            '''
             if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN'):               
                 prev_event = event
             prev_values = values
@@ -1517,8 +1529,6 @@ class Payment:
         self.__ui.focus_cash_amount()
         
         self.handler()
-        
-        
         self.__window.close()
         
     def handler(self):
@@ -1687,10 +1697,8 @@ class Payment:
         db_query = DbQuery(self.__db_conn, 'SELECT nextval("INVOICE_NUMBER")')
         for db_row in db_query.result:
             self.__tax_invoice_number = db_row[0]
-        print('sti1:', self.__tax_invoice_number)
 
     def set_output_parameters(self):
-        print('st2:', self.__tax_invoice_number)
         self.__output_param['tax_invoice_number'] = self.__tax_invoice_number
         self.__output_param['customer_number'] = self.__ui.customer_number
         self.__output_param['mobile_number'] = self.__ui.mobile_number
@@ -1711,10 +1719,9 @@ class Payment:
     def update_invoice(self):
         db_invoice_row = self.__db_invoice_table.get_row(self.__draft_invoice_number)
 
-        print('here1:', self.__draft_invoice_number)
         if not db_invoice_row:
             return
-        print('here2:')
+        print('here1:', self.__draft_invoice_number, self.__ui.customer_number)
             
         db_invoice_row.invoice_number = self.__tax_invoice_number
         db_invoice_row.customer = self.__ui.customer_number
