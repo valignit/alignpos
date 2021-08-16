@@ -65,11 +65,14 @@ class MainMenu():
                 self.__window.close()
                 break
                 
-            if event in ('E', 'e', 'Estimate', '_ESTIMATE_OPTION_'):
+            if event in ('E', 'e', 'Estimate', '_ESTIMATE_'):
                 self.estimate_window(self.__user_id, self.__terminal_id)
 
-            if event in ('I', 'i', 'Invoice', '_INVOICE_OPTION_'):
-                self.invoice_window(self.__user_id, self.__terminal_id)
+            if event in ('D', 'd', 'Draft Invoice', '_DRAFT_INVOICE_'):
+                self.draft_invoice_window(self.__user_id, self.__terminal_id)
+
+            if event in ('T', 't', 'Tax Invoice', '_TAX_INVOICE_'):
+                self.tax_invoice_window(self.__user_id, self.__terminal_id)
                 
             if event == 'Exit':
                 break
@@ -82,9 +85,14 @@ class MainMenu():
         estimate = Estimate(user_id, terminal_id)
 
     ######
+    # Wrapper function for Billing window
+    def draft_invoice_window(self, user_id, terminal_id):
+        draft_invoice = Invoice('draft', user_id, terminal_id)
+          
+    ######
     # Wrapper function for Invoice window
-    def invoice_window(self, user_id, terminal_id):
-        invoice = Invoice(user_id, terminal_id)
+    def tax_invoice_window(self, user_id, terminal_id):
+        tax_invoice = Invoice('tax', user_id, terminal_id)
           
     def initialize_ui_detail_pane(self):
         None

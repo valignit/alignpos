@@ -14,9 +14,8 @@ from common import Message, Keypad, ItemList, CustomerList
 
 class Invoice():
 
-    def __init__(self, type, user_id, terminal_id):
-        self.__type = type
-        self.__reference_number = None
+    def __init__(self, user_id, terminal_id):
+        
         w, h = sg.Window.get_screen_size()
         
         self.__kv = KvConn()
@@ -41,20 +40,43 @@ class Invoice():
         # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
         self.__fav_item_codes_list = []
         self.__fast_item_codes_list = []
-        self.__fav_item_names_list = []
-        self.__fast_item_names_list = []
-        
-        if self.__type == 'draft':
-            self.fill_item_lists()
+        max_fav_ct = 9
+        max_fast_ct = 3
+        fav_ct = 0
+        fast_ct = 0
+        for key in self.__kv.getall():
+            if key[:13] == 'favorite_item':
+                fav_ct += 1
+                if fav_ct > max_fav_ct:
+                    continue
+                item_key = 'favorite_item_' + str(fav_ct)
+                self.__fav_item_codes_list.append(self.__kv.get(item_key))
 
-        self.__canvas = InvoiceCanvas(  type,
-                                        self.__fav_item_codes_list,
+            elif key[:16] == 'fast_moving_item':
+                fast_ct += 1
+                if fast_ct > max_fast_ct:
+                    continue
+                item_key = 'fast_moving_item_' + str(fast_ct)
+                self.__fast_item_codes_list.append(self.__kv.get(item_key))
+
+        self.__fav_item_names_list = []
+        for fav_item_code in self.__fav_item_codes_list:
+            db_item_row = self.__db_item_table.get_row(fav_item_code)
+            if db_item_row:
+                self.__fav_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
+                
+        self.__fast_item_names_list = []
+        for fast_item_code in self.__fast_item_codes_list:
+            db_item_row = self.__db_item_table.get_row(fast_item_code)
+            if db_item_row:
+                self.__fast_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
+
+        self.__canvas = InvoiceCanvas( self.__fav_item_codes_list,
                                         self.__fav_item_names_list,
                                         self.__fast_item_codes_list,                                  
                                         self.__fast_item_names_list)
         
-        title = self.__type.capitalize() + ' Invoice'
-        self.__window = sg.Window(title, 
+        self.__window = sg.Window('Draft Invoice', 
                         self.__canvas.layout,
                         font='Helvetica 11', 
                         finalize=True, 
@@ -180,7 +202,7 @@ class Invoice():
                 self.__kb.release(Key.backspace)
                 continue
 
-            if event in ('Home:36', '_BEGIN_'):            
+            if event in ('Home:36', '_BEGIN_'):
                 if not self.__actual_items_list == self.__ui.items_list:
                     confirm_save = Message('OPT', 'Save current Invoice?')
                     if confirm_save.ok:
@@ -212,10 +234,8 @@ class Invoice():
                 self.goto_last_row()
                 continue
 
-            if self.__type == 'tax' and event not in ('F5:116', 'F5', 'Print', 'F10', 'F10:121', '_FIND_'):
-                continue
-
             if event == '\t':
+                print('here')
                 if focus == '_ITEMS_LIST_':
                     if len(self.__ui.items_list) > 0:
                         self.__ui.focus_items_list_row(len(self.__ui.items_list)-1)
@@ -326,18 +346,18 @@ class Invoice():
                     self.__ui.focus_barcode()                         
                     continue
                 else:
-                    if not self.__ui.draft_invoice_number or self.__ui.draft_invoice_number == '':
+                    if not self.__ui.invoice_number or self.__ui.invoice_number == '':
                         continue
                     confirm_delete = Message('OPT', 'Delete current Invoice?')
                     if not confirm_delete.ok:
                         continue
-                    draft_invoice_number = self.__ui.draft_invoice_number            
+                    invoice_number = self.__ui.invoice_number            
                     self.delete_invoice()
                     self.clear_ui()
-                    self.__ui.draft_invoice_number = draft_invoice_number
+                    self.__ui.invoice_number = invoice_number
                     self.goto_previous_row()
-                    if self.__ui.draft_invoice_number == draft_invoice_number:
-                        self.__ui.draft_invoice_number = ''
+                    if self.__ui.invoice_number == invoice_number:
+                        self.__ui.invoice_number = ''
                 continue
                
             if event in ('F3:114', 'F3', 'Save'):
@@ -351,7 +371,6 @@ class Invoice():
                 self.save_invoice()
                 self.print_invoice()
                 self.clear_ui()
-                self.__actual_items_list = []                                
                 continue
                 
             if event in ('F5:116', 'F5', 'Print'):
@@ -522,7 +541,7 @@ class Invoice():
     ######
     # Wrapper function for Invoice List
     def invoice_list(self):
-        invoice_list = InvoiceList(self.__type)
+        invoice_list = InvoiceList()
         return invoice_list.invoice_number
 
 
@@ -544,28 +563,12 @@ class Invoice():
     # Wrapper function for Payment
     def payment(self):
         input_param = dict()
-        input_param['draft_invoice_number'] = self.__ui.draft_invoice_number
         input_param['customer_number'] = self.__ui.customer_number
         input_param['mobile_number'] = self.__ui.mobile_number
         input_param['customer_name'] = self.__ui.customer_name
         input_param['customer_address'] = self.__ui.customer_address        
         input_param['net_amount'] = self.__ui.net_amount        
-        payment = Payment(input_param)
-        print(payment.output_param)
-        self.__ui.tax_invoice_number = payment.output_param['tax_invoice_number']
-        self.__ui.tax_invoice_amount = payment.output_param['invoice_amount']
-        self.__ui.discount_amount = payment.output_param['discount_amount']
-        self.__ui.roundoff_amount = payment.output_param['roundoff_adjustment']
-        self.__ui.cash_amount = payment.output_param['cash_amount']
-        self.__ui.card_amount = payment.output_param['card_amount']
-        self.__ui.card_reference = payment.output_param['card_reference']
-        self.__ui.cash_return = payment.output_param['cash_return']
-        self.__ui.exchange_amount = payment.output_param['exchange_adjustment']
-        self.__ui.redeem_points = payment.output_param['redeem_points']
-        self.__ui.redeem_amount = payment.output_param['redeem_adjustment']
-        self.__ui.paid_amount = payment.output_param['invoice_amount']
-        self.__ui.exchange_voucher = payment.output_param['exchange_voucher']
-        print('pay:', self.__ui.cash_amount)
+        output_param = Payment(input_param)
         return 
 
 
@@ -576,39 +579,8 @@ class Invoice():
         return(keypad.input_value)
 
 
-    def fill_item_lists(self):
-        max_fav_ct = 9
-        max_fast_ct = 3
-        fav_ct = 0
-        fast_ct = 0
-        for key in self.__kv.getall():
-            if key[:13] == 'favorite_item':
-                fav_ct += 1
-                if fav_ct > max_fav_ct:
-                    continue
-                item_key = 'favorite_item_' + str(fav_ct)
-                self.__fav_item_codes_list.append(self.__kv.get(item_key))
-
-            elif key[:16] == 'fast_moving_item':
-                fast_ct += 1
-                if fast_ct > max_fast_ct:
-                    continue
-                item_key = 'fast_moving_item_' + str(fast_ct)
-                self.__fast_item_codes_list.append(self.__kv.get(item_key))
-
-        for fav_item_code in self.__fav_item_codes_list:
-            db_item_row = self.__db_item_table.get_row(fav_item_code)
-            if db_item_row:
-                self.__fav_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
-                
-        for fast_item_code in self.__fast_item_codes_list:
-            db_item_row = self.__db_item_table.get_row(fast_item_code)
-            if db_item_row:
-                self.__fast_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
-
     def initialize_header_pane(self):
-        self.__ui.draft_invoice_number = ''
-        self.__ui.tax_invoice_number = ''
+        self.__ui.invoice_number = ''
         self.__ui.payment_status = ''
         walk_in_customer = self.__kv.get('walk_in_customer')  
         db_customer_row = self.__db_customer_table.get_row(walk_in_customer)
@@ -651,7 +623,7 @@ class Invoice():
         self.__window.Element('F9').update(text='Price\nF9')
         self.__window.Element('+').update(text='Add\n+')
         self.__window.Element('-').update(text='Less\n-')
-        
+
     def initialize_footer_pane(self):
         self.__ui.user_id = ''
         self.__ui.terminal_id = ''
@@ -685,14 +657,9 @@ class Invoice():
         self.initialize_summary_pane()
     
     def goto_this_row(self, invoice_number):
-        print('goto:', invoice_number)
         if invoice_number:
-            if self.__type == 'draft':
-                filter = "name = '{}'"
-            else:
-                filter = "invoice_number = '{}'"
-            
-            db_invoice_row = self.__db_invoice_table.first(filter.format(invoice_number))
+            filter = "name = '{}'"
+            db_invoice_row = self.__db_invoice_table.get_row(invoice_number)
             if db_invoice_row:
                 self.clear_ui()    
                 self.show_ui(db_invoice_row)
@@ -701,63 +668,39 @@ class Invoice():
             self.goto_last_row()
 
     def goto_first_row(self):
-        if self.__type == 'draft':
-            filter = "invoice_number is null"
-        else:
-            filter = "invoice_number is not null"
-        
+        filter = "invoice_number is null"    
         db_invoice_row = self.__db_invoice_table.first(filter)
         if db_invoice_row:
             self.clear_ui()    
             self.show_ui(db_invoice_row)
             self.__ui.focus_items_list_last()            
 
-    def goto_previous_row(self): 
-        db_invoice_row = None  
-        if self.__type == 'draft':            
-            if self.__ui.draft_invoice_number:
-                name = self.__ui.draft_invoice_number
-                filter = "name < '{}' and invoice_number is null"
-                db_invoice_row = self.__db_invoice_table.last(filter.format(name))            
-        else:
-            if self.__ui.tax_invoice_number:
-                invoice_number = self.__ui.tax_invoice_number
-                filter = "invoice_number < '{}' and invoice_number is not null"
-                order = 'invoice_number'         
-                db_invoice_row = self.__db_invoice_table.last(filter.format(invoice_number), order)
-        if db_invoice_row:
-                self.clear_ui()    
-                self.show_ui(db_invoice_row)
-                self.__ui.focus_items_list_last()                
-
-
-    def goto_next_row(self):
-        db_invoice_row = None  
-        if self.__type == 'draft':            
-            if self.__ui.draft_invoice_number:
-                name = self.__ui.draft_invoice_number
-                filter = "name > '{}' and invoice_number is null"
-                db_invoice_row = self.__db_invoice_table.first(filter.format(name))            
-        else:
-            if self.__ui.tax_invoice_number:
-                invoice_number = self.__ui.tax_invoice_number
-                filter = "invoice_number > '{}' and invoice_number is not null"
-                order = 'invoice_number'
-                db_invoice_row = self.__db_invoice_table.first(filter.format(invoice_number), order)
-                
-        if db_invoice_row:
+    def goto_previous_row(self):
+        if self.__ui.invoice_number:
+            name = self.__ui.invoice_number
+            filter = "name < '{}' and invoice_number is null"
+            db_invoice_row = self.__db_invoice_table.last(filter.format(name))
+            if db_invoice_row:
                 self.clear_ui()    
                 self.show_ui(db_invoice_row)
                 self.__ui.focus_items_list_last()                
         else:
             self.goto_last_row()
 
-    def goto_last_row(self):
-        if self.__type == 'draft':            
-            filter = "invoice_number is null"
+    def goto_next_row(self):
+        if self.__ui.invoice_number:
+            name = self.__ui.invoice_number
+            filter = "name > '{}' and invoice_number is null"
+            db_invoice_row = self.__db_invoice_table.first(filter.format(name))
+            if db_invoice_row:
+                self.clear_ui()    
+                self.show_ui(db_invoice_row)
+                self.__ui.focus_items_list_last()               
         else:
-            filter = "invoice_number is not null"
-               
+            self.goto_last_row()
+
+    def goto_last_row(self):
+        filter = "invoice_number is null"    
         db_invoice_row = self.__db_invoice_table.last(filter)
         if db_invoice_row:
             self.clear_ui()
@@ -767,13 +710,8 @@ class Invoice():
     def show_ui(self, db_invoice_row):
         if not db_invoice_row:
             return
-
-        self.__reference_number = db_invoice_row.name
-        if self.__type == 'draft':
-            self.__ui.draft_invoice_number = db_invoice_row.name
-        else:
-            self.__ui.tax_invoice_number = db_invoice_row.invoice_number        
-        print('refs:', self.__ui.draft_invoice_number)
+            
+        self.__ui.invoice_number = db_invoice_row.name
 
         customer_number = db_invoice_row.customer
         db_customer_row = self.__db_customer_table.get_row(customer_number)
@@ -785,7 +723,7 @@ class Invoice():
 
         self.__ui.item_line = []
         filter = "parent='{}'"
-        db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__reference_number))    
+        db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__ui.invoice_number))    
         for db_invoice_item_row in db_invoice_item_cursor:
             self.move_db_invoice_item_to_ui_detail_pane(db_invoice_item_row)
         self.sum_item_list()
@@ -1004,7 +942,7 @@ class Invoice():
         if not len(self.__ui.items_list) > 0:
             return    
 
-        if self.__ui.draft_invoice_number == '':
+        if self.__ui.invoice_number == '':
             self.insert_invoice()        
         else:
             self.update_invoice()
@@ -1013,7 +951,7 @@ class Invoice():
     def insert_invoice(self):
         db_query = DbQuery(self.__db_conn, 'SELECT nextval("DRAFT_INVOICE_NUMBER")')
         for db_row in db_query.result:
-            self.__ui.draft_invoice_number = db_row[0]
+            self.__ui.invoice_number = db_row[0]
 
         customer_number = 'CUST-00000'
         db_customer_row = self.__db_customer_table.get_row(customer_number)
@@ -1025,7 +963,7 @@ class Invoice():
 
         db_invoice_row = self.__db_invoice_table.new_row()
 
-        db_invoice_row.name = self.__ui.draft_invoice_number
+        db_invoice_row.name = self.__ui.invoice_number
         db_invoice_row.customer = customer_number
         db_invoice_row.posting_date = self.__ui.current_date    
         db_invoice_row.total_amount = self.__ui.total_amount
@@ -1042,8 +980,8 @@ class Invoice():
 
             db_invoice_item_row = self.__db_invoice_item_table.new_row()
             
-            db_invoice_item_row.name = self.__ui.draft_invoice_number + f"{idx:04d}"
-            db_invoice_item_row.parent = self.__ui.draft_invoice_number
+            db_invoice_item_row.name = self.__ui.invoice_number + f"{idx:04d}"
+            db_invoice_item_row.parent = self.__ui.invoice_number
             db_invoice_item_row.item = self.__ui.item_code
             db_invoice_item_row.qty = self.__ui.qty
             db_invoice_item_row.standard_selling_price = self.__ui.selling_price
@@ -1056,7 +994,7 @@ class Invoice():
         self.__db_session.commit()
         
     def update_invoice(self):
-        db_invoice_row = self.__db_invoice_table.get_row(self.__ui.draft_invoice_number)
+        db_invoice_row = self.__db_invoice_table.get_row(self.__ui.invoice_number)
 
         if not db_invoice_row:
             return
@@ -1070,7 +1008,7 @@ class Invoice():
         db_invoice_row.terminal_id = self.__ui.terminal_id  
 
         filter = "parent='{}'"
-        db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__ui.draft_invoice_number))
+        db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__ui.invoice_number))
         for db_invoice_item_row in db_invoice_item_cursor:
             self.__db_invoice_item_table.delete_row(db_invoice_item_row)
 
@@ -1081,8 +1019,8 @@ class Invoice():
             
             db_invoice_item_row = self.__db_invoice_item_table.new_row()
             
-            db_invoice_item_row.name = self.__ui.draft_invoice_number + f"{idx:04d}"
-            db_invoice_item_row.parent = self.__ui.draft_invoice_number
+            db_invoice_item_row.name = self.__ui.invoice_number + f"{idx:04d}"
+            db_invoice_item_row.parent = self.__ui.invoice_number
             db_invoice_item_row.item = self.__ui.item_code
             db_invoice_item_row.qty = self.__ui.qty
             db_invoice_item_row.standard_selling_price = self.__ui.selling_price
@@ -1096,14 +1034,14 @@ class Invoice():
     
     def delete_invoice(self):
         filter = "parent='{}'"
-        db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__ui._draft_invoice_number))
+        db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__ui.invoice_number))
         for db_invoice_item_row in db_invoice_item_cursor:
             print(db_invoice_item_row.name)
             self.__db_invoice_item_table.delete_row(db_invoice_item_row)
 
         self.__db_session.flush()
         
-        db_invoice_row = self.__db_invoice_table.get_row(self.__ui.draft_invoice_number)
+        db_invoice_row = self.__db_invoice_table.get_row(self.__ui.invoice_number)
         if db_invoice_row:
             self.__db_invoice_table.delete_row(db_invoice_row)
         
@@ -1120,25 +1058,13 @@ class Invoice():
     ######
     # Print Invoice into PDF file
     def print_invoice(self):
-        if not self.__ui.draft_invoice_number:
+        if not self.__ui.invoice_number:
             Message('INFO', 'Plese save the invoice before printing.')
             return
-
-        print('print:', self.__type, self.__ui.tax_invoice_number)
-        if self.__type == 'draft':
-            if self.__ui.tax_invoice_number:
-                title = 'TAX INVOICE'
-                invoice_number = self.__ui.tax_invoice_number
-            else:
-                title = 'DRAFT INVOICE'
-                invoice_number = self.__ui.draft_invoice_number
-        else:    
-            title = 'TAX INVOICE'
-            invoice_number = self.__ui.tax_invoice_number
-                
+        
         barcode_file = 'barcode-' + self.__ui.terminal_id + '.jpeg'
         with open(barcode_file, 'wb') as f:
-            Code128(invoice_number, writer=ImageWriter()).write(f)
+            Code128(self.__ui.invoice_number, writer=ImageWriter()).write(f)
 
         config = pdfkit.configuration(wkhtmltopdf = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
         options = {
@@ -1180,9 +1106,9 @@ class Invoice():
                         </tr>
                     </table>                       
                     <p style="font-size:18px; font-weight: bold; font-family:Courier; text-align:center">
-                        {}
+                        Invoice
                     </p>            
-                """.format(title)   
+                """    
 
         print_str += """
                 <p  class="aligncenter" style="font-size:14px; font-weight: bold; font-family:Courier">
@@ -1195,7 +1121,7 @@ class Invoice():
                     Invoice No: {}<br>
                     Date: {}<br>
                 </p>            
-                """.format( invoice_number, 
+                """.format( self.__ui.invoice_number, 
                             self.__ui.current_date
                     )    
 
@@ -1208,6 +1134,7 @@ class Invoice():
                 </p>
                 <hr style="width:95%;text-align:left;margin-left:0">
             """
+        print('here3')
             
         for idx in range(len(self.__ui.items_list)): 
             self.__ui.item_line_to_elements(idx)        
@@ -1255,12 +1182,15 @@ class Invoice():
                 Net&nbspAmt&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
             </p>
             """.format(self.__ui.invoice_amount.rjust(10,'*').replace('*', '&nbsp'))
+        print('here4')
         print_file = 'print-' + self.__ui.terminal_id + '.pdf'
         
         try:    
             pdfkit.from_string(print_str, print_file, options=options)
+            print('here6')            
             os.startfile(print_file)
         except:
+            print('hereE')                    
             pass
 
     
@@ -1330,10 +1260,7 @@ class ChangeQty:
 
 
 class InvoiceList:
-    def __init__(self, type):    
-        self.__type = type
-        print('type:', self.__type)
-
+    def __init__(self):    
         self.__invoice_number = ''
 
         self.__db_conn = DbConn()
@@ -1366,8 +1293,16 @@ class InvoiceList:
         
         self.__ui.invoices_list = []
 
-        if self.__type == 'draft':
-            self.__base_query = 'select tabInvoice.name, \
+        '''
+        self.__base_query = 'select tabCustomer.name, \
+            tabCustomer.mobile_number, \
+            tabCustomer.customer_name, \
+            tabCustomer.customer_type \
+            from tabCustomer \
+            where tabCustomer.name = tabCustomer.name'
+        '''
+        
+        self.__base_query = 'select tabInvoice.name, \
 tabInvoice.total_amount, \
 (tabInvoice.cgst_tax_amount + tabInvoice.sgst_tax_amount) as tax_amount, \
 (tabInvoice.total_amount + tabInvoice.cgst_tax_amount + tabInvoice.sgst_tax_amount) as net_amount,\
@@ -1379,21 +1314,7 @@ tabInvoice.invoice_amount, \
 tabCustomer.mobile_number \
 from tabInvoice, tabCustomer \
 where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is null'
-        else:
-            self.__base_query = 'select tabInvoice.invoice_number, \
-tabInvoice.total_amount, \
-(tabInvoice.cgst_tax_amount + tabInvoice.sgst_tax_amount) as tax_amount, \
-(tabInvoice.total_amount + tabInvoice.cgst_tax_amount + tabInvoice.sgst_tax_amount) as net_amount,\
-ifnull(tabInvoice.discount_amount,0) as discount_amount,\
-tabInvoice.invoice_amount - ((tabInvoice.total_amount + tabInvoice.cgst_tax_amount + tabInvoice.sgst_tax_amount) - \
-(ifnull(tabInvoice.discount_amount,0))) as roundoff_amount, \
-tabInvoice.invoice_amount, \
-(select count(*) from tabInvoice_Item where tabInvoice_Item.parent = tabInvoice.name) as line_count, \
-tabCustomer.mobile_number \
-from tabInvoice, tabCustomer \
-where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is not null order by tabInvoice.invoice_number'
-            print(self.__base_query)
-                
+
         db_query = DbQuery(self.__db_conn, self.__base_query)
         if  db_query.result:
             for db_row in db_query.result:
@@ -1478,25 +1399,22 @@ where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is no
 class Payment:
 
     def __init__(self, input_param):
-        self.__tax_invoice_number = ''
-        self.__output_param = dict()
-        self.__draft_invoice_number = input_param['draft_invoice_number'] 
+        self.__kb = Controller()
+
         self.__mobile_number = input_param['mobile_number'] 
         self.__customer_number = input_param['customer_number']
         self.__customer_name = input_param['customer_name']
         self.__customer_address = input_param['customer_address']        
         self.__net_amount = input_param['net_amount'] 
         
+        self.__invoice_number = None    
         self.__discount_amount = 0
         self.__paid_amount = 0
-
-        self.__kb = Controller()
 
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
         self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
         self.__db_exchange_table = DbTable(self.__db_conn, 'tabExchange')
-        self.__db_invoice_table = DbTable(self.__db_conn, 'tabInvoice')
         
         self.__canvas = PaymentCanvas()
         
@@ -1518,6 +1436,8 @@ class Payment:
         
         self.handler()
         
+        self.__output_parameters = dict()
+        self.set_output_parameters()
         
         self.__window.close()
         
@@ -1577,7 +1497,7 @@ class Payment:
                 break
                 
             if event == "_PAYMENT_OK_" or event == "F12:123":
-                self.set_payment_elements()
+                set_payment_elements()
                 if float(self.__ui.balance_amount) == 0:
                     if float(self.__ui.card_amount) > 0 and self.__ui.card_reference == '':
                         Message('INFO', 'Enter Card Reference')
@@ -1586,11 +1506,9 @@ class Payment:
                         if float(self.__ui.cash_return) > 0:
                             msg = 'Please return back ' + self.__ui.cash_return + ' cash to customer'
                             Message('INFO', msg)
+                        self.move_payment_to_summary_pane()
                         self.generate_invoice_number()
-                        self.set_output_parameters()
-                        self.update_invoice()
-                        msg = 'Invoice ' + str(self.__tax_invoice_number) + ' generated'
-                        Message('INFO', msg)
+                        Message('INFO', 'Invoice generated', keep_on_top = True)
                         break
                 else:
                     Message('INFO', 'Settle Balance amount')
@@ -1599,7 +1517,8 @@ class Payment:
             prev_event = event
 
     def initialize_payment_elements(self):
-        self.__ui.mobile_number = self.__mobile_number        
+        self.__ui.mobile_number = self.__mobile_number
+        
         self.__ui.customer_name = self.__customer_name
         self.__ui.mobile_number_header = self.__mobile_number
         self.__ui.customer_name_header = self.__customer_name
@@ -1632,6 +1551,7 @@ class Payment:
         filter = "mobile_number='{}'"
         db_customer_row = self.__db_customer_table.first(filter.format(self.__ui.mobile_number))
         if db_customer_row:
+            print(db_customer_row.customer_name)
             self.__ui.customer_number = db_customer_row.name
             self.__ui.customer_name = db_customer_row.customer_name
             self.__ui.customer_address = db_customer_row.address
@@ -1686,56 +1606,15 @@ class Payment:
     def generate_invoice_number(self):
         db_query = DbQuery(self.__db_conn, 'SELECT nextval("INVOICE_NUMBER")')
         for db_row in db_query.result:
-            self.__tax_invoice_number = db_row[0]
-        print('sti1:', self.__tax_invoice_number)
+            self.__invoice_number = db_row[0]
 
     def set_output_parameters(self):
-        print('st2:', self.__tax_invoice_number)
-        self.__output_param['tax_invoice_number'] = self.__tax_invoice_number
-        self.__output_param['customer_number'] = self.__ui.customer_number
-        self.__output_param['mobile_number'] = self.__ui.mobile_number
-        self.__output_param['customer_name'] = self.__ui.customer_name
-        self.__output_param['customer_address'] = self.__ui.customer_address        
-        self.__output_param['invoice_amount'] = float(self.__ui.invoice_amount)
-        self.__output_param['roundoff_adjustment'] = float(self.__ui.roundoff_adjustment)
-        self.__output_param['discount_amount'] = float(self.__ui.discount_amount)
-        self.__output_param['cash_amount'] = float(self.__ui.cash_amount)
-        self.__output_param['card_amount'] = float(self.__ui.card_amount)
-        self.__output_param['card_reference'] = self.__ui.card_reference
-        self.__output_param['cash_return'] = float(self.__ui.cash_return)
-        self.__output_param['exchange_adjustment'] = float(self.__ui.exchange_adjustment)
-        self.__output_param['redeem_points'] = self.__ui.redeem_points
-        self.__output_param['redeem_adjustment'] = float(self.__ui.redeem_adjustment)
-        self.__output_param['exchange_voucher'] = self.__ui.exchange_voucher
-
-    def update_invoice(self):
-        db_invoice_row = self.__db_invoice_table.get_row(self.__draft_invoice_number)
-
-        print('here1:', self.__draft_invoice_number)
-        if not db_invoice_row:
-            return
-        print('here2:')
-            
-        db_invoice_row.invoice_number = self.__tax_invoice_number
-        db_invoice_row.customer = self.__ui.customer_number
-        db_invoice_row.discount_amount = self.__ui.discount_amount
-        db_invoice_row.invoice_amount = self.__ui.invoice_amount
-        
-        db_invoice_row.exchange_amount = self.__ui.exchange_adjustment
-        db_invoice_row.exchange_reference = self.__ui.exchange_voucher
-        db_invoice_row.redeemed_points = self.__ui.redeem_points
-        db_invoice_row.redeemed_amount = self.__ui.redeem_adjustment
-        db_invoice_row.cash_amount = self.__ui.cash_amount
-        db_invoice_row.card_amount = self.__ui.card_amount
-        db_invoice_row.card_reference = self.__ui.card_reference
-        db_invoice_row.cash_return = self.__ui.cash_return
-        db_invoice_row.paid_amount = self.__ui.total_received_amount
-
-        self.__db_session.commit()
-
-
-    def get_output_param(self):
-        return self.__output_param
-
-    
-    output_param = property(get_output_param)  
+        self.__output_parameters['invoice_number'] = self.__invoice_number
+        self.__output_parameters['customer_number'] = self.__ui.customer_number
+        self.__output_parameters['mobile_number'] = self.__ui.mobile_number
+        self.__output_parameters['customer_name'] = self.__ui.customer_name
+        self.__output_parameters['customer_address'] = self.__ui.customer_address        
+        self.__output_parameters['self.__ui.invoice_amount'] = self.__ui.invoice_amount
+        self.__output_parameters['self.__ui.roundoff_adjustment'] = self.__ui.roundoff_adjustment
+        self.__output_parameters['self.__ui.discount_amount'] = self.__ui.discount_amount
+ 

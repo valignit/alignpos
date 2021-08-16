@@ -7,7 +7,7 @@ class ElementStyle:
    
     page_title:  dict = {           
                         'font':("Calibri 18 bold"),
-                        'size':(10,1),
+                        'size':(15,1),
                         'text_color': 'grey30',
                     }
 

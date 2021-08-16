@@ -6,14 +6,29 @@ from common_layout import ElementStyle as ap_style
 ###
 # Invoice Layout               
 class InvoiceCanvas:
-    def __init__(self, fav_item_codes_list, fav_item_names_list, fast_item_codes_list, fast_item_names_list):
-   
+    def __init__(self, type, fav_item_codes_list, fav_item_names_list, fast_item_codes_list, fast_item_names_list):
+
+        title = type.upper() + ' INVOICE'
         w, h = sg.Window.get_screen_size()        
         lw = w*78/100
         rw = w*25/100                
         lh = h
         rh = h
-        background_color='LightCyan',
+        
+        if type == 'draft':
+            background_color='PaleTurquoise1'
+            alternating_row_color = 'LightSkyBlue1'
+            item_rows = 14
+            bottom_pane_top = 10
+            print_left_pad = 0
+            exit_left_pad = 20          
+        else:
+            background_color='LemonChiffon'
+            alternating_row_color = 'Khaki'        
+            item_rows = 20
+            bottom_pane_top = 210
+            print_left_pad = 4
+            exit_left_pad = 775         
 
         menu_def = [
                 ['&File', ['New', 'Delete', 'Save', 'Submit', 'Print', '---', 'Exit']],      
@@ -24,9 +39,10 @@ class InvoiceCanvas:
         
         ui_header_pane_layout = [
             [
-                sg.Text('BILL', **ap_style.page_title, pad=((0,0),(0,3)), background_color=background_color),
-                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_BILL_NUMBER_', background_color=background_color),
-                sg.Text('', **ap_style.page_title, pad=((0,264),(0,3)), key='_MOBILE_NUMBER_', background_color=background_color),
+                sg.Text(title, **ap_style.page_title, pad=((0,0),(0,3)), background_color=background_color),
+                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_DRAFT_INVOICE_NUMBER_', background_color=background_color,visible=(eval("type=='draft'"))),
+                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_TAX_INVOICE_NUMBER_', background_color=background_color,visible=(eval("type=='tax'"))),
+                sg.Text('', **ap_style.page_title, pad=((0,67),(0,3)), key='_MOBILE_NUMBER_', background_color=background_color),
                 sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.action_button, pad = ((0,7),(0,0))),
                 sg.Button(key='_BEGIN_', button_text='BEGN\nHome',**ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **ap_style.nav_button, pad = ((3,5),(0,0))),
@@ -73,8 +89,8 @@ class InvoiceCanvas:
                      auto_size_columns=False,
                      justification='right',
                      row_height=24,
-                     alternating_row_color='LightSkyBlue1',
-                     num_rows=14,
+                     alternating_row_color= alternating_row_color,
+                     num_rows=item_rows,
                      display_row_numbers=True,
                      right_click_menu=["that",["Specs","Quantity","Weight", "Price", "---", "Add", "Less", "---", "Delete"]],
                      bind_return_key=True,
@@ -85,18 +101,18 @@ class InvoiceCanvas:
 
         ui_action_pane_layout = [
             [
-                sg.Button(key='F1',  button_text='\nF1', **ap_style.action_button, pad=((3,5),(5,0))),
-                sg.Button(key='F2',  button_text='\nF2', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F3',  button_text='\nF3', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F4',  button_text='\nF4', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F5',  button_text='\nF5', **ap_style.action_button, pad=((0,25),(5,0))),
-                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='+',  button_text='\n+', **ap_style.action_button_small, pad=((20,5),(5,0))),
-                sg.Button(key='-',  button_text='\n-', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='ESC', button_text='Exit\nEsc', **ap_style.exit_button, pad=((20,0),(5,0))),
+                sg.Button(key='F1',  button_text='\nF1', **ap_style.action_button, pad=((3,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='F2',  button_text='\nF2', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='F3',  button_text='\nF3', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='F4',  button_text='\nF4', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='F5',  button_text='\nF5', **ap_style.action_button, pad=((print_left_pad,25),(5,0))),
+                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='+',  button_text='\n+', **ap_style.action_button_small, pad=((20,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='-',  button_text='\n-', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("type=='draft'"))),
+                sg.Button(key='ESC', button_text='Exit\nEsc', **ap_style.exit_button, pad=((exit_left_pad,0),(5,0))),
             ]               
         ]
 
@@ -143,21 +159,21 @@ class InvoiceCanvas:
                 sg.Input(key='_ROUNDOFF_AMOUNT_', **ap_style.summary_input),
             ],
             [
-                sg.Text('Billed:', **ap_style.summary_text_bold, pad=((5,0),(10,0))),
+                sg.Text('Invoiced:', **ap_style.summary_text_bold, pad=((5,0),(10,0))),
                 sg.Input(key='_INVOICE_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(10,10))),
             ],
             [
-                sg.Text('Paid:', **ap_style.summary_text_bold ,pad=((5,0),(5,0))),
+                sg.Text('Received:', **ap_style.summary_text_bold ,pad=((5,0),(5,0))),
                 sg.Input(key='_PAID_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(0,10)))
             ]            
         ]        
         
         ui_tools_pane_layout = [
             [
-                sg.Button('ADDON  (Alt-A)', key='Addon', **ap_style.search_button_wide)
+                sg.Button('ADDON  (Alt-A)', key='Addon', **ap_style.search_button_wide,visible=(eval("type=='draft'")))
             ],
             [
-                sg.Button('BUNDLE  (Alt-B)', key='Bundle', **ap_style.search_button_wide)
+                sg.Button('BUNDLE  (Alt-B)', key='Bundle', **ap_style.search_button_wide,visible=(eval("type=='draft'")))
             ],
         ]
 
@@ -187,7 +203,7 @@ class InvoiceCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(7,5)),
-                    background_color=background_color,
+                    background_color=background_color, visible=(eval("type=='draft'"))
                 )     
             ],
             [
@@ -196,7 +212,7 @@ class InvoiceCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((2,0),(0,0)),
-                    background_color=background_color,
+                    background_color=background_color, visible=(eval("type=='draft'"))
                 )     
              ],
             [
@@ -262,7 +278,7 @@ class InvoiceCanvas:
                     pad = ((4,0),(2,9)),
                 )     
             ],
-            [sg.Text('Fast moving:', **ap_style.summary_text_bold, pad=((5,0),(10,0)))],                              
+            [sg.Text('Fast moving:', **ap_style.summary_text_bold, pad=((5,0),(10,0)), visible=(eval("type=='draft'")))],                              
             [
                 sg.Frame('',
                     ui_fast_pane_layout, 
@@ -273,7 +289,7 @@ class InvoiceCanvas:
                 )     
             ],            
             [
-                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(5,10))),
+                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(bottom_pane_top,10))),
             ],
             [
                 sg.Frame('',
@@ -398,7 +414,7 @@ class InvoiceListCanvas:
                      num_rows=10,
                      display_row_numbers=False,
                      bind_return_key = True,
-                     col_widths=[10, 12, 5, 9, 9, 9, 9, 9, 12],
+                     col_widths=[15, 12, 5, 9, 9, 9, 9, 9, 12],
                      pad=((5,0),(5,5))
                 )            
             ],
@@ -418,6 +434,317 @@ class InvoiceListCanvas:
         return self.__layout
     
     layout = property(get_layout)         
+
+
+###
+class PaymentCanvas:
+    def __init__(self):
+    
+        ui_customer_tab_layout = [
+            [
+                sg.Text('', font=("Helvetica", 5)),
+            ],
+            [
+                sg.Text('Mobile No.:', size=(12,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_MOBILE_NUMBER_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(15,1),
+                    enable_events=True,                                
+                    justification = 'left'
+                )
+            ],
+            [
+                sg.Text('Name:', size=(12,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_CUSTOMER_NAME_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(30,1),
+                    justification = 'left'
+                )
+            ],
+            [
+                sg.Text('Address:', size=(12,1),  font=("Helvetica", 11)),         
+            ],
+            [
+                sg.Input(key='_CUSTOMER_ADDRESS_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(45,1),
+                    justification = 'left'
+                )
+            ]
+        ]
+
+        ui_receive_tab_layout = [
+            [
+                sg.Text('', font=("Helvetica", 5)),
+            ],
+            [
+                sg.Text('Net Amount:', size=(17,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_NET_AMOUNT_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('Discount Amount:', size=(17,1),  font=("Helvetica", 11)),             
+                sg.Input(key='_DISCOUNT_AMOUNT_HD_',
+                    readonly=True, 
+                    font=("Helvetica", 11),size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('Roundoff Adjustment:', size=(17,1),  font=("Helvetica", 11)),             
+                sg.Input(key='_ROUNDOFF_ADJUSTMENT_',
+                    readonly=True, 
+                    font=("Helvetica", 11),size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('Invoice Amount:', size=(15,1), font=("Helvetica 12 bold"), text_color='Blue'),             
+                sg.Input(key='_INVOICE_AMOUNT_',
+                    readonly=True, 
+                    size=(11,1),                
+                    font=("Helvetica 14 bold"),
+                    pad = ((8,0),(0,0)),                
+                    justification = 'right'
+                )
+            ],
+            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(15,15)))],            
+            [
+                sg.Text('Redeem Adjustment:', size=(17,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_REDEEM_ADJUSTMENT_HD_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('Exchange Adjustment:', size=(17,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_EXCHANGE_ADJUSTMENT_HD_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('Cash Amount:', size=(17,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_CASH_AMOUNT_',
+                    focus=True, 
+                    background_color='white',
+                    font=("Helvetica", 11),size=(15,1),
+                    enable_events=True,                                
+                    justification = 'right'
+                ),
+            ],
+            [
+                sg.Text('Card Amount:', size=(17,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_CARD_AMOUNT_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(15,1),
+                    enable_events=True,                                
+                    justification = 'right'
+                ), 
+                sg.Text('Ref:', font=("Helvetica", 11)),                         
+                sg.Input(key='_CARD_REFERENCE_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(15,1),
+                    enable_events=True,                                
+                    justification = 'left',
+                    pad=((0,20),(0,0))
+                ),        
+            ],
+            [
+                sg.Text('Total Received :', size=(15,1), font=("Helvetica 12 bold"), text_color='Blue', pad = ((6,0),(5,5))),             
+                sg.Input(key='_TOTAL_RECEIVED_AMOUNT_',
+                    readonly=True, 
+                     size=(11,1),                
+                    font=("Helvetica 14 bold"),
+                    pad = ((12,0),(0,0)),                
+                    justification = 'right'
+                )
+            ],            
+            [
+                sg.Text('Cash Return:', size=(15,1), font=("Helvetica 12 bold"), text_color='Blue', pad = ((6,0),(0,15))),             
+                sg.Input(key='_CASH_RETURN_',
+                    readonly=True, 
+                    size=(11,1),                
+                    font=("Helvetica 14 bold"),
+                    pad = ((12,0),(0,15)),                
+                    justification = 'right'
+                )
+            ],
+        ]
+
+        ui_exchange_tab_layout = [
+            [
+                sg.Text('', font=("Helvetica", 5)),
+            ],
+            [
+                sg.Text('Voucher:', size=(10,1),  font=("Helvetica", 11)),     
+                sg.Combo(key='_EXCHANGE_VOUCHER_',
+                    values=['None'],
+                    default_value='None',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(20,2),
+                    enable_events=True,                                
+                )
+            ],
+            [
+                sg.Text('Adjustment:', size=(10,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_EXCHANGE_ADJUSTMENT_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                )
+            ],
+        ]
+
+        ui_discount_tab_layout = [
+            [
+                sg.Text('', font=("Helvetica", 5)),
+            ],
+            [
+                sg.Text('Discount:', size=(10,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_DISCOUNT_AMOUNT_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(15,1),
+                    enable_events=True,                                
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('PIN:', size=(10,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_DISCOUNT_PIN_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(5,1),
+                    enable_events=True,                                
+                    justification = 'left'
+                )
+            ],
+        ]
+
+        ui_redeem_tab_layout = [
+            [
+                sg.Text('', font=("Helvetica", 5)),
+            ],
+            [
+                sg.Text('Available Points:', size=(15,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_AVAILABLE_POINTS_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(5,1),
+                    justification = 'right'
+                ),
+                sg.Input(key='_AVAILABLE_BALANCE_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                )        
+            ],
+            [
+                sg.Text('Redeem Points:', size=(15,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_REDEEM_POINTS_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(5,1),
+                    enable_events=True,                                
+                    justification = 'right'
+                ),
+                sg.Input(key='_REDEEM_ADJUSTMENT_',
+                    readonly=True, 
+                     font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                )        
+            ],
+            [
+                sg.Text('PIN:', size=(15,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_REDEEM_PIN_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(5,1),
+                    enable_events=True,                                
+                    justification = 'left'
+                )
+            ],
+        ]
+    
+        self.__layout = [
+            [
+                sg.Text('Customer:', size=(8,1),  font=("Helvetica", 11), pad=((10,0),(10,5))),     
+                sg.Input(key='_MOBILE_NUMBER_HEADER_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(12,1),
+                    justification = 'left',
+                    pad=((5,0),(10,5))            
+                ),    
+                sg.Input(key='_CUSTOMER_NAME_HEADER_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(34,1),
+                    justification = 'left', 
+                    pad=((5,0),(10,5))
+                )
+            ],
+            [
+                sg.Text('Balance:', size=(7,1), font=("Helvetica 12 bold"), text_color='Blue', pad=((10,0),(0,10))),         
+                sg.Input(key='_BALANCE_AMOUNT_',
+                    readonly=True,
+                    font=("Helvetica 14 bold"),
+                    size=(12,1),
+                    justification = 'right',
+                    pad=((7,0),(0,10)),            
+                ),    
+            
+            ],
+            [
+                sg.TabGroup(
+                    [
+                        [
+                            sg.Tab('Receive-F1', ui_receive_tab_layout, key='_RECEIVE_TAB_'),
+                            sg.Tab('Exchange-F2', ui_exchange_tab_layout, key='_EXCHANGE_TAB_'),
+                            sg.Tab('Redeem-F3', ui_redeem_tab_layout, key='_REDEEM_TAB_'),
+                            sg.Tab('Discount-F4', ui_discount_tab_layout, key='_DISCOUNT_TAB_'),
+                            sg.Tab('Customer-F5', ui_customer_tab_layout, key='_CUSTOMER_TAB_'),
+                        ]
+                    ],
+                    key='-group2-', 
+                    title_color='grey32',
+                    font=("Helvetica 11"),
+                    selected_title_color='white',
+                    tab_location='topleft'
+                ),
+            ],
+            [
+                sg.Button('Ok-F12', 
+                    size=(8, 1), 
+                    font='Calibri 12 bold', 
+                    key='_PAYMENT_OK_',
+                    pad = ((5,0),(10,10)),                            
+                ),
+
+                sg.Button('Exit-Esc', 
+                    size=(8, 1), 
+                    font='Calibri 12 bold', 
+                    key='_PAYMENT_ESC_', 
+                    pad = ((15,0),(10,10)),                            
+                )
+            ]                   
+        ]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)         
+
 
 
 ###

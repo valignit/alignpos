@@ -14,7 +14,7 @@ class MainMenuCanvas:
 
         menu_def = [
                 ['&File', ['E&xit']],      
-                ['&Operations', ['&Estimate', '&Invoice', '&Receipt', '&Cash', '---', 'Day Close']],      
+                ['&Operations', ['&Estimate', '&Draft Invoice', '&Tax Invoice', '&Cash', '---', 'Day Close']],      
                 ['&Interface', ['&Download Customer', '&Download Item', '&Download Exchange', '---', '&Upload Invoice']],      
                 ['&Reports', ['&Daily Sales', 'Cash &Position']],      
                 ['&Help', '&About'], 
@@ -34,13 +34,13 @@ class MainMenuCanvas:
                             sg.Text('Operations',**ap_style.menu_text),
                         ],
                         [
-                            sg.Button(key='_ESTIMATE_OPTION_', button_text='E̲stimate',**ap_style.menu_button),
+                            sg.Button(key='_ESTIMATE_', button_text='E̲stimate',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_INVOICE_OPTION_', button_text='I̲nvoice',**ap_style.menu_button),
+                            sg.Button(key='_DRAFT_INVOICE_', button_text='D̲raft Invoice',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_RECEIPT_OPTION_', button_text='R̲eceipt',**ap_style.menu_button),
+                            sg.Button(key='_TAX_INVOICE_', button_text='T̲ax Invoice',**ap_style.menu_button),
                         ],
                         [
                             sg.Button(key='_CASH_OPTION_', button_text='C̲ash',**ap_style.menu_button),
@@ -62,7 +62,7 @@ class MainMenuCanvas:
                             sg.Button(key='_DOWNLOAD_CUSTOMERS_', button_text='Download Cu̲stomer',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_DOWNLOAD_ITEMS_', button_text='Download In̲voice',**ap_style.menu_button),
+                            sg.Button(key='_DOWNLOAD_ITEMS_', button_text='Download It̲em',**ap_style.menu_button),
                         ],
                         [
                             sg.Button(key='_DOWNLOAD_EXCHANGES_', button_text='Download Exch̲ange',**ap_style.menu_button),

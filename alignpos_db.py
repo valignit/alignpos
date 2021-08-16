@@ -1,4 +1,6 @@
+from multipledispatch import dispatch
 from sqlalchemy import create_engine, exc, text, MetaData
+from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.automap import automap_base
 import os
@@ -127,31 +129,82 @@ class DbTable():
         self.__count = len(self.__list)                
         return(self.__count)
    
+    @dispatch(str)
     def list(self, filter):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=exc.SAWarning)
             try:
-                self.__list = self.__conn.session.query(self.__table).filter(text(filter)).all()       
+                self.__list = self.__conn.session.query(self.__table).filter(text(filter)).order_by('name').all()      
             except exc.SQLAlchemyError as db_err:
                 print("Database error 205 while list() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
                 sys.exit(1)    
             return self.__list
-   
+
+    @dispatch(str, str)   
+    def list(self, filter, order):
+        table = inspect(self.__table)
+        for column in table.c:
+            if order == column.name:
+                print(column.name)
+                break
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=exc.SAWarning)
+            try:
+                self.__list = self.__conn.session.query(self.__table).filter(text(filter)).order_by(column).all()      
+            except exc.SQLAlchemyError as db_err:
+                print("Database error 205 while list() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                sys.exit(1)    
+            return self.__list
+
+    @dispatch(str)   
     def first(self, filter):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=exc.SAWarning)
             try:
-                self.__row = self.__conn.session.query(self.__table).filter(text(filter)).first()        
+                self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by('name').first()
             except exc.SQLAlchemyError as db_err:
-                print("Database error 206 while first() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 206a while first() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
                 sys.exit(1)
             return self.__row
 
+    @dispatch(str, str)   
+    def first(self, filter, order):
+        table = inspect(self.__table)
+        for column in table.c:
+            if order == column.name:
+                print(column.name)
+                break
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=exc.SAWarning)
+            try:
+                self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by(column).first()        
+            except exc.SQLAlchemyError as db_err:
+                print("Database error 206b while first() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                sys.exit(1)
+            return self.__row
+
+    @dispatch(str)
     def last(self, filter):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=exc.SAWarning)
             try:
                 self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by(self.__table.name.desc()).first()       
+            except exc.SQLAlchemyError as db_err:
+                print("Database error 207 while last() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                sys.exit(1)    
+            return self.__row
+
+    @dispatch(str, str)   
+    def last(self, filter, order):
+        table = inspect(self.__table)
+        for column in table.c:
+            if order == column.name:
+                print(column.name)
+                break
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=exc.SAWarning)
+            try:
+                self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by(column.desc()).first()       
             except exc.SQLAlchemyError as db_err:
                 print("Database error 207 while last() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
                 sys.exit(1)    
