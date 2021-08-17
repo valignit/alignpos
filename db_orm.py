@@ -8,6 +8,8 @@ import sys
 import json
 import warnings
 
+from utilities import Config
+
 
 ###
 # alignpos Database Connection
@@ -19,8 +21,15 @@ class DbConn():
         self.__table = None
         self.__table_name = ''
         self.__customer_table = None 
-        
-        with open('./alignpos.json') as file_config:
+
+        config = Config()
+        db_host = config.db_host
+        db_port = config.db_port
+        db_database = config.db_database
+        db_user = config.db_user
+        db_passwd = config.db_passwd         
+        '''
+        with open('c:/alignpos/alignpos.json') as file_config:
           config = json.load(file_config)
 
         db_pos_host = config["db_pos_host"]
@@ -28,8 +37,9 @@ class DbConn():
         db_pos_database = config["db_pos_database"]
         db_pos_user = config["db_pos_user"]
         db_pos_passwd = config["db_pos_passwd"]         
-       
-        conn_str = 'mariadb+mariadbconnector://{}:{}@{}:{}/{}'.format(db_pos_user, db_pos_passwd, db_pos_host, db_pos_port, db_pos_database)
+        '''
+                
+        conn_str = 'mariadb+mariadbconnector://{}:{}@{}:{}/{}'.format(db_user, db_passwd, db_host, db_port, db_database)
         self.__engine = create_engine(conn_str)
         self.__session = Session(self.__engine)
         metadata = MetaData()

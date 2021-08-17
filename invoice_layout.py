@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 
-from common_layout import ElementStyle as ap_style
+from styles import ElementStyle as ap_style
+from utilities import Config
 
 
 ###
@@ -9,6 +10,9 @@ class InvoiceCanvas:
     def __init__(self, type, fav_item_codes_list, fav_item_names_list, fast_item_codes_list, fast_item_names_list):
 
         title = type.upper() + ' INVOICE'
+        
+        config = Config()
+        
         w, h = sg.Window.get_screen_size()        
         lw = w*78/100
         rw = w*25/100                
@@ -129,7 +133,7 @@ class InvoiceCanvas:
 
         ui_top_pane_layout = [
             [
-                sg.Image(filename = 'images/al_fareeda_logo.PNG', background_color = 'white', pad = ((55,55),(0,0)))
+                sg.Image(filename = config.application_path + '/images/client_logo.PNG', background_color = 'white', pad = ((55,55),(0,0)))
             ],
         ]
 
@@ -183,7 +187,7 @@ class InvoiceCanvas:
         
         ui_bottom_pane_layout = [
             [
-                sg.Image(filename = 'images/alignpos_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
+                sg.Image(filename = config.application_path + '/images/application_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
             ]
         ]
 

@@ -5,16 +5,20 @@ import os
 from barcode import Code128
 from barcode.writer import ImageWriter
 
-from alignpos_kv import KvConn
-from alignpos_db import DbConn, DbTable, DbQuery
+from utilities import Config, Message, Keypad
+from db_nosql import KvConn
+from db_orm import DbConn, DbTable, DbQuery
 from invoice_layout import InvoiceCanvas, ChangeQtyCanvas, InvoiceListCanvas, PaymentCanvas
 from invoice_ui import InvoiceUi, ChangeQtyUi, InvoiceListUi, PaymentUi
-from common import Message, Keypad, ItemList, CustomerList
+from common import ItemList, CustomerList
 
 
 class Invoice():
 
     def __init__(self, type, user_id, terminal_id):
+    
+        config = Config()
+        
         self.__type = type
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
@@ -98,7 +102,7 @@ class Invoice():
         ct = 0
         
         for item_code in self.__fav_item_codes_list:
-            path = 'images/'
+            path = config.application_path + '/images/'
             file = path + item_code + '.png'
             element = 'FAV_' + item_code            
             if os.path.isfile(file):

@@ -5,22 +5,25 @@ import os
 from barcode import Code128
 from barcode.writer import ImageWriter
 
-from alignpos_kv import KvConn
-from alignpos_db import DbConn, DbTable, DbQuery
+from utilities import Config, Message, Keypad
+from db_nosql import KvConn
+from db_orm import DbConn, DbTable, DbQuery
+from common import ItemList, CustomerList
 from estimate_layout import EstimateCanvas, ChangeQtyCanvas, EstimateListCanvas
 from estimate_ui import EstimateUi, ChangeQtyUi, EstimateListUi
-from common import Message, Keypad, ItemList, CustomerList
 
 
 class Estimate():
 
     def __init__(self, user_id, terminal_id):
+
+        config = Config()
         
         w, h = sg.Window.get_screen_size()
         
         self.__kv = KvConn()
 
-        self.tax_included = self.__kv.get('tax_included')
+        self.__tax_included = self.__kv.get('tax_included')
         
         kb = Controller()
         self.__kb = kb
@@ -84,7 +87,7 @@ class Estimate():
                         resizable=False,
                         return_keyboard_events=True, 
                         use_default_focus=False,
-                        icon='images/favicon.ico',
+                        icon='c:/alignpos/images/favicon.ico',
                         modal=True
                     )
 
@@ -118,7 +121,7 @@ class Estimate():
         ct = 0
         
         for item_code in self.__fav_item_codes_list:
-            path = 'images/'
+            path = config.application_path + '/images/'
             file = path + item_code + '.png'
             element = 'FAV_' + item_code            
             if os.path.isfile(file):
@@ -567,7 +570,8 @@ class Estimate():
     def initialize_header_pane(self):
         self.__ui.estimate_number = ''
         self.__ui.payment_status = ''
-        walk_in_customer = self.__kv.get('walk_in_customer')  
+        walk_in_customer = self.__kv.get('favorite_item_1')
+        print('wic:', walk_in_customer)
         db_customer_row = self.__db_customer_table.get_row(walk_in_customer)
         if db_customer_row:        
             self.__ui.mobile_number = db_customer_row.mobile_number
@@ -726,7 +730,7 @@ class Estimate():
         self.__ui.sgst_tax_rate = db_item_row.sgst_tax_rate
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         
-        if self.tax_included == 0:
+        if self.__tax_included == 0:
             self.__ui.selling_price = db_item_row.selling_price
             self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
             tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
@@ -753,7 +757,7 @@ class Estimate():
         self.__ui.sgst_tax_rate = db_estimate_item_row.sgst_tax_rate
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         
-        if self.tax_included == 0:
+        if self.__tax_included == 0:
             self.__ui.selling_price = db_item_row.selling_price
             self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
             self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100

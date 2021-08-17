@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 import json
 from subprocess import run
 
-from alignpos_kv import KvConn
+from db_nosql import KvConn
 from main_menu_layout import MainMenuCanvas
 from main_menu_ui import MainMenuUi
 from estimate import Estimate
@@ -33,7 +33,7 @@ class MainMenu():
                         keep_on_top=False, 
                         resizable=False,
                         return_keyboard_events=True, 
-                        icon='images/favicon.ico',
+                        icon='c:/alignpos/images/favicon.ico',
                         use_default_focus=False,
                  )        
      

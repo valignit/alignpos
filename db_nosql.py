@@ -4,6 +4,7 @@ import sys
 import json
 import warnings
 
+from utilities import Config
 
 ###
 # alignpos Database Connection
@@ -11,12 +12,15 @@ class KvConn():
 
     def __init__(self):
         self.__kv = None
-        
-        with open('./alignpos.json') as file_config:
+        config = Config()
+        '''
+        with open('c:/alignpos/alignpos.json') as file_config:
           config = json.load(file_config)
-
-        kv_pos_database = config["kv_pos_database"]
-        self.__kv = pickledb.load(kv_pos_database, False)
+        '''
+        
+        #kv_pos_database = config["kv_pos_database"]
+        kv_database = config.kv_database
+        self.__kv = pickledb.load(kv_database, False)
 
     def set(self, key, value):
         self.__kv.set(key, value)

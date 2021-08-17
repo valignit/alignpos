@@ -31,7 +31,7 @@ def print_log(msg):
 ##############################
 now = datetime.now()
 
-with open('./alignpos.json') as file_config:
+with open('./app_config.json') as file_config:
   config = json.load(file_config)
   
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
@@ -42,10 +42,10 @@ print_log('------------------------------------------')
 
 ######
 # Connect to ERPNext web service
-ws_erp_host = config["ws_erp_host"]
+ws_erp_host = config["ws_host"]
 ws_erp_sess = requests.Session()
-ws_erp_user = config["ws_erp_user"]
-ws_erp_passwd = config["ws_erp_passwd"]
+ws_erp_user = config["ws_user"]
+ws_erp_passwd = config["ws_passwd"]
 ws_erp_payload = {"usr": ws_erp_user, "pwd": ws_erp_passwd }
 
 ws_erp_method = '/api/method/login'
@@ -71,7 +71,7 @@ except requests.exceptions.RequestException as ws_err:
 
 ######
 # Connect to Key Value database
-kv = pickledb.load('alignpos_settings', False)
+kv = pickledb.load('data/alignpos_settings', False)
 
 ######
 # Fetch Created list of Customers from ERP

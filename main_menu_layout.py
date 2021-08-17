@@ -1,11 +1,13 @@
 import PySimpleGUI as sg
-from common_layout import ElementStyle as ap_style
-
+from styles import ElementStyle as ap_style
+from utilities import Config
 
 ###
 # Main Menu Layout               
 class MainMenuCanvas:
     def __init__(self, w, h):
+    
+        config = Config()
             
         lw = w*78/100
         rw = w*22/100
@@ -107,13 +109,13 @@ class MainMenuCanvas:
 
         ui_top_pane_layout = [
             [
-                sg.Image(filename = 'images/al_fareeda_logo.PNG', background_color = 'white', pad = ((55,55),(0,0)))
+                sg.Image(filename = config.application_path + '/images/client_logo.PNG', background_color = 'white', pad = ((55,55),(0,0)))
             ],
         ]
 
         ui_summary_pane_layout = [
             [
-                sg.Image(filename = 'images/grossery.PNG', background_color = 'white', pad = ((0,0),(10,0)))
+                sg.Image(filename = config.application_path + '/images/domain.PNG', background_color = 'white', pad = ((0,0),(10,0)))
             ],
             [
                 sg.Text('', key='_WELCOME_TEXT_', **ap_style.welcome_text, pad = ((5,5),(10,5))),
@@ -122,7 +124,7 @@ class MainMenuCanvas:
         
         ui_bottom_pane_layout = [
             [
-                sg.Image(filename = 'images/alignpos_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
+                sg.Image(filename = config.application_path + '/images/application_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
             ]
         ]
         
