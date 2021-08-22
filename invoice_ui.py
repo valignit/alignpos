@@ -19,7 +19,7 @@ class InvoiceUi:
         # Initialize Search Pane
         self.__barcode = str('')
         self.__search_name = str('') 
-        self.__item_group = str('') 
+        self.__search_item_group = str('') 
         self.__item_groups_list = ['']
         
         # Initialize Detail Pane
@@ -29,9 +29,12 @@ class InvoiceUi:
         self.__item_code = str('')
         self.__item_barcode = str('')
         self.__item_name = str('')
+        self.__item_group = str('')
         self.__uom = str('')
         self.__qty = float(0.0)
-        self.__selling_price = float(0.00)
+        self.__standard_selling_price = float(0.00)
+        self.__applied_selling_price = float(0.00)
+        self.__item_discount_amount = float(0.00)
         self.__selling_amount = float(0.00)
         self.__tax_rate = float(0.00)
         self.__tax_amount = float(0.00)
@@ -54,7 +57,12 @@ class InvoiceUi:
         self.__discount_amount = float(0.00)
         self.__roundoff_amount = float(0.00)
         self.__invoice_amount = float(0.00)
+        self.__cash_amount = float(0.00)
+        self.__card_amount = float(0.00)
+        self.__exchange_amount = float(0.00)
+        self.__redeem_amount = float(0.00)
         self.__paid_amount = float(0.00)
+        self.__cash_return = float(0.00)
 
         ###
         # Unfocus Header Pane        
@@ -75,12 +83,19 @@ class InvoiceUi:
         # Unfocus Summary Pane
         self.__window['_LINE_ITEMS_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_TOTAL_CGST_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_TOTAL_SGST_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_TAX_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_NET_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_DISCOUNT_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_ROUNDOFF_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_INVOICE_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_CASH_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_CARD_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_EXCHANGE_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_REDEEMED_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_PAID_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_CASH_RETURN_'].Widget.config(takefocus=0)
 
         # Unfocus Tools Pane        
         self.__window['Addon'].Widget.config(takefocus=0)
@@ -168,17 +183,17 @@ class InvoiceUi:
         self.__search_name = self.__window.Element('_SEARCH_NAME_').get()        
         return self.__search_name
 
-    def set_item_group(self, item_group):
-        self.__item_group = item_group
-        self.__window.Element('_ITEM_GROUP_').update(values = self.__item_group_list)
+    def set_search_item_group(self, search_item_group):
+        self.__search_item_group = search_item_group
+        self.__window.Element('_SEARCH_ITEM_GROUP_').update(values = self.__item_groups_list)
         
-    def get_item_group(self):
-        self.__item_group = self.__window.Element('_ITEM_GROUP_').get()        
-        return self.__item_group
+    def get_search_item_group(self):
+        self.__search_item_group = self.__window.Element('_SEARCH_ITEM_GROUP_').get()        
+        return self.__search_item_group
 
     def set_item_groups_list(self, item_groups_list):
         self.__item_groups_list = item_groups_list
-        self.__window.Element('_ITEM_GROUP_').update(values = self.__item_groups_list)
+        self.__window.Element('_SEARCH_ITEM_GROUP_').update(values = self.__item_groups_list)
         
     def get_item_groups_list(self):
         return self.__item_groups_list
@@ -218,6 +233,12 @@ class InvoiceUi:
     def get_item_name(self):
         return self.__item_name
 
+    def set_item_group(self, item_group):
+        self.__item_group = item_group
+        
+    def get_item_group(self):
+        return self.__item_group
+
     def set_uom(self, uom):
         self.__uom = uom
         
@@ -230,11 +251,23 @@ class InvoiceUi:
     def get_qty(self):
         return self.__qty
 
-    def set_selling_price(self, selling_price):
-        self.__selling_price = selling_price
+    def set_standard_selling_price(self, standard_selling_price):
+        self.__standard_selling_price = standard_selling_price
         
-    def get_selling_price(self):
-        return self.__selling_price
+    def get_standard_selling_price(self):
+        return self.__standard_selling_price
+
+    def set_applied_selling_price(self, applied_selling_price):
+        self.__applied_selling_price = applied_selling_price
+        
+    def get_applied_selling_price(self):
+        return self.__applied_selling_price
+
+    def set_item_discount_amount(self, item_discount_amount):
+        self.__item_discount_amount = item_discount_amount
+        
+    def get_item_discount_amount(self):
+        return self.__item_discount_amount
 
     def set_selling_amount(self, selling_amount):
         self.__selling_amount = selling_amount
@@ -330,15 +363,19 @@ class InvoiceUi:
         return self.__total_tax_amount
 
     def set_total_cgst_amount(self, total_cgst_amount):
-        self.__total_cgst_amount = "{:.2f}".format(total_cgst_amount)
-        
+        self.__total_cgst_amount = total_cgst_amount
+        self.__window.Element('_TOTAL_CGST_AMOUNT_').update(value = "{:.2f}".format(self.__total_cgst_amount))
+                
     def get_total_cgst_amount(self):
+        self.__total_cgst_amount = self.__window.Element('_TOTAL_CGST_AMOUNT_').get()        
         return self.__total_cgst_amount
 
     def set_total_sgst_amount(self, total_sgst_amount):
-        self.__total_sgst_amount = "{:.2f}".format(total_sgst_amount)
+        self.__total_sgst_amount = total_sgst_amount
+        self.__window.Element('_TOTAL_SGST_AMOUNT_').update(value = "{:.2f}".format(self.__total_sgst_amount))
         
     def get_total_sgst_amount(self):
+        self.__total_sgst_amount = self.__window.Element('_TOTAL_SGST_AMOUNT_').get()        
         return self.__total_sgst_amount
 
     def set_net_amount(self, total_net_amount):
@@ -373,6 +410,38 @@ class InvoiceUi:
         self.__invoice_amount = self.__window.Element('_INVOICE_AMOUNT_').get()        
         return self.__invoice_amount
 
+    def set_cash_amount(self, cash_amount):
+        self.__cash_amount = cash_amount
+        self.__window.Element('_CASH_AMOUNT_').update(value = "{:.2f}".format(self.__cash_amount))
+        
+    def get_cash_amount(self):
+        self.__cash_amount = self.__window.Element('_CASH_AMOUNT_').get()        
+        return self.__cash_amount
+
+    def set_card_amount(self, card_amount):
+        self.__card_amount = card_amount
+        self.__window.Element('_CARD_AMOUNT_').update(value = "{:.2f}".format(self.__card_amount))
+        
+    def get_card_amount(self):
+        self.__card_amount = self.__window.Element('_CARD_AMOUNT_').get()        
+        return self.__card_amount
+
+    def set_exchange_amount(self, exchange_amount):
+        self.__exchange_amount = exchange_amount
+        self.__window.Element('_EXCHANGE_AMOUNT_').update(value = "{:.2f}".format(self.__exchange_amount))
+        
+    def get_exchange_amount(self):
+        self.__exchange_amount = self.__window.Element('_EXCHANGE_AMOUNT_').get()        
+        return self.__exchange_amount
+
+    def set_redeemed_amount(self, redeemed_amount):
+        self.__redeemed_amount = redeemed_amount
+        self.__window.Element('_REDEEMED_AMOUNT_').update(value = "{:.2f}".format(self.__redeemed_amount))
+        
+    def get_redeemed_amount(self):
+        self.__redeemed_amount = self.__window.Element('_REDEEMED_AMOUNT_').get()        
+        return self.__redeemed_amount
+
     def set_paid_amount(self, paid_amount):
         self.__paid_amount = paid_amount
         self.__window.Element('_PAID_AMOUNT_').update(value = "{:.2f}".format(self.__paid_amount))
@@ -380,6 +449,14 @@ class InvoiceUi:
     def get_paid_amount(self):
         self.__paid_amount = self.__window.Element('_PAID_AMOUNT_').get()        
         return self.__paid_amount
+
+    def set_cash_return(self, cash_return):
+        self.__cash_return = cash_return
+        self.__window.Element('_CASH_RETURN_').update(value = "{:.2f}".format(self.__cash_return))
+        
+    def get_cash_return(self):
+        self.__cash_amount = self.__window.Element('_CASH_RETURN_').get()        
+        return self.__cash_return
 
 
     ###
@@ -390,11 +467,11 @@ class InvoiceUi:
     def focus_item_name(self):
         self.__window.Element('_SEARCH_NAME_').SetFocus() 
                                    
-    def focus_item_group(self):
-        self.__window.Element('_ITEM_GROUP_').SetFocus() 
+    def focus_search_item_group(self):
+        self.__window.Element('_SEARCH_ITEM_GROUP_').SetFocus() 
 
     def focus_item_group_line(self, idx):
-        self.__window.Element('_ITEM_GROUP_').update(set_to_index = idx)
+        self.__window.Element('_SEARCH_ITEM_GROUP_').update(set_to_index = idx)
 
 
     # Focus Detail Pane
@@ -437,9 +514,12 @@ class InvoiceUi:
         self.__item_line.append(self.__item_code)
         self.__item_line.append(self.__item_barcode)        
         self.__item_line.append(self.__item_name)        
+        #self.__item_line.append(self.__item_group)        
         self.__item_line.append(self.__uom)        
         self.__item_line.append("{:.2f}".format(float(self.__qty)))      
-        self.__item_line.append("{:.2f}".format(float(self.__selling_price)))        
+        #self.__item_line.append("{:.2f}".format(float(self.__standard_selling_price)))        
+        self.__item_line.append("{:.2f}".format(float(self.__applied_selling_price)))        
+        self.__item_line.append("{:.2f}".format(float(self.__item_discount_amount)))        
         self.__item_line.append("{:.2f}".format(float(self.__selling_amount)))       
         self.__item_line.append("{:.2f}".format(float(self.__tax_rate)))     
         self.__item_line.append("{:.2f}".format(float(self.__tax_amount)))       
@@ -452,15 +532,18 @@ class InvoiceUi:
         self.__item_code = self.__item_line[0]
         self.__item_barcode = self.__item_line[1]
         self.__item_name = self.__item_line[2]
+        #self.__item_group = self.__item_line[3]
         self.__uom = self.__item_line[3]
         self.__qty = self.__item_line[4]
-        self.__selling_price = self.__item_line[5]
-        self.__selling_amount = self.__item_line[6]
-        self.__tax_rate = self.__item_line[7]
-        self.__tax_amount = self.__item_line[8]
-        self.__item_net_amount = self.__item_line[9]
-        self.__cgst_tax_rate = self.__item_line[10]
-        self.__sgst_tax_rate = self.__item_line[11]
+        #self.__standard_selling_price = self.__item_line[5]
+        self.__applied_selling_price = self.__item_line[5]
+        self.__item_discount_amount = self.__item_line[6]
+        self.__selling_amount = self.__item_line[7]
+        self.__tax_rate = self.__item_line[8]
+        self.__tax_amount = self.__item_line[9]
+        self.__item_net_amount = self.__item_line[10]
+        self.__cgst_tax_rate = self.__item_line[11]
+        self.__sgst_tax_rate = self.__item_line[12]
 
     def add_item_line(self):
         self.__item_line = []
@@ -510,7 +593,7 @@ class InvoiceUi:
     # Properties for Search Pane
     barcode = property(get_barcode, set_barcode) 
     search_name = property(get_search_name, set_search_name) 
-    item_group = property(get_item_group, set_item_group) 
+    search_item_group = property(get_search_item_group, set_search_item_group) 
     item_groups_list = property(get_item_groups_list, set_item_groups_list) 
     
     # Properties for Detail Pane    
@@ -520,9 +603,12 @@ class InvoiceUi:
     item_code = property(get_item_code, set_item_code)
     item_barcode = property(get_item_barcode, set_item_barcode)
     item_name = property(get_item_name, set_item_name)
+    item_group = property(get_item_group, set_item_group)
     uom = property(get_uom, set_uom)
     qty = property(get_qty, set_qty)
-    selling_price = property(get_selling_price, set_selling_price)
+    standard_selling_price = property(get_standard_selling_price, set_standard_selling_price)
+    applied_selling_price = property(get_applied_selling_price, set_applied_selling_price)
+    item_discount_amount = property(get_item_discount_amount, set_item_discount_amount)
     selling_amount = property(get_selling_amount, set_selling_amount)
     tax_rate = property(get_tax_rate, set_tax_rate)
     tax_amount = property(get_tax_amount, set_tax_amount)
@@ -538,14 +624,19 @@ class InvoiceUi:
     # Properties for Summary Pane    
     line_items = property(get_line_items, set_line_items)
     total_amount = property(get_total_amount, set_total_amount)
-    total_tax_amount = property(get_total_tax_amount, set_total_tax_amount)
     total_cgst_amount = property(get_total_cgst_amount, set_total_cgst_amount)
     total_sgst_amount = property(get_total_sgst_amount, set_total_sgst_amount)
+    total_tax_amount = property(get_total_tax_amount, set_total_tax_amount)
     net_amount = property(get_net_amount, set_net_amount)
     discount_amount = property(get_discount_amount, set_discount_amount)
     roundoff_amount = property(get_roundoff_amount, set_roundoff_amount)
     invoice_amount = property(get_invoice_amount, set_invoice_amount)
-    paid_amount = property(get_invoice_amount, set_invoice_amount)
+    cash_amount = property(get_cash_amount, set_cash_amount)
+    card_amount = property(get_card_amount, set_card_amount)
+    exchange_amount = property(get_exchange_amount, set_exchange_amount)
+    redeemed_amount = property(get_redeemed_amount, set_redeemed_amount)
+    paid_amount = property(get_paid_amount, set_paid_amount)
+    cash_return = property(get_cash_return, set_cash_return)
         
 
 class ChangeQtyUi:

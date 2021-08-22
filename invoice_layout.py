@@ -23,20 +23,20 @@ class InvoiceCanvas:
             background_color='PaleTurquoise1'
             alternating_row_color = 'LightSkyBlue1'
             item_rows = 14
-            bottom_pane_top = 10
+            bottom_pane_top = 16
             print_left_pad = 0
             exit_left_pad = 20          
         else:
             background_color='LemonChiffon'
             alternating_row_color = 'Khaki'        
             item_rows = 20
-            bottom_pane_top = 210
+            bottom_pane_top = 24
             print_left_pad = 4
             exit_left_pad = 775         
 
         menu_def = [
                 ['&File', ['New', 'Delete', 'Save', 'Submit', 'Print', '---', 'Exit']],      
-                ['&Edit', ['Specs', 'Quantity', 'Weight', 'Price', '---', 'Add', 'Less', '---', 'Addon', 'Bundle' ]],      
+                ['&Edit', ['Specs', 'Quantity', 'Weight', 'Discount', '---', 'Add', 'Less', '---', 'Addon', 'Bundle' ]],      
                 ['&View', ['First', 'Previous', 'Next',  'Last']],      
                 ['&Help', 'About'], 
         ]
@@ -64,7 +64,7 @@ class InvoiceCanvas:
                 sg.Input(key='_SEARCH_NAME_', size=(35,1), **ap_style.search_input),
                 sg.Button(key='_KEYPAD2_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))), 
                 sg.Text('Item Group:', **ap_style.search_text, background_color=background_color),
-                sg.Combo([''], key='_ITEM_GROUP_',default_value = 'None'),                
+                sg.Combo([''], key='_SEARCH_ITEM_GROUP_',default_value = 'None'),                
             ]
         ]
 
@@ -88,7 +88,7 @@ class InvoiceCanvas:
         ui_detail_pane_layout = [
             [
                 sg.Table(values=[], key='_ITEMS_LIST_', enable_events=True,
-                     headings= ['Item code', 'Barcode', 'Item Name', 'Unit', 'Qty', 'Price', 'Amount', 'Tax Rate', 'Tax', 'Net'],
+                     headings= ['Item code', 'Barcode', 'Item Name', 'Unit', 'Qty', 'Price', 'Disc', 'Amount', 'Tax Rate', 'Tax', 'Net'],
                      font=(("Helvetica", 11)),
                      auto_size_columns=False,
                      justification='right',
@@ -98,7 +98,7 @@ class InvoiceCanvas:
                      display_row_numbers=True,
                      right_click_menu=["that",["Specs","Quantity","Weight", "Price", "---", "Add", "Less", "---", "Delete"]],
                      bind_return_key=True,
-                     col_widths=[10, 13, 24, 5, 5, 8, 9, 8, 10, 10],
+                     col_widths=[9, 13, 24, 5, 5, 7, 8, 7, 8, 7, 9],
                 )            
             ],
         ]
@@ -147,12 +147,20 @@ class InvoiceCanvas:
                 sg.Input(key='_TOTAL_AMOUNT_', **ap_style.summary_input),
             ],
             [
-                sg.Text('Tax:', **ap_style.summary_text),
-                sg.Input(key='_TOTAL_TAX_AMOUNT_', **ap_style.summary_input),
+                sg.Text('CGST:', **ap_style.summary_text, visible=(eval("type=='tax'"))),
+                sg.Input(key='_TOTAL_CGST_AMOUNT_', **ap_style.summary_input, visible=(eval("type=='tax'"))),
             ],
             [
-                sg.Text('Net Amount:', **ap_style.summary_text),
-                sg.Input(key='_NET_AMOUNT_', **ap_style.summary_input),
+                sg.Text('SGST:', **ap_style.summary_text, visible=(eval("type=='tax'"))),
+                sg.Input(key='_TOTAL_SGST_AMOUNT_', **ap_style.summary_input, visible=(eval("type=='tax'"))),
+            ],
+            [
+                sg.Text('Tax:', **ap_style.summary_text, visible=(eval("type=='draft'"))),
+                sg.Input(key='_TOTAL_TAX_AMOUNT_', **ap_style.summary_input, visible=(eval("type=='draft'"))),
+            ],
+            [
+                sg.Text('Net Amount:', **ap_style.summary_text_bold, pad=((5,0),(10,0))),
+                sg.Input(key='_NET_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(10,10))),
             ],
             [
                 sg.Text('Discount:', **ap_style.summary_text),
@@ -167,9 +175,29 @@ class InvoiceCanvas:
                 sg.Input(key='_INVOICE_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(10,10))),
             ],
             [
-                sg.Text('Received:', **ap_style.summary_text_bold ,pad=((5,0),(5,0))),
-                sg.Input(key='_PAID_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(0,10)))
-            ]            
+                sg.Text('Cash:', **ap_style.summary_text, visible=(eval("type=='tax'"))),
+                sg.Input(key='_CASH_AMOUNT_', **ap_style.summary_input, visible=(eval("type=='tax'"))),
+            ],
+            [
+                sg.Text('Card:', **ap_style.summary_text, visible=(eval("type=='tax'"))),
+                sg.Input(key='_CARD_AMOUNT_', **ap_style.summary_input, visible=(eval("type=='tax'"))),
+            ],
+            [
+                sg.Text('Exchange:', **ap_style.summary_text, visible=(eval("type=='tax'"))),
+                sg.Input(key='_EXCHANGE_AMOUNT_', **ap_style.summary_input, visible=(eval("type=='tax'"))),
+            ],
+            [
+                sg.Text('Redeem:', **ap_style.summary_text, visible=(eval("type=='tax'"))),
+                sg.Input(key='_REDEEMED_AMOUNT_', **ap_style.summary_input, visible=(eval("type=='tax'"))),
+            ],
+            [
+                sg.Text('Received:', **ap_style.summary_text_bold ,pad=((5,0),(10,0))),
+                sg.Input(key='_PAID_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(10,10)))
+            ],          
+            [
+                sg.Text('Cash return:', **ap_style.summary_text, visible=(eval("type=='tax'"))),
+                sg.Input(key='_CASH_RETURN_', **ap_style.summary_input, pad=((5,0),(5,10)), visible=(eval("type=='tax'"))),
+            ],
         ]        
         
         ui_tools_pane_layout = [
@@ -282,14 +310,13 @@ class InvoiceCanvas:
                     pad = ((4,0),(2,9)),
                 )     
             ],
-            [sg.Text('Fast moving:', **ap_style.summary_text_bold, pad=((5,0),(10,0)), visible=(eval("type=='draft'")))],                              
             [
                 sg.Frame('',
                     ui_fast_pane_layout, 
                     background_color = 'grey90',
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((4,0),(2,20)),
+                    pad = ((4,0),(20,10)),
                 )     
             ],            
             [

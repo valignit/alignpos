@@ -1,0 +1,59 @@
+{
+    "data": {
+        "name": "SINV-00030",
+        "owner": "Administrator",
+        "docstatus": 0,
+        "invoice_number": "SINV-00030",
+        "posting_date": "2021-04-27",
+        "customer": "CUST-00002",
+        "total_amount": 115.0,
+        "discount_amount": 0.0,
+        "cgst_tax_amount": 20.7,
+        "sgst_tax_amount": 20.7,
+        "invoice_amount": 135.7,
+        "credit_note_amount": 0.0,
+        "credit_note_reference": "",
+        "loyalty_points_redeemed": 0,
+        "loyalty_redeemed_amount": 0.0,
+        "paid_amount": 135.7,
+        "home_delivery": "Yes",
+        "terminal_id": "1",
+        "amended_from": null,
+        "doctype": "Alignpos Invoice",
+        "items": [
+            {
+                "name": "163dd6eaf9",
+                "owner": "Administrator",
+                "parent": "SINV-00030",
+                "parentfield": "items",
+                "parenttype": "Alignpos Invoice",
+                "docstatus": 0,
+                "item": "ITEM-1001",
+                "item_name": "Pril Dish Washing Liquid",
+                "quantity": 1.0,
+                "standard_selling_price": 115.0,
+                "applied_selling_price": 115.0,
+                "cgst_tax_rate": 18.0,
+                "sgst_tax_rate": 18.0,
+                "approved_by": "xxxx",
+                "doctype": "Alignpos Invoice Item"
+            }
+        ],
+        "payment": [
+            {
+                "name": "2fdd9f4577",
+                "owner": "Administrator",
+                "parent": "SINV-00030",
+                "parentfield": "payment",
+                "parenttype": "Alignpos Invoice",
+                "idx": 1,
+                "docstatus": 0,
+                "mode_of_payment": "Cash",
+                "reference_number": "",
+                "reference_date": null,
+                "received_amount": 135.7,
+                "doctype": "Alignpos Invoice Payment"
+            }
+        ]
+    }
+}

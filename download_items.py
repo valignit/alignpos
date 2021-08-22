@@ -32,7 +32,7 @@ def print_log(msg):
 ##############################
 now = datetime.now()
 
-with open('./alignpos.json') as file_config:
+with open('./app_config.json') as file_config:
   config = json.load(file_config)
   
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
@@ -43,10 +43,10 @@ print_log('---------------------------------------')
 
 ######
 # Connect to ERPNext web service
-ws_erp_host = config["ws_erp_host"]
+ws_erp_host = config["ws_host"]
 ws_erp_sess = requests.Session()
-ws_erp_user = config["ws_erp_user"]
-ws_erp_passwd = config["ws_erp_passwd"]
+ws_erp_user = config["ws_user"]
+ws_erp_passwd = config["ws_passwd"]
 ws_erp_payload = {"usr": ws_erp_user, "pwd": ws_erp_passwd }
 
 ws_erp_method = '/api/method/login'
@@ -72,11 +72,11 @@ except requests.exceptions.RequestException as ws_err:
 
 ######
 # Connect to POS database
-db_pos_host = config["db_pos_host"]
-db_pos_port = config["db_pos_port"]
-db_pos_database = config["db_pos_database"]
-db_pos_user = config["db_pos_user"]
-db_pos_passwd = config["db_pos_passwd"]
+db_pos_host = config["db_host"]
+db_pos_port = config["db_port"]
+db_pos_database = config["db_database"]
+db_pos_user = config["db_user"]
+db_pos_passwd = config["db_passwd"]
 
 try:
     db_pos_conn = mariadb.connect(
@@ -130,7 +130,7 @@ for ws_item_row in ws_erp_resp_json["items"]:
     item_item_name = ws_item_row["item_name"]
     item_group = ws_item_row["item_group"]
     item_stock = ws_item_row["shop_stock"]
-    item_selling_price = ws_item_row["standard_rate"]
+    item_standard_selling_price = ws_item_row["standard_rate"]
     item_maximum_retail_price = ws_item_row["maximum_retail_price"]
     item_tax_template = ''
     item_created = ws_item_row["creation"]
@@ -188,10 +188,10 @@ for ws_item_row in ws_erp_resp_json["items"]:
         last_sync = item_created
     
     db_pos_sql_stmt = (
-       "INSERT INTO tabItem (name, item_code, item_name, item_group, barcode, uom, stock, selling_price, maximum_retail_price, cgst_tax_rate, sgst_tax_rate, creation, owner)"
+       "INSERT INTO tabItem (name, item_code, item_name, item_group, barcode, uom, stock, standard_selling_price, maximum_retail_price, cgst_tax_rate, sgst_tax_rate, creation, owner)"
        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s)"
     )
-    db_pos_sql_data = (item_name, item_code, item_item_name, item_group, item_barcode, item_uom, item_stock, item_selling_price, item_maximum_retail_price, cgst_tax_rate, sgst_tax_rate, ws_erp_user)
+    db_pos_sql_data = (item_name, item_code, item_item_name, item_group, item_barcode, item_uom, item_stock, item_standard_selling_price, item_maximum_retail_price, cgst_tax_rate, sgst_tax_rate, ws_erp_user)
 
     try:
         db_pos_cur.execute(db_pos_sql_stmt, db_pos_sql_data)
@@ -239,7 +239,7 @@ for ws_item_row in ws_erp_resp_json["items"]:
     item_item_name = ws_item_row["item_name"]
     item_group = ws_item_row["item_group"]
     item_stock = ws_item_row["shop_stock"]
-    item_selling_price = ws_item_row["standard_rate"]
+    item_standard_selling_price = ws_item_row["standard_rate"]
     item_maximum_retail_price = ws_item_row["maximum_retail_price"]
     item_tax_template = ''
     item_modified = ws_item_row["modified"]
@@ -302,7 +302,7 @@ for ws_item_row in ws_erp_resp_json["items"]:
                             barcode = %s, \
                             uom = %s, \
                             stock = %s, \
-                            selling_price = %s, \
+                            standard_selling_price = %s, \
                             maximum_retail_price = %s, \
                             cgst_tax_rate = %s, \
                             sgst_tax_rate = %s, \
@@ -311,7 +311,7 @@ for ws_item_row in ws_erp_resp_json["items"]:
                         WHERE item_code = %s" \
     )
     db_pos_sql_data = ( item_item_name, item_group, item_barcode, \
-                        item_uom, item_stock, item_selling_price, item_maximum_retail_price, \
+                        item_uom, item_stock, item_standard_selling_price, item_maximum_retail_price, \
                         cgst_tax_rate, sgst_tax_rate, ws_erp_user, item_code \
     )
 

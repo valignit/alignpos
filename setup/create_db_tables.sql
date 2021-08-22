@@ -27,7 +27,7 @@ CREATE TABLE `tabItem` (
 	`barcode` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`uom` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`stock` DECIMAL(18,6) NULL DEFAULT NULL,
-	`selling_price` DECIMAL(18,6) NULL DEFAULT NULL,
+	`standard_selling_price` DECIMAL(18,6) NULL DEFAULT NULL,
 	`maximum_retail_price` DECIMAL(18,6) NULL DEFAULT NULL,
 	`cgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,

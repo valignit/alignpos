@@ -18,7 +18,7 @@ class EstimateUi:
         # Initialize Search Pane
         self.__barcode = str('')
         self.__search_name = str('') 
-        self.__item_group = str('') 
+        self.__search_item_group = str('') 
         self.__item_groups_list = ['']
         
         # Initialize Detail Pane

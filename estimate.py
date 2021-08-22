@@ -18,7 +18,8 @@ class Estimate():
     def __init__(self, user_id, terminal_id):
 
         config = Config()
-        
+        max_fav_ct = 9
+        max_fast_ct = 5        
         w, h = sg.Window.get_screen_size()
         
         self.__kv = KvConn()
@@ -41,8 +42,6 @@ class Estimate():
         self.__fav_item_codes_list = []
         self.__fast_item_codes_list = []
 
-        max_fav_ct = 9
-        max_fast_ct = 4
         fav_ct = 0
         fast_ct = 0
         for key in self.__kv.getall():
@@ -731,13 +730,13 @@ class Estimate():
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         
         if self.__tax_included == 0:
-            self.__ui.selling_price = db_item_row.selling_price
+            self.__ui.selling_price = db_item_row.standard_selling_price
             self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
             tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
             self.__ui.tax_amount = round(tax_amount, 2)
             self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
         else:
-            self.__ui.item_net_amount = db_item_row.selling_price
+            self.__ui.item_net_amount = db_item_row.standard_selling_price
             self.__ui.selling_amount = float(self.__ui.item_net_amount) / ( 1 + (float(self.__ui.tax_rate)/100))
             self.__ui.selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
             self.__ui.tax_amount = float(self.__ui.item_net_amount) - float(self.__ui.selling_amount)                
@@ -758,12 +757,12 @@ class Estimate():
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         
         if self.__tax_included == 0:
-            self.__ui.selling_price = db_item_row.selling_price
+            self.__ui.selling_price = db_item_row.standard_selling_price
             self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
             self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
             self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
         else:
-            self.__ui.item_net_amount = float(db_item_row.selling_price) * float(self.__ui.qty)
+            self.__ui.item_net_amount = float(db_item_row.standard_selling_price) * float(self.__ui.qty)
             self.__ui.selling_amount = float(self.__ui.item_net_amount) / ( 1 + (float(self.__ui.tax_rate)/100))
             self.__ui.selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
             self.__ui.tax_amount = float(self.__ui.item_net_amount) - float(self.__ui.selling_amount)                

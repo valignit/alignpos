@@ -153,7 +153,7 @@ class ItemList:
             self.__ui.item_code = db_item_row.item_code
             self.__ui.item_name = db_item_row.item_name
             self.__ui.stock = db_item_row.stock
-            self.__ui.selling_price = db_item_row.selling_price
+            self.__ui.selling_price = db_item_row.standard_selling_price
             self.__ui.add_item_line()
 
         self.__ui.item_idx = 0

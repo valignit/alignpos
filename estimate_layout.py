@@ -261,14 +261,13 @@ class EstimateCanvas:
                     pad = ((4,0),(2,9)),
                 )     
             ],
-            [sg.Text('Fast moving:', **ap_style.summary_text_bold, pad=((5,0),(10,0)))],                              
             [
                 sg.Frame('',
                     ui_fast_pane_layout, 
                     background_color = 'grey90',
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((4,0),(2,20)),
+                    pad = ((4,0),(8,12)),
                 )     
             ],            
             [
