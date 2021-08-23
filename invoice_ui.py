@@ -37,6 +37,8 @@ class InvoiceUi:
         self.__item_discount_amount = float(0.00)
         self.__selling_amount = float(0.00)
         self.__tax_rate = float(0.00)
+        self.__cgst_tax_amount = float(0.00)
+        self.__sgst_tax_amount = float(0.00)
         self.__tax_amount = float(0.00)
         self.__item_net_amount = float(0.00)
         self.__cgst_tax_rate = float(0.00)
@@ -287,6 +289,18 @@ class InvoiceUi:
     def get_tax_amount(self):
         return self.__tax_amount
 
+    def set_cgst_tax_amount(self, cgst_tax_amount):
+        self.__cgst_tax_amount = cgst_tax_amount
+        
+    def get_cgst_tax_amount(self):
+        return self.__cgst_tax_amount
+
+    def set_sgst_tax_amount(self, sgst_tax_amount):
+        self.__sgst_tax_amount = sgst_tax_amount
+        
+    def get_sgst_tax_amount(self):
+        return self.__sgst_tax_amount
+
     def set_item_net_amount(self, item_net_amount):
         self.__item_net_amount = item_net_amount
         
@@ -526,6 +540,8 @@ class InvoiceUi:
         self.__item_line.append("{:.2f}".format(float(self.__item_net_amount)))    
         self.__item_line.append("{:.2f}".format(float(self.__cgst_tax_rate)))       
         self.__item_line.append("{:.2f}".format(float(self.__sgst_tax_rate)))
+        self.__item_line.append("{:.2f}".format(float(self.__cgst_tax_amount)))       
+        self.__item_line.append("{:.2f}".format(float(self.__sgst_tax_amount)))
        
     def item_line_to_elements(self, idx):
         self.__item_line = self.__items_list[idx]
@@ -544,6 +560,8 @@ class InvoiceUi:
         self.__item_net_amount = self.__item_line[10]
         self.__cgst_tax_rate = self.__item_line[11]
         self.__sgst_tax_rate = self.__item_line[12]
+        self.__cgst_tax_amount = self.__item_line[13]
+        self.__sgst_tax_amount = self.__item_line[14]
 
     def add_item_line(self):
         self.__item_line = []
@@ -615,6 +633,8 @@ class InvoiceUi:
     item_net_amount = property(get_item_net_amount, set_item_net_amount)
     cgst_tax_rate = property(get_cgst_tax_rate, set_cgst_tax_rate)
     sgst_tax_rate = property(get_sgst_tax_rate, set_sgst_tax_rate)
+    cgst_tax_amount = property(get_cgst_tax_amount, set_cgst_tax_amount)
+    sgst_tax_amount = property(get_sgst_tax_amount, set_sgst_tax_amount)
     
     # Properties for Footer Pane    
     user_id = property(get_user_id, set_user_id) 
@@ -697,6 +717,66 @@ class ChangeQtyUi:
     existing_qty = property(get_existing_qty, set_existing_qty) 
     new_qty = property(get_new_qty, set_new_qty) 
     new_qty_f = property(get_new_qty, set_new_qty_f) 
+
+
+class DiscountUi:
+    def __init__(self, popup):
+        self.__popup = popup
+        self.__item_name = ''
+        self.__selling_price = float(0.00)
+        self.__item_discount_amount = float(0.00)
+
+        self.__popup["_SELLING_PRICE_"].Widget.config(takefocus=0)
+        self.__popup["_DISCOUNT_OK_"].Widget.config(takefocus=0) 
+        self.__popup["_DISCOUNT_ESC_"].Widget.config(takefocus=0) 
+        
+    def set_item_name(self, item_name):
+        self.__item_name = item_name
+        self.__popup.Element('_ITEM_NAME_').update(value = self.__item_name)
+        
+    def get_item_name(self):
+        return self.__item_name
+        
+    def set_selling_price(self, selling_price):
+        self.__selling_price = selling_price
+        self.__popup.Element('_SELLING_PRICE_').update(value = self.__selling_price)
+        
+    def get_selling_price(self):
+        self.__selling_price = self.__popup.Element('_SELLING_PRICE_').get()        
+        return self.__selling_price
+
+    def set_item_discount_amount(self, item_discount_amount):
+        self.__item_discount_amount = item_discount_amount
+        self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').update(value = self.__item_discount_amount)
+        
+    def set_item_discount_amount_f(self, item_discount_amount):
+        self.__item_discount_amount = item_discount_amount
+        self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').update(value = "{:.2f}".format(float(self.__item_discount_amount)))
+        
+    def get_item_discount_amount(self):
+        self.__item_discount_amount = self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').get()        
+        return self.__item_discount_amount
+
+    def focus_selling_price(self):
+        self.__popup.Element('_SELLING_PRICE_').SetFocus() 
+
+    def focus_item_discount_amount(self):
+        self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').SetFocus() 
+        self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').update(select=True)        
+
+    def append_char(self, key, char):
+        if self.__popup[key].Widget.select_present():
+            self.__item_discount_amount = ''
+            self.__popup.Element(key).update(value = self.__item_discount_amount)
+        
+        self.__item_discount_amount = self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').get()        
+        self.__item_discount_amount = str(self.__item_discount_amount) + char
+        self.__popup.Element(key).update(value = self.__item_discount_amount)
+
+    item_name = property(get_item_name, set_item_name)     
+    selling_price = property(get_selling_price, set_selling_price) 
+    item_discount_amount = property(get_item_discount_amount, set_item_discount_amount) 
+    item_discount_amount_f = property(get_item_discount_amount, set_item_discount_amount_f) 
 
 
 class InvoiceListUi:

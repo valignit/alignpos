@@ -8,8 +8,8 @@ from barcode.writer import ImageWriter
 from utilities import Config, Message, Keypad
 from db_nosql import KvConn
 from db_orm import DbConn, DbTable, DbQuery
-from invoice_layout import InvoiceCanvas, ChangeQtyCanvas, InvoiceListCanvas, PaymentCanvas
-from invoice_ui import InvoiceUi, ChangeQtyUi, InvoiceListUi, PaymentUi
+from invoice_layout import InvoiceCanvas, ChangeQtyCanvas, InvoiceListCanvas, PaymentCanvas, DiscountCanvas
+from invoice_ui import InvoiceUi, ChangeQtyUi, InvoiceListUi, PaymentUi, DiscountUi
 from common import ItemList, CustomerList
 
 
@@ -63,7 +63,7 @@ class Invoice():
                         font='Helvetica 11', 
                         finalize=True, 
                         location=(0,0), 
-                        size=(w,h),
+                        size=(w,h-60),
                         keep_on_top=False, 
                         resizable=False,
                         return_keyboard_events=True, 
@@ -126,7 +126,8 @@ class Invoice():
         item_idx = '' 
         focus = None    
         while True:
-            prev_event = event
+            if not event == 'Shift_L:16':
+                prev_event = event
 
             event, values = self.__window.read()
             
@@ -231,6 +232,7 @@ class Invoice():
                     filter = 'item_group = "{}"'.format(selected_group)
                     item_code = self.item_list(filter)
                     self.process_item_name(item_code)                    
+                    self.initialize_search_pane()            
                     self.__ui.focus_item_group_line(0)
                     if self.__ui.items_list:
                         self.__ui.focus_items_list_last()
@@ -253,12 +255,14 @@ class Invoice():
             if event[4:] in self.__fav_item_codes_list:
                 item_code = event[4:]
                 self.process_item_name(item_code)                    
+                self.initialize_search_pane()
                 self.__ui.focus_items_list_last()
                 continue
                 
             if event[5:] in self.__fast_item_codes_list:
                 item_code = event[5:]
                 self.process_item_name(item_code)                    
+                self.initialize_search_pane()
                 self.__ui.focus_items_list_last()
                 continue
 
@@ -318,6 +322,17 @@ class Invoice():
                             continue
                         idx = values['_ITEMS_LIST_'][0]
                         self.delete_item(idx)
+                        if len(self.__ui.items_list) == 0: 
+                            Message('WARN', 'Empty invoice will be deleted')                        
+                            draft_invoice_number = self.__ui.draft_invoice_number            
+                            self.delete_invoice()
+                            self.clear_ui()
+                            self.__actual_items_list = []
+                            self.__ui.items_list = []                        
+                            self.__ui.draft_invoice_number = draft_invoice_number
+                            self.goto_previous_row()
+                            if self.__ui.draft_invoice_number == draft_invoice_number:
+                                self.__ui.draft_invoice_number = ''
                         prev_idx = ''
                         item_idx = ''
                     else:
@@ -397,7 +412,6 @@ class Invoice():
                     if values['_ITEMS_LIST_']:
                         item_idx = values['_ITEMS_LIST_'][0]
                         self.process_weight(item_idx)
-                        self.sum_item_list()
                         prev_idx = ''
                         item_idx = ''
                     else:
@@ -410,7 +424,8 @@ class Invoice():
                 if focus == '_ITEMS_LIST_' :
                     if values['_ITEMS_LIST_']:
                         item_idx = values['_ITEMS_LIST_'][0]
-                        self.process_discount(item_idx)
+                        item_discount_amount = self.discount(self.__ui.items_list[item_idx])                        
+                        self.process_discount(item_discount_amount, item_idx)
                         self.sum_item_list()
                         prev_idx = ''
                         item_idx = ''
@@ -445,12 +460,7 @@ class Invoice():
                 self.initialize_search_pane()
                 self.__ui.focus_items_list_last()
                 continue
-            
-            if (event == 'Bundle') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
-                Message('INFO', 'Feature not yet implemented')
-                self.__ui.focus_items_list_last()
-                continue
-            
+                       
             if event == 'v:86' and focus == '_BARCODE_':
                 self.process_barcode()
                 self.initialize_search_pane()
@@ -508,10 +518,9 @@ class Invoice():
                             item_idx = values['_ITEMS_LIST_'][0]
                             self.process_count(item_idx, '-')
                             self.sum_item_list()
-                    continue                        
+                    continue                 
                                     
                 self.__ui.barcode = self.__ui.barcode + event
-
                 self.__ui.barcode = self.__ui.barcode.upper()
                 if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12) or \
                    (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8) or \
@@ -526,6 +535,14 @@ class Invoice():
     def change_qty(self, item_line):
         change_qty = ChangeQty(item_line)
         return(change_qty.new_qty)
+
+
+    ######
+    # Wrapper function for Discount
+    #      whole line is sent as parameter so that item_name and selling price also can be used
+    def discount(self, item_line):
+        discount = Discount(item_line)
+        return(discount.item_discount_amount)
 
 
     ######
@@ -651,18 +668,20 @@ class Invoice():
         self.__ui.net_amount = float(0.00)
         self.__ui.cgst_tax_rate = float(0.00)
         self.__ui.sgst_tax_rate = float(0.00)
+        self.__ui.cgst_tax_amount = float(0.00)
+        self.__ui.sgst_tax_amount = float(0.00)
         self.__ui.item_line = [] 
 
     def initialize_action_pane(self):
         self.__window.Element('F1').update(text='New\nF1')    
         self.__window.Element('F2').update(text='Delete\nF2')
         self.__window.Element('F3').update(text='Save\nF3')
-        self.__window.Element('F4').update(text='Invoice\nF4')
+        self.__window.Element('F4').update(text='Receipt\nF4')
         self.__window.Element('F5').update(text='Print\nF5')
         self.__window.Element('F6').update(text='Specs\nF6')
         self.__window.Element('F7').update(text='Qty\nF7')
         self.__window.Element('F8').update(text='Weight\nF8')
-        self.__window.Element('F9').update(text='Disc\nF9')
+        self.__window.Element('F9').update(text='Price\nF9')
         self.__window.Element('+').update(text='Add\n+')
         self.__window.Element('-').update(text='Less\n-')
         
@@ -839,9 +858,7 @@ class Invoice():
             self.__ui.cash_return = db_invoice_row.cash_return
         else:
             self.__ui.cash_return = 0.00
-            
-        
-
+       
         self.__actual_items_list = self.__ui.items_list.copy()
     
     def move_db_item_to_ui_detail_pane(self, db_item_row):
@@ -855,10 +872,10 @@ class Invoice():
         self.__ui.cgst_tax_rate = db_item_row.cgst_tax_rate
         self.__ui.sgst_tax_rate = db_item_row.sgst_tax_rate
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.item_discount_amount = float(0.00)
         
         if self.tax_included == 0:
             self.__ui.standard_selling_price = db_item_row.standard_selling_price
-            #self.__ui.applied_selling_price = db_item_row.standard_selling_price
             self.__ui.applied_selling_price = db_item_row.standard_selling_price - float(self.__ui.item_discount_amount)
             self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)
             self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
@@ -868,8 +885,10 @@ class Invoice():
             self.__ui.item_net_amount = float(db_item_row.standard_selling_price) * float(self.__ui.qty)
             self.__ui.tax_amount = round(float(self.__ui.item_net_amount)*(float(self.__ui.tax_rate)/(100 + float(self.__ui.tax_rate))),2)
             self.__ui.selling_amount = float(self.__ui.item_net_amount) - float(self.__ui.tax_amount)
-            #self.__ui.applied_selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
             self.__ui.applied_selling_price = (float(self.__ui.selling_amount) / float(self.__ui.qty)) - float(self.__ui.item_discount_amount)
+        self.__ui.cgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100), 2)
+        self.__ui.sgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100), 2)
+        print('tax:', self.__ui.cgst_tax_amount, self.__ui.sgst_tax_amount, self.__ui.tax_amount)
             
         self.__ui.add_item_line()    
 
@@ -888,23 +907,18 @@ class Invoice():
         self.__ui.cgst_tax_rate = db_invoice_item_row.cgst_tax_rate
         self.__ui.sgst_tax_rate = db_invoice_item_row.sgst_tax_rate
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.item_discount_amount = db_invoice_item_row.item_discount_amount
+        self.__ui.standard_selling_price = db_invoice_item_row.standard_selling_price
+        self.__ui.applied_selling_price = db_invoice_item_row.applied_selling_price
+        self.__ui.selling_amount = db_invoice_item_row.selling_amount
+        #self.__ui.cgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100
+        #self.__ui.sgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100
+        self.__ui.cgst_tax_amount = db_invoice_item_row.cgst_tax_amount
+        self.__ui.sgst_tax_amount = db_invoice_item_row.cgst_tax_amount
+        self.__ui.tax_amount = float(self.__ui.cgst_tax_amount) + float(self.__ui.sgst_tax_amount)
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
         
-        if self.tax_included == 0:
-            self.__ui.standard_selling_price = db_item_row.standard_selling_price
-            #self.__ui.applied_selling_price = db_item_row.standard_selling_price
-            self.__ui.applied_selling_price = db_item_row.standard_selling_price - float(self.__ui.item_discount_amount)
-            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)
-            self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
-            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)            
-        else:
-            self.__ui.standard_selling_price = db_item_row.standard_selling_price
-            self.__ui.item_net_amount = float(db_item_row.standard_selling_price) * float(self.__ui.qty)
-            self.__ui.tax_amount = round(float(self.__ui.item_net_amount)*(float(self.__ui.tax_rate)/(100 + float(self.__ui.tax_rate))),2)
-            self.__ui.selling_amount = float(self.__ui.item_net_amount) - float(self.__ui.tax_amount)
-            #self.__ui.applied_selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
-            self.__ui.applied_selling_price = (float(self.__ui.selling_amount) / float(self.__ui.qty)) - float(self.__ui.item_discount_amount)
-            
-        self.__ui.add_item_line()    
+        self.__ui.add_item_line()
    
     def move_db_estimate_item_to_ui_detail_pane(self, db_estimate_item_row):
         self.__ui.item_code = db_estimate_item_row.item
@@ -924,7 +938,6 @@ class Invoice():
 
         if self.tax_included == 0:
             self.__ui.standard_selling_price = db_item_row.standard_selling_price
-            #self.__ui.applied_selling_price = db_item_row.standard_selling_price
             self.__ui.applied_selling_price = db_item_row.standard_selling_price - float(self.__ui.item_discount_amount)
             self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)
             self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
@@ -934,40 +947,33 @@ class Invoice():
             self.__ui.item_net_amount = float(db_item_row.standard_selling_price) * float(self.__ui.qty)
             self.__ui.tax_amount = round(float(self.__ui.item_net_amount)*(float(self.__ui.tax_rate)/(100 + float(self.__ui.tax_rate))),2)
             self.__ui.selling_amount = float(self.__ui.item_net_amount) - float(self.__ui.tax_amount)
-            #self.__ui.applied_selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
             self.__ui.applied_selling_price = (float(self.__ui.selling_amount) / float(self.__ui.qty)) - float(self.__ui.item_discount_amount)
         
         self.__ui.add_item_line()    
    
     def sum_item_list(self):
         line_items = 0
-        total_amount = 0.00
+        total_selling_amount = 0.00
         total_tax_amount = 0.00
         total_cgst_amount = 0.00
         total_sgst_amount = 0.00
-        net_amount = 0.00
+        total_net_amount = 0.00
        
         for item_line in self.__ui.items_list:
             self.__ui.item_line_to_elements(line_items)
-            total_amount += float(self.__ui.selling_amount)
-            total_tax_amount += float(self.__ui.tax_amount)
-            net_amount += float(self.__ui.item_net_amount)
-            cgst_rate = float(self.__ui.cgst_tax_rate)
-            sgst_rate = float(self.__ui.sgst_tax_rate)
-            cgst_amount = float(self.__ui.selling_amount) * cgst_rate / 100
-            sgst_amount = float(self.__ui.selling_amount) * sgst_rate / 100       
-            total_cgst_amount += cgst_amount
-            total_sgst_amount += sgst_amount
+            total_selling_amount += float(self.__ui.selling_amount)
+            total_cgst_amount += float(self.__ui.cgst_tax_amount)
+            total_sgst_amount += float(self.__ui.sgst_tax_amount)
             line_items += 1
 
         self.__ui.line_items = line_items
-        self.__ui.total_amount = total_amount
-        self.__ui.total_tax_amount = total_tax_amount
-        self.__ui.net_amount = net_amount
+        self.__ui.total_amount = total_selling_amount
         self.__ui.total_cgst_amount = total_cgst_amount
         self.__ui.total_sgst_amount = total_sgst_amount
-        invoice_actual_amount = net_amount
-        self.__ui.roundoff_amount = float(self.__ui.net_amount) - round(float(self.__ui.total_amount) + float(self.__ui.total_cgst_amount) + float(self.__ui.total_sgst_amount),2)
+        self.__ui.total_tax_amount = total_cgst_amount + total_sgst_amount
+        self.__ui.net_amount = float(self.__ui.total_amount) + float(self.__ui.total_tax_amount)
+        self.__ui.invoice_amount = round(float(self.__ui.net_amount),0)
+        self.__ui.roundoff_amount =  float(self.__ui.invoice_amount) - float(self.__ui.net_amount)
 
     def process_change_qty(self, new_qty, item_idx):
         if not new_qty:
@@ -977,10 +983,14 @@ class Invoice():
             return
         self.__ui.fetch_item_line(item_idx)
         self.__ui.qty = new_qty
-        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)
+
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price) - float(self.__ui.item_discount_amount)
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
-        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)        
+        self.__ui.cgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100
+        self.__ui.sgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        
         self.__ui.update_item_line(item_idx)
         self.sum_item_list()
         self.__ui.focus_items_list_row(item_idx)
@@ -991,24 +1001,39 @@ class Invoice():
             Message('INFO', 'Not applicable to this UOM')
             return
         self.__ui.qty = 0.35
-        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)
+
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price) - float(self.__ui.item_discount_amount)
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+        self.__ui.cgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100
+        self.__ui.sgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100
         self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+
         self.__ui.update_item_line(idx)
         self.sum_item_list()
         self.__ui.focus_items_list_row(idx)       
 
-    def process_discount(self, idx):
-        self.__ui.item_line_to_elements(idx)
-        self.__ui.item_discount_amount = 10.00
-        self.__ui.selling_amount = float(self.__ui.qty) * (float(self.__ui.applied_selling_price) -float(self.__ui.item_discount_amount))
+    def process_discount(self, item_discount_amount, item_idx):
+        if not item_discount_amount:
+            return
+        
+        '''        
+        if not float(item_discount_amount) > 0:
+            return
+        '''
+        self.__ui.fetch_item_line(item_idx)
+        self.__ui.item_discount_amount = item_discount_amount
+
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price) - float(self.__ui.item_discount_amount)
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+        self.__ui.cgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100
+        self.__ui.sgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100
         self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
-        self.__ui.update_item_line(idx)
+        
+        self.__ui.update_item_line(item_idx)
         self.sum_item_list()
-        self.__ui.focus_items_list_row(idx)       
+        self.__ui.focus_items_list_row(item_idx)
 
     def process_count(self, idx, operator):
         self.__ui.item_line_to_elements(idx)
@@ -1020,15 +1045,20 @@ class Invoice():
             self.__ui.qty = qty + 1
         else:
             if qty > 1:
-                self.__ui.qty = qty - 1            
-        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)
+                print('qty:', qty)
+                self.__ui.qty = qty - 1
+
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price) - float(self.__ui.item_discount_amount)
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
-        self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+        self.__ui.cgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100), 2)
+        self.__ui.sgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100), 2)
+        
+        self.__ui.tax_amount = float(self.__ui.cgst_tax_amount) + float(self.__ui.sgst_tax_amount)
         self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+
         self.__ui.update_item_line(idx)
         self.sum_item_list()
         self.__ui.focus_items_list_row(idx)
-
     
     def process_barcode(self):
         if not self.__ui.barcode:
@@ -1120,14 +1150,15 @@ class Invoice():
             db_invoice_item_row.parent = self.__ui.draft_invoice_number
             db_invoice_item_row.item = self.__ui.item_code
             db_invoice_item_row.item_name = self.__ui.item_name
-            #db_invoice_item_row.barcode = self.__ui.item_barcode
-            #db_invoice_item_row.item_group = self.__ui.item_group
-            #db_invoice_item_row.uom = self.__ui.uom
             db_invoice_item_row.qty = self.__ui.qty
             db_invoice_item_row.standard_selling_price = self.__ui.standard_selling_price
             db_invoice_item_row.applied_selling_price = self.__ui.applied_selling_price
+            db_invoice_item_row.item_discount_amount = self.__ui.item_discount_amount
+            db_invoice_item_row.selling_amount = self.__ui.selling_amount
             db_invoice_item_row.cgst_tax_rate = self.__ui.cgst_tax_rate
             db_invoice_item_row.sgst_tax_rate = self.__ui.sgst_tax_rate
+            db_invoice_item_row.cgst_tax_amount = self.__ui.cgst_tax_amount
+            db_invoice_item_row.sgst_tax_amount = self.__ui.sgst_tax_amount
           
             self.__db_invoice_item_table.create_row(db_invoice_item_row)
 
@@ -1163,14 +1194,15 @@ class Invoice():
             db_invoice_item_row.parent = self.__ui.draft_invoice_number
             db_invoice_item_row.item = self.__ui.item_code
             db_invoice_item_row.item_name = self.__ui.item_name
-            #db_invoice_item_row.barcode = self.__ui.item_barcode
-            #db_invoice_item_row.item_group = self.__ui.item_group
-            #db_invoice_item_row.uom = self.__ui.uom
             db_invoice_item_row.qty = self.__ui.qty
             db_invoice_item_row.standard_selling_price = self.__ui.standard_selling_price
             db_invoice_item_row.applied_selling_price = self.__ui.applied_selling_price
+            db_invoice_item_row.item_discount_amount = self.__ui.item_discount_amount
+            db_invoice_item_row.selling_amount = self.__ui.selling_amount
             db_invoice_item_row.cgst_tax_rate = self.__ui.cgst_tax_rate
             db_invoice_item_row.sgst_tax_rate = self.__ui.sgst_tax_rate
+            db_invoice_item_row.cgst_tax_amount = self.__ui.cgst_tax_amount
+            db_invoice_item_row.sgst_tax_amount = self.__ui.sgst_tax_amount
           
             self.__db_invoice_item_table.create_row(db_invoice_item_row)
 
@@ -1410,6 +1442,71 @@ class ChangeQty:
         return self.__new_qty
 
     new_qty = property(get_new_qty, set_new_qty)
+
+
+class Discount:
+
+    def __init__(self, item_line):
+        self.__kb = Controller()
+        
+        self.__item_discount_amount = 0
+        
+        self.__canvas = DiscountCanvas()
+        
+        self.__window = sg.Window("Disount", 
+                        self.__canvas.layout, 
+                        location=(300,250), 
+                        size=(350,210), 
+                        modal=True, 
+                        finalize=True,
+                        keep_on_top = True,
+                        icon='images/favicon.ico',
+                        return_keyboard_events=True,
+                    )
+
+        self.__ui = DiscountUi(self.__window)
+
+        self.__ui.item_name = item_line[2]
+        self.__ui.selling_price = item_line[5]
+        
+        self.handler()
+        
+    def handler(self):
+        prev_event = '' 
+        focus = None
+        while True:
+            event, values = self.__window.read()
+            #print('discount=', event)
+            
+            if self.__window.FindElementWithFocus():
+                focus = self.__window.FindElementWithFocus().Key
+            print('discount=', event, 'prev=', prev_event, 'focus:', focus)
+                            
+            if event == '_KEYPAD_':        
+                result = self.keypad(self.__ui.item_discount_amount)
+                self.__ui.item_discount_amount = result
+                self.__ui.item_discount_amount = self.__ui.item_discount_amount
+                self.__ui.focus_item_discount_amount()
+
+            if event in ('Exit', '_DISCOUNT_ESC_', 'Escape:27', sg.WIN_CLOSED):
+                break             
+                
+            if event == '\t':
+                self.__ui.item_discount_amount_f = self.__ui.item_discount_amount
+ 
+            if event in ('_DISCOUNT_OK_', 'F12:123', '\r'):
+                self.__item_discount_amount = self.__ui.item_discount_amount
+                break
+
+        self.__window.close()
+
+    def set_item_discount_amount(self, item_discount_amount):
+        self.__item_discount_amount = item_discount_amount
+        
+    def get_item_discount_amount(self):
+        return self.__item_discount_amount
+
+    item_discount_amount = property(get_item_discount_amount, set_item_discount_amount)
 
 
 class InvoiceList:
@@ -1656,6 +1753,7 @@ class Payment:
                 
             if event in ('\t', 'TAB') and prev_event == '_REDEEM_POINTS_':
                 if self.__ui.redeem_points in ('', '0'):
+                    self.__ui.redeem_adjustment = 0
                     continue
                 if int(self.__ui.redeem_points) > int(self.__ui.available_points):
                     self.__ui.redeem_points = 0
