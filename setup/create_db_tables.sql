@@ -6,6 +6,7 @@ CREATE TABLE `tabCustomer` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`customer_name` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`customer_type` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`customer_group` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`address` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`mobile_number` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`loyalty_points` INT(6) NULL DEFAULT NULL,
@@ -121,12 +122,14 @@ ENGINE=InnoDB
 
 CREATE TABLE `tabEstimate` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',	
+	`order_number` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`posting_date` DATETIME(6) NULL DEFAULT NULL,
+	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`cgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`total_amount` DECIMAL(18,6) NULL DEFAULT NULL,
-	`estimate_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`discount_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`invoice_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`creation` DATETIME(6) NULL DEFAULT NULL,
@@ -134,7 +137,8 @@ CREATE TABLE `tabEstimate` (
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	PRIMARY KEY (`name`) USING BTREE,
-	INDEX `FK_tabEstimate_tabCustomer` (`customer`) USING BTREE	
+	INDEX `FK_tabEstimate_tabCustomer` (`customer`) USING BTREE,
+	CONSTRAINT `FK_tabEstimate_tabCustomer` FOREIGN KEY (`customer`) REFERENCES `alignpos`.`tabCustomer` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
@@ -147,14 +151,17 @@ CREATE TABLE `tabEstimate_Item` (
 	`qty` DECIMAL(18,6) NULL DEFAULT NULL,
 	`standard_selling_price` DECIMAL(18,6) NULL DEFAULT NULL,
 	`applied_selling_price` DECIMAL(18,6) NULL DEFAULT NULL,
+	`item_discount_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`selling_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`cgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`sgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`cgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	PRIMARY KEY (`name`) USING BTREE,
 	INDEX `FK_tabEstimate_Item_tabItem` (`item`) USING BTREE,
-	INDEX `FK_tabEstimate_Item_tabEstimate` (`parent`) USING BTREE,
-	CONSTRAINT `FK_tabEstimate_Item_tabEstimate` FOREIGN KEY (`parent`) REFERENCES `alignpos`.`tabEstimate` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	INDEX `FK_tabEstimate_Item_tabInvoice` (`parent`) USING BTREE,
+	CONSTRAINT `FK_tabEstimate_Item_tabInvoice` FOREIGN KEY (`parent`) REFERENCES `alignpos`.`tabEstimate` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT,
 	CONSTRAINT `FK_tabEstimate_Item_tabItem` FOREIGN KEY (`item`) REFERENCES `alignpos`.`tabItem` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
@@ -191,6 +198,7 @@ CREATE TABLE `tabUser` (
 ;
 
 insert into tabUser (name, full_name, passwd, role, enabled, creation, owner) values ('administrator', 'administrator', ENCODE('welcome', 'secret'), 'Alignpos Administrator', 1, now(), 'administrator');
-insert into tabSequence (name) values ('REFERENCE_NUMBER');
-insert into tabSequence (name, prefix) values ('INVOICE_NUMBER', 'SINV-');
+insert into tabSequence (name) values ('DRAFT_INVOICE_NUMBER');
+insert into tabSequence (name, prefix) values ('TAX_INVOICE_NUMBER', 'SINV-');
 insert into tabSequence (name, prefix) values ('ESTIMATE_NUMBER', 'EST-');
+insert into tabSequence (name, prefix) values ('ORDER_NUMBER', 'ORD-');

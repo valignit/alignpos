@@ -223,7 +223,7 @@ class CustomerList:
         self.__window = sg.Window("List Customer",
                         self.__canvas.layout,
                         location=(100,100), 
-                        size=(700,360), 
+                        size=(800,360), 
                         modal=True, 
                         finalize=True,
                         return_keyboard_events=True, 
@@ -238,7 +238,8 @@ class CustomerList:
         self.__base_query = 'select tabCustomer.name, \
         tabCustomer.mobile_number, \
         tabCustomer.customer_name, \
-        tabCustomer.customer_type \
+        tabCustomer.customer_type, \
+        tabCustomer.customer_group \
         from tabCustomer \
         where tabCustomer.name = tabCustomer.name'
         
@@ -250,6 +251,7 @@ class CustomerList:
                 self.__ui.mobile_number = db_row[1]
                 self.__ui.customer_name = db_row[2]
                 self.__ui.customer_type = db_row[3]
+                self.__ui.customer_group = db_row[4]
                 self.__ui.add_customer_line()
 
         self.__ui.customer_idx = 0
@@ -285,6 +287,7 @@ class CustomerList:
                         self.__ui.mobile_number = db_row[1]
                         self.__ui.customer_name = db_row[2]
                         self.__ui.customer_type = db_row[3]
+                        self.__ui.customer_group = db_row[4]
                         self.__ui.add_customer_line()
 
             if event in ('_CUSTOMER_LIST_OK_', '\r', 'F12', 'F12:123'):

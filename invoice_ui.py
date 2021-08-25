@@ -15,6 +15,7 @@ class InvoiceUi:
         self.__customer_number = str('')
         self.__customer_name = str('')
         self.__customer_address = str('')
+        self.__customer_type = str('')
         
         # Initialize Search Pane
         self.__barcode = str('')
@@ -166,6 +167,12 @@ class InvoiceUi:
         
     def get_customer_address(self):
         return self.__customer_address
+
+    def set_customer_type(self, customer_type):
+        self.__customer_type = customer_type
+        
+    def get_customer_type(self):
+        return self.__customer_type
 
 
     # Setters and Getters for Search Pane    
@@ -607,6 +614,7 @@ class InvoiceUi:
     customer_number = property(get_customer_number, set_customer_number) 
     customer_name = property(get_customer_name, set_customer_name) 
     customer_address = property(get_customer_address, set_customer_address) 
+    customer_type = property(get_customer_type, set_customer_type) 
 
     # Properties for Search Pane
     barcode = property(get_barcode, set_barcode) 
@@ -690,6 +698,8 @@ class ChangeQtyUi:
         self.__popup.Element('_NEW_QTY_').update(value = self.__new_qty)
         
     def set_new_qty_f(self, new_qty):
+        if not new_qty:
+            new_qty = 0
         self.__new_qty = new_qty
         self.__popup.Element('_NEW_QTY_').update(value = "{:.2f}".format(float(self.__new_qty)))
         
@@ -724,7 +734,8 @@ class DiscountUi:
         self.__popup = popup
         self.__item_name = ''
         self.__selling_price = float(0.00)
-        self.__item_discount_amount = float(0.00)
+        self.__item_discount_option = 'Amount'
+        self.__item_discount_value = float(0.00)
 
         self.__popup["_SELLING_PRICE_"].Widget.config(takefocus=0)
         self.__popup["_DISCOUNT_OK_"].Widget.config(takefocus=0) 
@@ -745,38 +756,47 @@ class DiscountUi:
         self.__selling_price = self.__popup.Element('_SELLING_PRICE_').get()        
         return self.__selling_price
 
-    def set_item_discount_amount(self, item_discount_amount):
-        self.__item_discount_amount = item_discount_amount
-        self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').update(value = self.__item_discount_amount)
+    def set_item_discount_option(self, item_discount_option):
+        self.__item_discount_option = item_discount_option
+        self.__popup.Element('_ITEM_DISCOUNT_OPTION_').update(value = self.__item_discount_option)
         
-    def set_item_discount_amount_f(self, item_discount_amount):
-        self.__item_discount_amount = item_discount_amount
-        self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').update(value = "{:.2f}".format(float(self.__item_discount_amount)))
+    def get_item_discount_option(self):
+        self.__item_discount_option = self.__popup.Element('_ITEM_DISCOUNT_OPTION_').get()        
+        return self.__item_discount_option
         
-    def get_item_discount_amount(self):
-        self.__item_discount_amount = self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').get()        
-        return self.__item_discount_amount
+    def set_item_discount_value(self, item_discount_value):
+        self.__item_discount_value = item_discount_value
+        self.__popup.Element('_ITEM_DISCOUNT_VALUE_').update(value = self.__item_discount_value)
+        
+    def set_item_discount_value_f(self, item_discount_value):
+        self.__item_discount_value = item_discount_value
+        self.__popup.Element('_ITEM_DISCOUNT_VALUE_').update(value = "{:.2f}".format(float(self.__item_discount_value)))
+        
+    def get_item_discount_value(self):
+        self.__item_discount_value = self.__popup.Element('_ITEM_DISCOUNT_VALUE_').get()        
+        return self.__item_discount_value
 
     def focus_selling_price(self):
         self.__popup.Element('_SELLING_PRICE_').SetFocus() 
 
-    def focus_item_discount_amount(self):
-        self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').SetFocus() 
-        self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').update(select=True)        
+    def focus_item_discount_value(self):
+        self.__popup.Element('_ITEM_DISCOUNT_VALUE_').SetFocus() 
+        self.__popup.Element('_ITEM_DISCOUNT_VALUE_').update(select=True)        
 
     def append_char(self, key, char):
         if self.__popup[key].Widget.select_present():
-            self.__item_discount_amount = ''
-            self.__popup.Element(key).update(value = self.__item_discount_amount)
+            self.__item_discount_value = ''
+            self.__popup.Element(key).update(value = self.__item_discount_value)
         
-        self.__item_discount_amount = self.__popup.Element('_ITEM_DISCOUNT_AMOUNT_').get()        
-        self.__item_discount_amount = str(self.__item_discount_amount) + char
-        self.__popup.Element(key).update(value = self.__item_discount_amount)
+        self.__item_discount_value = self.__popup.Element('_ITEM_DISCOUNT_VALUE_').get()        
+        self.__item_discount_value = str(self.__item_discount_value) + char
+        self.__popup.Element(key).update(value = self.__item_discount_value)
 
     item_name = property(get_item_name, set_item_name)     
     selling_price = property(get_selling_price, set_selling_price) 
-    item_discount_amount = property(get_item_discount_amount, set_item_discount_amount) 
-    item_discount_amount_f = property(get_item_discount_amount, set_item_discount_amount_f) 
+    item_discount_option = property(get_item_discount_option, set_item_discount_option) 
+    item_discount_value = property(get_item_discount_value, set_item_discount_value) 
+    item_discount_value_f = property(get_item_discount_value, set_item_discount_value_f) 
 
 
 class InvoiceListUi:

@@ -363,22 +363,19 @@ class Estimate():
             if event in ('F3:114', 'F3', 'Save'):
                 if len(self.__ui.items_list) > 0:
                     self.save_estimate()
-                    if len(self.__ui.items_list) > 0:                    
-                        self.__ui.focus_items_list_last()
+                    self.__ui.focus_items_list_last()
                 continue
 
             if event in ('F4:115', 'F4', 'Submit'):
                 self.__ui.customer_number, self.__ui.mobile_number = self.customer_list()
                 self.save_estimate()
-                if len(self.__ui.items_list) > 0:                    
-                    self.__ui.focus_items_list_last()
+                self.__ui.focus_items_list_last()
                 continue
                 
             if event in ('F5:116', 'F5', 'Print'):
                 print('here')            
                 self.print_estimate()
-                if len(self.__ui.items_list) > 0:                    
-                    self.__ui.focus_items_list_last()
+                self.__ui.focus_items_list_last()
                 continue
 
             if event in ('F6:117', 'F6', 'Specs'):

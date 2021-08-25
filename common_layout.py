@@ -101,7 +101,7 @@ class CustomerListCanvas:
                 sg.Table(values=[], 
                      key='_CUSTOMERS_LIST_', 
                      enable_events=True,
-                     headings= ['Customer-No', 'Mobile-No', 'Name', 'Type'],
+                     headings= ['Customer-No', 'Mobile-No', 'Name', 'Type', 'Group'],
                      font=("Helvetica", 11),
                      auto_size_columns=False,
                      justification='right',
@@ -110,7 +110,7 @@ class CustomerListCanvas:
                      num_rows=10,
                      display_row_numbers=False,
                      bind_return_key = True,
-                     col_widths=[12, 12, 30, 15],
+                     col_widths=[12, 12, 30, 15, 15],
                      pad=((5,0),(5,5))
                 )            
             ],

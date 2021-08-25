@@ -22,7 +22,7 @@ exchange_adjustment_count = 0
 # Print and Log
 ##############################
 def print_log(msg):
-    #print(msg)
+    print(msg)
     msg = str(now) + ': ' + msg + '\n'
     file_log.write(msg)
 
@@ -32,21 +32,22 @@ def print_log(msg):
 ##############################
 now = datetime.now()
 
-with open('./alignpos.json') as file_config:
+with open('./app_config.json') as file_config:
   config = json.load(file_config)
   
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
 file_log = open(file_name, "w")
+
 
 print_log('alignPOS - Download Exchange Adjustments - Version 1.1')
 print_log('------------------------------------------------------')
 
 ######
 # Connect to ERPNext web service
-ws_erp_host = config["ws_erp_host"]
+ws_erp_host = config["ws_host"]
 ws_erp_sess = requests.Session()
-ws_erp_user = config["ws_erp_user"]
-ws_erp_passwd = config["ws_erp_passwd"]
+ws_erp_user = config["ws_user"]
+ws_erp_passwd = config["ws_passwd"]
 ws_erp_payload = {"usr": ws_erp_user, "pwd": ws_erp_passwd }
 
 ws_erp_method = '/api/method/login'
@@ -72,11 +73,11 @@ except requests.exceptions.RequestException as ws_err:
 
 ######
 # Connect to POS database
-db_pos_host = config["db_pos_host"]
-db_pos_port = config["db_pos_port"]
-db_pos_database = config["db_pos_database"]
-db_pos_user = config["db_pos_user"]
-db_pos_passwd = config["db_pos_passwd"]
+db_pos_host = config["db_host"]
+db_pos_port = config["db_port"]
+db_pos_database = config["db_database"]
+db_pos_user = config["db_user"]
+db_pos_passwd = config["db_passwd"]
 
 try:
     db_pos_conn = mariadb.connect(
@@ -133,6 +134,7 @@ for ws_exchange_adjustment_row in ws_erp_resp_json["exchange_adjustments_list"]:
     exchange_adjustment_modified_datetime = datetime.strptime(ws_exchange_adjustment_row["creation"], '%Y-%m-%d %H:%M:%S.%f')
     last_sync_datetime = datetime.strptime(last_sync, '%Y-%m-%d %H:%M:%S.%f') 
 
+    #print(exchange_adjustment_modified_datetime, last_sync_datetime)
     if exchange_adjustment_modified_datetime > last_sync_datetime:
         last_sync = exchange_adjustment_modified
     

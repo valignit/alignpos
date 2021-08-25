@@ -170,6 +170,8 @@ class CustomerListUi:
         self.__customer_number_search = ''
         self.__mobile_number = ''
         self.__mobile_number_search = ''
+        self.__customer_type = ''
+        self.__customer_group = ''
         
         self.__window["_CUSTOMER_LIST_OK_"].Widget.config(takefocus=0)
         self.__window["_CUSTOMER_LIST_ESC_"].Widget.config(takefocus=0)
@@ -231,6 +233,12 @@ class CustomerListUi:
     def get_customer_type(self):
         return self.__customer_type
 
+    def set_customer_group(self, customer_group):
+        self.__customer_group = customer_group
+        
+    def get_customer_group(self):
+        return self.__customer_group
+
     def set_customer_idx(self, customer_idx):
         self.__customer_idx = customer_idx
         
@@ -264,6 +272,7 @@ class CustomerListUi:
         self.__customer_line.append(self.__mobile_number)        
         self.__customer_line.append(self.__customer_name)        
         self.__customer_line.append(self.__customer_type)        
+        self.__customer_line.append(self.__customer_group)        
 
        
     def customer_line_to_elements(self, idx):
@@ -272,6 +281,7 @@ class CustomerListUi:
         self.__mobile_number = self.__customer_line[1]
         self.__customer_name = self.__customer_line[2]
         self.__customer_type = self.__customer_line[3]
+        self.__customer_group = self.__customer_line[4]
 
     def add_customer_line(self):
         self.__customer_line = []
@@ -289,4 +299,5 @@ class CustomerListUi:
     mobile_number = property(get_mobile_number, set_mobile_number)
     customer_name = property(get_customer_name, set_customer_name)
     customer_type = property(get_customer_type, set_customer_type)
+    customer_group = property(get_customer_group, set_customer_group)
        

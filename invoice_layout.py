@@ -440,8 +440,12 @@ class DiscountCanvas:
                 )
             ],
             [
+                sg.Text('Option:', size=(15,1),  font=("Helvetica", 11), pad=((5,5),(10,10))),             
+                sg.Combo(['Amount', 'Percentage'], key='_ITEM_DISCOUNT_OPTION_',default_value = 'Amount'),                            
+            ],
+            [
                 sg.Text('Discount:', size=(15,1),  font=("Helvetica", 11), pad=((5,5),(10,10))),             
-                sg.Input(key='_ITEM_DISCOUNT_AMOUNT_',
+                sg.Input(key='_ITEM_DISCOUNT_VALUE_',
                     readonly=False, 
                     focus=True, 
                     background_color='white',

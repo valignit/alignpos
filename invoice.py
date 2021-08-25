@@ -642,9 +642,10 @@ class Invoice():
         db_customer_row = self.__db_customer_table.get_row(walk_in_customer)
         if db_customer_row:        
             self.__ui.mobile_number = db_customer_row.mobile_number
-        self.__ui.customer_number = ''
-        self.__ui.customer_name = ''
-        self.__ui.customer_address = ''
+            self.__ui.customer_number = db_customer_row.name
+            self.__ui.customer_name = db_customer_row.customer_name
+            self.__ui.customer_address = db_customer_row.address
+            self.__ui.customer_type = db_customer_row.customer_type
  
     def initialize_search_pane(self):
         self.__ui.barcode = ''
@@ -876,7 +877,7 @@ class Invoice():
         
         if self.tax_included == 0:
             self.__ui.standard_selling_price = db_item_row.standard_selling_price
-            self.__ui.applied_selling_price = db_item_row.standard_selling_price - float(self.__ui.item_discount_amount)
+            self.__ui.applied_selling_price = float(db_item_row.standard_selling_price) - float(self.__ui.item_discount_amount)
             self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)
             self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
             self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)            
@@ -888,7 +889,6 @@ class Invoice():
             self.__ui.applied_selling_price = (float(self.__ui.selling_amount) / float(self.__ui.qty)) - float(self.__ui.item_discount_amount)
         self.__ui.cgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100), 2)
         self.__ui.sgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100), 2)
-        print('tax:', self.__ui.cgst_tax_amount, self.__ui.sgst_tax_amount, self.__ui.tax_amount)
             
         self.__ui.add_item_line()    
 
@@ -911,8 +911,6 @@ class Invoice():
         self.__ui.standard_selling_price = db_invoice_item_row.standard_selling_price
         self.__ui.applied_selling_price = db_invoice_item_row.applied_selling_price
         self.__ui.selling_amount = db_invoice_item_row.selling_amount
-        #self.__ui.cgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100
-        #self.__ui.sgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100
         self.__ui.cgst_tax_amount = db_invoice_item_row.cgst_tax_amount
         self.__ui.sgst_tax_amount = db_invoice_item_row.cgst_tax_amount
         self.__ui.tax_amount = float(self.__ui.cgst_tax_amount) + float(self.__ui.sgst_tax_amount)
@@ -936,18 +934,18 @@ class Invoice():
         self.__ui.sgst_tax_rate = db_estimate_item_row.sgst_tax_rate
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
 
-        if self.tax_included == 0:
-            self.__ui.standard_selling_price = db_item_row.standard_selling_price
-            self.__ui.applied_selling_price = db_item_row.standard_selling_price - float(self.__ui.item_discount_amount)
-            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)
-            self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
-            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)            
-        else:
-            self.__ui.standard_selling_price = db_item_row.standard_selling_price
-            self.__ui.item_net_amount = float(db_item_row.standard_selling_price) * float(self.__ui.qty)
-            self.__ui.tax_amount = round(float(self.__ui.item_net_amount)*(float(self.__ui.tax_rate)/(100 + float(self.__ui.tax_rate))),2)
-            self.__ui.selling_amount = float(self.__ui.item_net_amount) - float(self.__ui.tax_amount)
-            self.__ui.applied_selling_price = (float(self.__ui.selling_amount) / float(self.__ui.qty)) - float(self.__ui.item_discount_amount)
+        self.__ui.qty = db_estimate_item_row.qty
+        self.__ui.cgst_tax_rate = db_estimate_item_row.cgst_tax_rate
+        self.__ui.sgst_tax_rate = db_estimate_item_row.sgst_tax_rate
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.item_discount_amount = db_estimate_item_row.item_discount_amount
+        self.__ui.standard_selling_price = db_estimate_item_row.standard_selling_price
+        self.__ui.applied_selling_price = db_estimate_item_row.applied_selling_price
+        self.__ui.selling_amount = db_estimate_item_row.selling_amount
+        self.__ui.cgst_tax_amount = db_estimate_item_row.cgst_tax_amount
+        self.__ui.sgst_tax_amount = db_estimate_item_row.cgst_tax_amount
+        self.__ui.tax_amount = float(self.__ui.cgst_tax_amount) + float(self.__ui.sgst_tax_amount)
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
         
         self.__ui.add_item_line()    
    
@@ -1017,10 +1015,6 @@ class Invoice():
         if not item_discount_amount:
             return
         
-        '''        
-        if not float(item_discount_amount) > 0:
-            return
-        '''
         self.__ui.fetch_item_line(item_idx)
         self.__ui.item_discount_amount = item_discount_amount
 
@@ -1435,6 +1429,12 @@ class ChangeQty:
 
         self.__window.close()
 
+    ######
+    # Wrapper function for Keypad
+    def keypad(self, current_value):
+        keypad = Keypad(current_value)
+        return(keypad.input_value)
+
     def set_new_qty(self, new_qty):
         self.__new_qty = new_qty
         
@@ -1456,7 +1456,7 @@ class Discount:
         self.__window = sg.Window("Disount", 
                         self.__canvas.layout, 
                         location=(300,250), 
-                        size=(350,210), 
+                        size=(350,250), 
                         modal=True, 
                         finalize=True,
                         keep_on_top = True,
@@ -1483,10 +1483,10 @@ class Discount:
             print('discount=', event, 'prev=', prev_event, 'focus:', focus)
                             
             if event == '_KEYPAD_':        
-                result = self.keypad(self.__ui.item_discount_amount)
-                self.__ui.item_discount_amount = result
-                self.__ui.item_discount_amount = self.__ui.item_discount_amount
-                self.__ui.focus_item_discount_amount()
+                result = self.keypad(0)
+                self.__ui.item_discount_value = result
+                self.__ui.item_discount_value = self.__ui.item_discount_value
+                self.__ui.focus_item_discount_value()
 
             if event in ('Exit', '_DISCOUNT_ESC_', 'Escape:27', sg.WIN_CLOSED):
                 break             
@@ -1495,10 +1495,20 @@ class Discount:
                 self.__ui.item_discount_amount_f = self.__ui.item_discount_amount
  
             if event in ('_DISCOUNT_OK_', 'F12:123', '\r'):
-                self.__item_discount_amount = self.__ui.item_discount_amount
+                if self.__ui.item_discount_option == 'Amount':
+                    self.__item_discount_amount = self.__ui.item_discount_value
+                else:
+                    self.__item_discount_amount = round((float(self.__ui.selling_price) * float(self.__ui.item_discount_value) / 100),2)
+                
                 break
 
         self.__window.close()
+
+    ######
+    # Wrapper function for Keypad
+    def keypad(self, current_value):
+        keypad = Keypad(current_value)
+        return(keypad.input_value)
 
     def set_item_discount_amount(self, item_discount_amount):
         self.__item_discount_amount = item_discount_amount
@@ -1874,7 +1884,7 @@ class Payment:
                                             float(self.__ui.cash_return)
 
     def generate_invoice_number(self):
-        db_query = DbQuery(self.__db_conn, 'SELECT nextval("INVOICE_NUMBER")')
+        db_query = DbQuery(self.__db_conn, 'SELECT nextval("TAX_INVOICE_NUMBER")')
         for db_row in db_query.result:
             self.__tax_invoice_number = db_row[0]
 

@@ -32,7 +32,7 @@ def print_log(msg):
 ##############################
 now = datetime.now()
 
-with open('./alignpos.json') as file_config:
+with open('./app_config.json') as file_config:
   config = json.load(file_config)
   
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
@@ -43,10 +43,10 @@ print_log('-------------------------------------------')
 
 ######
 # Connect to ERPNext web service
-ws_erp_host = config["ws_erp_host"]
+ws_erp_host = config["ws_host"]
 ws_erp_sess = requests.Session()
-ws_erp_user = config["ws_erp_user"]
-ws_erp_passwd = config["ws_erp_passwd"]
+ws_erp_user = config["ws_user"]
+ws_erp_passwd = config["ws_passwd"]
 ws_erp_payload = {"usr": ws_erp_user, "pwd": ws_erp_passwd }
 
 ws_erp_method = '/api/method/login'
@@ -72,11 +72,11 @@ except requests.exceptions.RequestException as ws_err:
 
 ######
 # Connect to POS database
-db_pos_host = config["db_pos_host"]
-db_pos_port = config["db_pos_port"]
-db_pos_database = config["db_pos_database"]
-db_pos_user = config["db_pos_user"]
-db_pos_passwd = config["db_pos_passwd"]
+db_pos_host = config["db_host"]
+db_pos_port = config["db_port"]
+db_pos_database = config["db_database"]
+db_pos_user = config["db_user"]
+db_pos_passwd = config["db_passwd"]
 
 try:
     db_pos_conn = mariadb.connect(
@@ -128,6 +128,7 @@ for ws_customer_row in ws_erp_resp_json["customers"]:
     customer_name = ws_customer_row["name"]
     customer_customer_name = ws_customer_row["customer_name"]
     customer_type = ws_customer_row["customer_type"]
+    customer_group = ws_customer_row["customer_group"]
     customer_mobile_number = ws_customer_row["mobile_number"]
     customer_address = ws_customer_row["address"]
     customer_loyalty_points = ws_customer_row["loyalty_points"]
@@ -140,10 +141,10 @@ for ws_customer_row in ws_erp_resp_json["customers"]:
         last_sync = customer_created
     
     db_pos_sql_stmt = (
-       "INSERT INTO tabCustomer (name, customer_name, customer_type, address, mobile_number, loyalty_points, creation, owner)"
-       "VALUES (%s, %s, %s, %s, %s, %s, now(), %s)"
+       "INSERT INTO tabCustomer (name, customer_name, customer_type, customer_group, address, mobile_number, loyalty_points, creation, owner)"
+       "VALUES (%s, %s, %s, %s, %s, %s, %s, now(), %s)"
     )
-    db_pos_sql_data = (customer_name, customer_customer_name, customer_type, customer_address, customer_mobile_number, customer_loyalty_points, ws_erp_user)
+    db_pos_sql_data = (customer_name, customer_customer_name, customer_type, customer_group, customer_address, customer_mobile_number, customer_loyalty_points, ws_erp_user)
 
     try:
         db_pos_cur.execute(db_pos_sql_stmt, db_pos_sql_data)
@@ -189,6 +190,7 @@ for ws_customer_row in ws_erp_resp_json["customers"]:
     customer_name = ws_customer_row["name"]
     customer_customer_name = ws_customer_row["customer_name"]
     customer_type = ws_customer_row["customer_type"]
+    customer_group = ws_customer_row["customer_group"]
     customer_mobile_number = ws_customer_row["mobile_number"]
     customer_address = ws_customer_row["address"]
     customer_loyalty_points = ws_customer_row["loyalty_points"]
@@ -203,6 +205,7 @@ for ws_customer_row in ws_erp_resp_json["customers"]:
     db_pos_sql_stmt = (
        "UPDATE tabCustomer  SET customer_name = %s, \
                             customer_type = %s, \
+                            customer_group = %s, \
                             mobile_number = %s, \
                             address = %s, \
                             loyalty_points = %s, \
@@ -210,7 +213,7 @@ for ws_customer_row in ws_erp_resp_json["customers"]:
                             modified_by = %s \
                         WHERE name = %s" \
     )
-    db_pos_sql_data = ( customer_customer_name, customer_type, customer_mobile_number, \
+    db_pos_sql_data = ( customer_customer_name, customer_type, customer_group, customer_mobile_number, \
                         customer_address, customer_loyalty_points, ws_erp_user, customer_name \
     )
 

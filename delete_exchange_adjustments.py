@@ -16,7 +16,7 @@ import datetime
 
 now = datetime.datetime.now()
 
-with open('./alignpos.json') as file_config:
+with open('./app_config.json') as file_config:
   config = json.load(file_config)
   
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
@@ -40,10 +40,10 @@ print_log('----------------------------------------------------')
 
 ######
 # Connect to ERPNext web service
-ws_erp_host = config["ws_erp_host"]
+ws_erp_host = config["ws_host"]
 ws_erp_sess = requests.Session()
-ws_erp_user = config["ws_erp_user"]
-ws_erp_passwd = config["ws_erp_passwd"]
+ws_erp_user = config["ws_user"]
+ws_erp_passwd = config["ws_passwd"]
 ws_erp_payload = {"usr": ws_erp_user, "pwd": ws_erp_passwd }
 
 ws_erp_method = '/api/method/login'
@@ -70,11 +70,11 @@ except requests.exceptions.RequestException as ws_err:
 
 ######
 # Connect to POS database
-db_pos_host = config["db_pos_host"]
-db_pos_port = config["db_pos_port"]
-db_pos_database = config["db_pos_database"]
-db_pos_user = config["db_pos_user"]
-db_pos_passwd = config["db_pos_passwd"]
+db_pos_host = config["db_host"]
+db_pos_port = config["db_port"]
+db_pos_database = config["db_database"]
+db_pos_user = config["db_user"]
+db_pos_passwd = config["db_passwd"]
 
 try:
     db_pos_conn = mariadb.connect(
