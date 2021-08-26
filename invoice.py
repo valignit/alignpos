@@ -677,7 +677,7 @@ class Invoice():
         self.__window.Element('F1').update(text='New\nF1')    
         self.__window.Element('F2').update(text='Delete\nF2')
         self.__window.Element('F3').update(text='Save\nF3')
-        self.__window.Element('F4').update(text='Receipt\nF4')
+        self.__window.Element('F4').update(text='Submit\nF4')
         self.__window.Element('F5').update(text='Print\nF5')
         self.__window.Element('F6').update(text='Specs\nF6')
         self.__window.Element('F7').update(text='Qty\nF7')

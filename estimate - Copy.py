@@ -8,23 +8,24 @@ from barcode.writer import ImageWriter
 from utilities import Config, Message, Keypad
 from db_nosql import KvConn
 from db_orm import DbConn, DbTable, DbQuery
+from estimate_layout import EstimateCanvas, ChangeQtyCanvas, EstimateListCanvas, PaymentCanvas, DiscountCanvas
+from estimate_ui import EstimateUi, ChangeQtyUi, EstimateListUi, PaymentUi, DiscountUi
 from common import ItemList, CustomerList
-from estimate_layout import EstimateCanvas, ChangeQtyCanvas, EstimateListCanvas
-from estimate_ui import EstimateUi, ChangeQtyUi, EstimateListUi
 
 
 class Estimate():
 
-    def __init__(self, user_id, terminal_id):
-
+    def __init__(self, type, user_id, terminal_id):
+    
         config = Config()
-        max_fav_ct = 9
-        max_fast_ct = 5        
+        
+        self.__type = type
+        self.__reference_number = None
         w, h = sg.Window.get_screen_size()
         
         self.__kv = KvConn()
 
-        self.__tax_included = self.__kv.get('tax_included')
+        self.tax_included = self.__kv.get('tax_included')
         
         kb = Controller()
         self.__kb = kb
@@ -37,66 +38,47 @@ class Estimate():
         self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
         self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
         self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
+        self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
+        self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
+        self.__db_exchange_table = DbTable(self.__db_conn, 'tabExchange')
         
         # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
         self.__fav_item_codes_list = []
         self.__fast_item_codes_list = []
-
-        fav_ct = 0
-        fast_ct = 0
-        for key in self.__kv.getall():
-            if key[:13] == 'favorite_item':
-                fav_ct += 1
-                if fav_ct > max_fav_ct:
-                    continue
-                item_key = 'favorite_item_' + str(fav_ct)
-                self.__fav_item_codes_list.append(self.__kv.get(item_key))
-
-            elif key[:16] == 'fast_moving_item':
-                fast_ct += 1
-                if fast_ct > max_fast_ct:
-                    continue
-                item_key = 'fast_moving_item_' + str(fast_ct)
-                self.__fast_item_codes_list.append(self.__kv.get(item_key))
-
         self.__fav_item_names_list = []
-        for fav_item_code in self.__fav_item_codes_list:
-            db_item_row = self.__db_item_table.get_row(fav_item_code)
-            if db_item_row:
-                self.__fav_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
-                
         self.__fast_item_names_list = []
-        for fast_item_code in self.__fast_item_codes_list:
-            db_item_row = self.__db_item_table.get_row(fast_item_code)
-            if db_item_row:
-                self.__fast_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
+        
+        if self.__type == 'estimate':
+            self.fill_item_lists()
 
-        self.__canvas = EstimateCanvas( self.__fav_item_codes_list,
+        self.__canvas = EstimateCanvas(  type,
+                                        self.__fav_item_codes_list,
                                         self.__fav_item_names_list,
                                         self.__fast_item_codes_list,                                  
                                         self.__fast_item_names_list)
         
-        self.__window = sg.Window('Estimate', 
+        title = self.__type.capitalize()
+        self.__window = sg.Window(title, 
                         self.__canvas.layout,
                         font='Helvetica 11', 
                         finalize=True, 
                         location=(0,0), 
-                        size=(w,h),
+                        size=(w,h-60),
                         keep_on_top=False, 
                         resizable=False,
                         return_keyboard_events=True, 
                         use_default_focus=False,
-                        icon='c:/alignpos/images/favicon.ico',
+                        icon='images/favicon.ico',
                         modal=True
                     )
 
-        self.__window.maximize()
+        #self.__window.maximize()
         
         self.__window['_LEFT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
         self.__window['_RIGHT_PANES_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
         self.__window['_BARCODE_'].bind('<FocusIn>', '+CLICK+')
         self.__window['_SEARCH_NAME_'].bind('<FocusIn>', '+CLICK+')
-        self.__window['_ITEM_GROUP_'].bind('<FocusIn>', '+CLICK+')
+        self.__window['_SEARCH_ITEM_GROUP_'].bind('<FocusIn>', '+CLICK+')
 
         self.__ui = EstimateUi(self.__window)
     
@@ -144,7 +126,8 @@ class Estimate():
         item_idx = '' 
         focus = None    
         while True:
-            prev_event = event
+            if not event == 'Shift_L:16':
+                prev_event = event
 
             event, values = self.__window.read()
             
@@ -202,7 +185,7 @@ class Estimate():
                 self.__kb.release(Key.backspace)
                 continue
 
-            if event in ('Home:36', '_BEGIN_'):
+            if event in ('Home:36', '_BEGIN_'):            
                 if not self.__actual_items_list == self.__ui.items_list:
                     confirm_save = Message('OPT', 'Save current Estimate?')
                     if confirm_save.ok:
@@ -234,21 +217,25 @@ class Estimate():
                 self.goto_last_row()
                 continue
 
+            if self.__type == 'order' and event not in ('F5:116', 'F5', 'Print', 'F10', 'F10:121', '_FIND_'):
+                continue
+
             if event == '\t':
-                print('here')
                 if focus == '_ITEMS_LIST_':
                     if len(self.__ui.items_list) > 0:
                         self.__ui.focus_items_list_row(len(self.__ui.items_list)-1)
                 continue
              
-            if event == '_ITEM_GROUP_+CLICK+':
-                selected_group = values['_ITEM_GROUP_']
+            if event == '_SEARCH_ITEM_GROUP_+CLICK+':
+                selected_group = values['_SEARCH_ITEM_GROUP_']
                 if not selected_group == 'None':
                     filter = 'item_group = "{}"'.format(selected_group)
                     item_code = self.item_list(filter)
                     self.process_item_name(item_code)                    
+                    self.initialize_search_pane()            
                     self.__ui.focus_item_group_line(0)
-                    self.__ui.focus_items_list_last()
+                    if self.__ui.items_list:
+                        self.__ui.focus_items_list_last()
                 continue
 
             if event in ('+', 'Add') and focus in ('_ITEMS_LIST_', '+'):
@@ -268,12 +255,14 @@ class Estimate():
             if event[4:] in self.__fav_item_codes_list:
                 item_code = event[4:]
                 self.process_item_name(item_code)                    
+                self.initialize_search_pane()
                 self.__ui.focus_items_list_last()
                 continue
                 
             if event[5:] in self.__fast_item_codes_list:
                 item_code = event[5:]
                 self.process_item_name(item_code)                    
+                self.initialize_search_pane()
                 self.__ui.focus_items_list_last()
                 continue
 
@@ -291,14 +280,12 @@ class Estimate():
                 continue
 
             if prev_event == 'Alt_L:18' and event.isnumeric():
-                print('here1')
                 item_code = self.__fav_item_codes_list[int(event)-1]
                 self.process_item_name(item_code)             
                 self.__ui.focus_items_list_last()
                 continue
                 
             if event == 'Alt_L:18' and prev_event.isnumeric():
-                print('here2')
                 item_code = self.__fav_item_codes_list[int(prev_event)-1]
                 self.process_item_name(item_code)
                 self.initialize_search_pane()
@@ -335,13 +322,24 @@ class Estimate():
                             continue
                         idx = values['_ITEMS_LIST_'][0]
                         self.delete_item(idx)
+                        if len(self.__ui.items_list) == 0: 
+                            Message('WARN', 'Empty estimate will be deleted')                        
+                            estimate_number = self.__ui.estimate_number            
+                            self.delete_estimate()
+                            self.clear_ui()
+                            self.__actual_items_list = []
+                            self.__ui.items_list = []                        
+                            self.__ui.estimate_number = estimate_number
+                            self.goto_previous_row()
+                            if self.__ui.estimate_number == estimate_number:
+                                self.__ui.estimate_number = ''
                         prev_idx = ''
                         item_idx = ''
                     else:
                         Message('WARN', 'Select an Item')
                         self.__ui.focus_barcode()                                  
                         continue
-                elif focus == '_ITEM_GROUP_':
+                elif focus == '_SEARCH_ITEM_GROUP_':
                     self.__ui.focus_item_group_line(0)
                     self.__ui.focus_barcode()                         
                     continue
@@ -354,6 +352,8 @@ class Estimate():
                     estimate_number = self.__ui.estimate_number            
                     self.delete_estimate()
                     self.clear_ui()
+                    self.__actual_items_list = []
+                    self.__ui.items_list = []                        
                     self.__ui.estimate_number = estimate_number
                     self.goto_previous_row()
                     if self.__ui.estimate_number == estimate_number:
@@ -367,13 +367,15 @@ class Estimate():
                 continue
 
             if event in ('F4:115', 'F4', 'Submit'):
-                self.__ui.customer_number, self.__ui.mobile_number = self.customer_list()
-                self.save_estimate()
-                self.__ui.focus_items_list_last()
+                self.payment()
+                #self.save_estimate()
+                if self.__ui.order_number:               
+                    self.print_estimate()
+                    self.clear_ui()
+                    self.__actual_items_list = []                                
                 continue
                 
             if event in ('F5:116', 'F5', 'Print'):
-                print('here')            
                 self.print_estimate()
                 self.__ui.focus_items_list_last()
                 continue
@@ -410,7 +412,6 @@ class Estimate():
                     if values['_ITEMS_LIST_']:
                         item_idx = values['_ITEMS_LIST_'][0]
                         self.process_weight(item_idx)
-                        self.sum_item_list()
                         prev_idx = ''
                         item_idx = ''
                     else:
@@ -419,16 +420,19 @@ class Estimate():
                     Message('WARN', 'Select an Item')                                
                 continue
 
-            if event in ('F9:120', 'F9', 'Price'):
-                if focus == '_ITEMS_LIST_' :        
+            if event in ('F9:120', 'F9', 'Discount'):
+                if focus == '_ITEMS_LIST_' :
                     if values['_ITEMS_LIST_']:
-                        Message('INFO', 'Feature not yet implemented')
+                        item_idx = values['_ITEMS_LIST_'][0]
+                        item_discount_amount = self.discount(self.__ui.items_list[item_idx])                        
+                        self.process_discount(item_discount_amount, item_idx)
+                        self.sum_item_list()
                         prev_idx = ''
                         item_idx = ''
                     else:
-                        Message('WARN', 'Select an Item')                
+                        Message('WARN', 'Select an Item')                                
                 else:
-                    Message('WARN', 'Select an Item')                
+                    Message('WARN', 'Select an Item')                                
                 continue
 
             if event in ('F10', 'F10:121', '_FIND_'):
@@ -456,12 +460,7 @@ class Estimate():
                 self.initialize_search_pane()
                 self.__ui.focus_items_list_last()
                 continue
-            
-            if (event == 'Bundle') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
-                Message('INFO', 'Feature not yet implemented')
-                self.__ui.focus_items_list_last()
-                continue
-            
+                       
             if event == 'v:86' and focus == '_BARCODE_':
                 self.process_barcode()
                 self.initialize_search_pane()
@@ -485,8 +484,7 @@ class Estimate():
                 if self.__ui.barcode:
                     self.__ui.barcode = self.__ui.barcode.upper()
                     if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12) or \
-                       (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8) or \
-                       (self.__ui.barcode[0] == 'E' and len(self.__ui.barcode) > 8):
+                       (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8):
                         self.process_barcode()
                         self.initialize_search_pane()
                 continue
@@ -511,6 +509,7 @@ class Estimate():
                     continue
 
                 if event == '-':
+                    print('here')
                     if len(self.__ui.barcode) == 4:
                         self.__ui.barcode = self.__ui.barcode + event
                     else:                    
@@ -518,14 +517,12 @@ class Estimate():
                             item_idx = values['_ITEMS_LIST_'][0]
                             self.process_count(item_idx, '-')
                             self.sum_item_list()
-                    continue                        
+                    continue                 
                                     
                 self.__ui.barcode = self.__ui.barcode + event
-
                 self.__ui.barcode = self.__ui.barcode.upper()
                 if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12) or \
-                   (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8) or \
-                   (self.__ui.barcode[0] == 'E' and len(self.__ui.barcode) > 8):
+                   (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8):
                     self.process_barcode()
                     self.initialize_search_pane()
                 continue
@@ -539,9 +536,17 @@ class Estimate():
 
 
     ######
+    # Wrapper function for Discount
+    #      whole line is sent as parameter so that item_name and selling price also can be used
+    def discount(self, item_line):
+        discount = Discount(item_line)
+        return(discount.item_discount_amount)
+
+
+    ######
     # Wrapper function for Estimate List
     def estimate_list(self):
-        estimate_list = EstimateList()
+        estimate_list = EstimateList(self.__type)
         return estimate_list.estimate_number
 
 
@@ -560,23 +565,75 @@ class Estimate():
 
 
     ######
+    # Wrapper function for Payment
+    def payment(self):
+        input_param = dict()
+        input_param['estimate_number'] = self.__ui.estimate_number
+        input_param['customer_number'] = self.__ui.customer_number
+        input_param['mobile_number'] = self.__ui.mobile_number
+        input_param['customer_name'] = self.__ui.customer_name
+        input_param['customer_address'] = self.__ui.customer_address        
+        input_param['net_amount'] = self.__ui.net_amount        
+        payment = Payment(input_param)
+        print(payment.output_param)
+        if not payment.output_param:
+            return
+        self.__ui.order_number = payment.output_param['order_number']
+        self.__ui.tax_estimate_amount = payment.output_param['estimate_amount']
+        self.__ui.discount_amount = payment.output_param['discount_amount']
+        self.__ui.roundoff_amount = payment.output_param['roundoff_adjustment']
+        return 
+
+
+    ######
     # Wrapper function for Keypad
     def keypad(self, current_value):
         keypad = Keypad(current_value)
         return(keypad.input_value)
 
 
+    def fill_item_lists(self):
+        max_fav_ct = 9
+        max_fast_ct = 3
+        fav_ct = 0
+        fast_ct = 0
+        for key in self.__kv.getall():
+            if key[:13] == 'favorite_item':
+                fav_ct += 1
+                if fav_ct > max_fav_ct:
+                    continue
+                item_key = 'favorite_item_' + str(fav_ct)
+                self.__fav_item_codes_list.append(self.__kv.get(item_key))
+
+            elif key[:16] == 'fast_moving_item':
+                fast_ct += 1
+                if fast_ct > max_fast_ct:
+                    continue
+                item_key = 'fast_moving_item_' + str(fast_ct)
+                self.__fast_item_codes_list.append(self.__kv.get(item_key))
+
+        for fav_item_code in self.__fav_item_codes_list:
+            db_item_row = self.__db_item_table.get_row(fav_item_code)
+            if db_item_row:
+                self.__fav_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
+                
+        for fast_item_code in self.__fast_item_codes_list:
+            db_item_row = self.__db_item_table.get_row(fast_item_code)
+            if db_item_row:
+                self.__fast_item_names_list.append((db_item_row.item_name[:15].replace(' ', '_')).upper())
+
     def initialize_header_pane(self):
         self.__ui.estimate_number = ''
+        self.__ui.order_number = ''
         self.__ui.payment_status = ''
-        walk_in_customer = self.__kv.get('favorite_item_1')
-        print('wic:', walk_in_customer)
+        walk_in_customer = self.__kv.get('walk_in_customer')  
         db_customer_row = self.__db_customer_table.get_row(walk_in_customer)
         if db_customer_row:        
             self.__ui.mobile_number = db_customer_row.mobile_number
-        self.__ui.customer_number = ''
-        self.__ui.customer_name = ''
-        self.__ui.customer_address = ''
+            self.__ui.customer_number = db_customer_row.name
+            self.__ui.customer_name = db_customer_row.customer_name
+            self.__ui.customer_address = db_customer_row.address
+            self.__ui.customer_type = db_customer_row.customer_type
  
     def initialize_search_pane(self):
         self.__ui.barcode = ''
@@ -588,22 +645,27 @@ class Estimate():
         self.__ui.item_code = str('')
         self.__ui.barcode = str('')
         self.__ui.item_name = str('')
+        self.__ui.item_group = str('')
         self.__ui.uom = str('')
         self.__ui.qty = float(0.0)
-        self.__ui.selling_price = float(0.00)
+        self.__ui.standard_selling_price = float(0.00)
+        self.__ui.applied_selling_price = float(0.00)
+        self.__ui.item_discount_amount = float(0.00)
         self.__ui.selling_amount = float(0.00)
         self.__ui.tax_rate = float(0.00)
         self.__ui.tax_amount = float(0.00)
         self.__ui.net_amount = float(0.00)
         self.__ui.cgst_tax_rate = float(0.00)
         self.__ui.sgst_tax_rate = float(0.00)
+        self.__ui.cgst_tax_amount = float(0.00)
+        self.__ui.sgst_tax_amount = float(0.00)
         self.__ui.item_line = [] 
 
     def initialize_action_pane(self):
         self.__window.Element('F1').update(text='New\nF1')    
         self.__window.Element('F2').update(text='Delete\nF2')
         self.__window.Element('F3').update(text='Save\nF3')
-        self.__window.Element('F4').update(text='Customer\nF4')
+        self.__window.Element('F4').update(text='Submit\nF4')
         self.__window.Element('F5').update(text='Print\nF5')
         self.__window.Element('F6').update(text='Specs\nF6')
         self.__window.Element('F7').update(text='Qty\nF7')
@@ -611,7 +673,7 @@ class Estimate():
         self.__window.Element('F9').update(text='Price\nF9')
         self.__window.Element('+').update(text='Add\n+')
         self.__window.Element('-').update(text='Less\n-')
-
+        
     def initialize_footer_pane(self):
         self.__ui.user_id = ''
         self.__ui.terminal_id = ''
@@ -628,6 +690,11 @@ class Estimate():
         self.__ui.discount_amount = 0.00          
         self.__ui.roundoff_amount = 0.00          
         self.__ui.estimate_amount = 0.00
+        self.__ui.cash_amount = 0.00
+        self.__ui.card_amount = 0.00
+        self.__ui.exchange_amount = 0.00
+        self.__ui.redeem_amount = 0.00
+        self.__ui.paid_amount = 0.00
 
     def initialize_ui(self):
         self.initialize_header_pane()
@@ -644,9 +711,14 @@ class Estimate():
         self.initialize_summary_pane()
     
     def goto_this_row(self, estimate_number):
+        print('goto:', estimate_number)
         if estimate_number:
-            filter = "name = '{}'"
-            db_estimate_row = self.__db_estimate_table.get_row(estimate_number)
+            if self.__type == 'estimate':
+                filter = "name = '{}'"
+            else:
+                filter = "order_number = '{}'"
+            
+            db_estimate_row = self.__db_estimate_table.first(filter.format(estimate_number))
             if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
@@ -655,38 +727,64 @@ class Estimate():
             self.goto_last_row()
 
     def goto_first_row(self):
-        db_estimate_row = self.__db_estimate_table.first('')
+        if self.__type == 'estimate':
+            filter = "order_number is null"
+        else:
+            filter = "order_number is not null"
+        
+        db_estimate_row = self.__db_estimate_table.first(filter)
         if db_estimate_row:
             self.clear_ui()    
             self.show_ui(db_estimate_row)
             self.__ui.focus_items_list_last()            
 
-    def goto_previous_row(self):
-        if self.__ui.estimate_number:
-            name = self.__ui.estimate_number
-            filter = "name < '{}'"
-            db_estimate_row = self.__db_estimate_table.last(filter.format(name))
-            if db_estimate_row:
+    def goto_previous_row(self): 
+        db_estimate_row = None  
+        if self.__type == 'estimate':            
+            if self.__ui.estimate_number:
+                name = self.__ui.estimate_number
+                filter = "name < '{}' and order_number is null"
+                db_estimate_row = self.__db_estimate_table.last(filter.format(name))            
+        else:
+            if self.__ui.order_number:
+                estimate_number = self.__ui.order_number
+                filter = "order_number < '{}' and order_number is not null"
+                order = 'order_number'
+                db_estimate_row = self.__db_estimate_table.last(filter.format(estimate_number), order)
+        if db_estimate_row:
+                self.clear_ui()    
+                self.show_ui(db_estimate_row)
+                self.__ui.focus_items_list_last()                
+
+
+    def goto_next_row(self):
+        db_estimate_row = None  
+        if self.__type == 'estimate':            
+            if self.__ui.estimate_number:
+                name = self.__ui.estimate_number
+                filter = "name > '{}' and order_number is null"
+                db_estimate_row = self.__db_estimate_table.first(filter.format(name))            
+        else:
+            if self.__ui.order_number:
+                estimate_number = self.__ui.order_number
+                filter = "order_number > '{}' and order_number is not null"
+                order = 'order_number'
+                db_estimate_row = self.__db_estimate_table.first(filter.format(estimate_number), order)
+                
+        if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
                 self.__ui.focus_items_list_last()                
         else:
             self.goto_last_row()
 
-    def goto_next_row(self):
-        if self.__ui.estimate_number:
-            name = self.__ui.estimate_number
-            filter = "name > '{}'"
-            db_estimate_row = self.__db_estimate_table.first(filter.format(name))
-            if db_estimate_row:
-                self.clear_ui()    
-                self.show_ui(db_estimate_row)
-                self.__ui.focus_items_list_last()               
-        else:
-            self.goto_last_row()
-
     def goto_last_row(self):
-        db_estimate_row = self.__db_estimate_table.last('')
+        if self.__type == 'estimate':            
+            filter = "order_number is null"
+        else:
+            filter = "order_number is not null"
+               
+        db_estimate_row = self.__db_estimate_table.last(filter)
         if db_estimate_row:
             self.clear_ui()
             self.show_ui(db_estimate_row)
@@ -695,8 +793,13 @@ class Estimate():
     def show_ui(self, db_estimate_row):
         if not db_estimate_row:
             return
-            
-        self.__ui.estimate_number = db_estimate_row.name
+
+        self.__reference_number = db_estimate_row.name
+        if self.__type == 'estimate':
+            self.__ui.estimate_number = db_estimate_row.name
+        else:
+            self.__ui.order_number = db_estimate_row.order_number        
+        print('refs:', self.__ui.estimate_number)
 
         customer_number = db_estimate_row.customer
         db_customer_row = self.__db_customer_table.get_row(customer_number)
@@ -708,15 +811,19 @@ class Estimate():
 
         self.__ui.item_line = []
         filter = "parent='{}'"
-        db_estimate_item_cursor = self.__db_estimate_item_table.list(filter.format(self.__ui.estimate_number))    
+        db_estimate_item_cursor = self.__db_estimate_item_table.list(filter.format(self.__reference_number))    
         for db_estimate_item_row in db_estimate_item_cursor:
             self.move_db_estimate_item_to_ui_detail_pane(db_estimate_item_row)
         self.sum_item_list()
-        if (db_estimate_row.discount_amount):
+        if db_estimate_row.discount_amount:
             self.__ui.discount_amount = db_estimate_row.discount_amount
         else:
-            self.__ui.discount_amount = 0.00       
-        self.__ui.estimate_amount = db_estimate_row.estimate_amount
+            self.__ui.discount_amount = 0.00
+        if db_estimate_row.estimate_amount:
+            self.__ui.estimate_amount = db_estimate_row.estimate_amount
+        else:
+            self.__ui.estimate_amount = 0.00
+       
         self.__actual_items_list = self.__ui.items_list.copy()
     
     def move_db_item_to_ui_detail_pane(self, db_item_row):
@@ -724,22 +831,29 @@ class Estimate():
         self.__ui.item_barcode = db_item_row.barcode
         self.__ui.item_name = db_item_row.item_name
         self.__ui.uom = db_item_row.uom
+        self.__ui.barcode = db_item_row.barcode
+        self.__ui.item_group = db_item_row.item_group
         self.__ui.qty = 1
         self.__ui.cgst_tax_rate = db_item_row.cgst_tax_rate
         self.__ui.sgst_tax_rate = db_item_row.sgst_tax_rate
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.item_discount_amount = float(0.00)
         
-        if self.__tax_included == 0:
-            self.__ui.selling_price = db_item_row.standard_selling_price
-            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
-            tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
-            self.__ui.tax_amount = round(tax_amount, 2)
-            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        if self.tax_included == 0:
+            self.__ui.standard_selling_price = db_item_row.standard_selling_price
+            self.__ui.applied_selling_price = float(db_item_row.standard_selling_price) - float(self.__ui.item_discount_amount)
+            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)
+            self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)            
         else:
-            self.__ui.item_net_amount = db_item_row.standard_selling_price
-            self.__ui.selling_amount = float(self.__ui.item_net_amount) / ( 1 + (float(self.__ui.tax_rate)/100))
-            self.__ui.selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
-            self.__ui.tax_amount = float(self.__ui.item_net_amount) - float(self.__ui.selling_amount)                
+            self.__ui.standard_selling_price = db_item_row.standard_selling_price
+            self.__ui.item_net_amount = float(db_item_row.standard_selling_price) * float(self.__ui.qty)
+            self.__ui.tax_amount = round(float(self.__ui.item_net_amount)*(float(self.__ui.tax_rate)/(100 + float(self.__ui.tax_rate))),2)
+            self.__ui.selling_amount = float(self.__ui.item_net_amount) - float(self.__ui.tax_amount)
+            self.__ui.applied_selling_price = (float(self.__ui.selling_amount) / float(self.__ui.qty)) - float(self.__ui.item_discount_amount)
+        self.__ui.cgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100), 2)
+        self.__ui.sgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100), 2)
+            
         self.__ui.add_item_line()    
 
     def move_db_estimate_item_to_ui_detail_pane(self, db_estimate_item_row):
@@ -750,56 +864,78 @@ class Estimate():
             self.__ui.item_barcode = db_item_row.barcode
             self.__ui.item_name = db_item_row.item_name
             self.__ui.uom = db_item_row.uom
+            self.__ui.item_group = db_item_row.item_group
+            self.__ui.uom = db_item_row.uom
 
         self.__ui.qty = db_estimate_item_row.qty
         self.__ui.cgst_tax_rate = db_estimate_item_row.cgst_tax_rate
         self.__ui.sgst_tax_rate = db_estimate_item_row.sgst_tax_rate
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.item_discount_amount = db_estimate_item_row.item_discount_amount
+        self.__ui.standard_selling_price = db_estimate_item_row.standard_selling_price
+        self.__ui.applied_selling_price = db_estimate_item_row.applied_selling_price
+        self.__ui.selling_amount = db_estimate_item_row.selling_amount
+        self.__ui.cgst_tax_amount = db_estimate_item_row.cgst_tax_amount
+        self.__ui.sgst_tax_amount = db_estimate_item_row.cgst_tax_amount
+        self.__ui.tax_amount = float(self.__ui.cgst_tax_amount) + float(self.__ui.sgst_tax_amount)
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
         
-        if self.__tax_included == 0:
-            self.__ui.selling_price = db_item_row.standard_selling_price
-            self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
-            self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
-            self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
-        else:
-            self.__ui.item_net_amount = float(db_item_row.standard_selling_price) * float(self.__ui.qty)
-            self.__ui.selling_amount = float(self.__ui.item_net_amount) / ( 1 + (float(self.__ui.tax_rate)/100))
-            self.__ui.selling_price = float(self.__ui.selling_amount) / float(self.__ui.qty)
-            self.__ui.tax_amount = float(self.__ui.item_net_amount) - float(self.__ui.selling_amount)                
+        self.__ui.add_item_line()
+   
+    def move_db_estimate_item_to_ui_detail_pane(self, db_estimate_item_row):
+        self.__ui.item_code = db_estimate_item_row.item
+        
+        db_item_row = self.__db_item_table.get_row(db_estimate_item_row.item)
+        if db_item_row:
+            self.__ui.item_barcode = db_item_row.barcode
+            self.__ui.item_name = db_item_row.item_name
+            self.__ui.uom = db_item_row.uom
+            self.__ui.item_group = db_item_row.item_group
+            self.__ui.uom = db_item_row.uom
+
+        self.__ui.qty = db_estimate_item_row.qty
+        self.__ui.cgst_tax_rate = db_estimate_item_row.cgst_tax_rate
+        self.__ui.sgst_tax_rate = db_estimate_item_row.sgst_tax_rate
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+
+        self.__ui.qty = db_estimate_item_row.qty
+        self.__ui.cgst_tax_rate = db_estimate_item_row.cgst_tax_rate
+        self.__ui.sgst_tax_rate = db_estimate_item_row.sgst_tax_rate
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.item_discount_amount = db_estimate_item_row.item_discount_amount
+        self.__ui.standard_selling_price = db_estimate_item_row.standard_selling_price
+        self.__ui.applied_selling_price = db_estimate_item_row.applied_selling_price
+        self.__ui.selling_amount = db_estimate_item_row.selling_amount
+        self.__ui.cgst_tax_amount = db_estimate_item_row.cgst_tax_amount
+        self.__ui.sgst_tax_amount = db_estimate_item_row.cgst_tax_amount
+        self.__ui.tax_amount = float(self.__ui.cgst_tax_amount) + float(self.__ui.sgst_tax_amount)
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
         
         self.__ui.add_item_line()    
    
     def sum_item_list(self):
         line_items = 0
-        total_amount = 0.00
+        total_selling_amount = 0.00
         total_tax_amount = 0.00
         total_cgst_amount = 0.00
         total_sgst_amount = 0.00
-        net_amount = 0.00
+        total_net_amount = 0.00
        
         for item_line in self.__ui.items_list:
             self.__ui.item_line_to_elements(line_items)
-            total_amount += float(self.__ui.selling_amount)
-            total_tax_amount += float(self.__ui.tax_amount)
-            net_amount += float(self.__ui.item_net_amount)
-            cgst_rate = float(self.__ui.cgst_tax_rate)
-            sgst_rate = float(self.__ui.sgst_tax_rate)
-            cgst_amount = float(self.__ui.selling_amount) * cgst_rate / 100
-            sgst_amount = float(self.__ui.selling_amount) * sgst_rate / 100       
-            total_cgst_amount += cgst_amount
-            total_sgst_amount += sgst_amount
+            total_selling_amount += float(self.__ui.selling_amount)
+            total_cgst_amount += float(self.__ui.cgst_tax_amount)
+            total_sgst_amount += float(self.__ui.sgst_tax_amount)
             line_items += 1
 
         self.__ui.line_items = line_items
-        self.__ui.total_amount = total_amount
-        self.__ui.total_tax_amount = total_tax_amount
-        self.__ui.net_amount = net_amount
+        self.__ui.total_amount = total_selling_amount
         self.__ui.total_cgst_amount = total_cgst_amount
         self.__ui.total_sgst_amount = total_sgst_amount
-        estimate_actual_amount = net_amount
-        estimate_rounded_amount = round(net_amount, 0)
-        self.__ui.estimate_amount = estimate_rounded_amount
-        self.__ui.roundoff_amount = estimate_rounded_amount - estimate_actual_amount    
+        self.__ui.total_tax_amount = total_cgst_amount + total_sgst_amount
+        self.__ui.net_amount = float(self.__ui.total_amount) + float(self.__ui.total_tax_amount)
+        self.__ui.estimate_amount = round(float(self.__ui.net_amount),0)
+        self.__ui.roundoff_amount =  float(self.__ui.estimate_amount) - float(self.__ui.net_amount)
 
     def process_change_qty(self, new_qty, item_idx):
         if not new_qty:
@@ -809,10 +945,14 @@ class Estimate():
             return
         self.__ui.fetch_item_line(item_idx)
         self.__ui.qty = new_qty
-        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price) - float(self.__ui.item_discount_amount)
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
-        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)        
+        self.__ui.cgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100
+        self.__ui.sgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        
         self.__ui.update_item_line(item_idx)
         self.sum_item_list()
         self.__ui.focus_items_list_row(item_idx)
@@ -823,14 +963,35 @@ class Estimate():
             Message('INFO', 'Not applicable to this UOM')
             return
         self.__ui.qty = 0.35
-        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price) - float(self.__ui.item_discount_amount)
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+        self.__ui.cgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100
+        self.__ui.sgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100
         self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+
         self.__ui.update_item_line(idx)
         self.sum_item_list()
-        self.__ui.focus_items_list_row(idx)
+        self.__ui.focus_items_list_row(idx)       
+
+    def process_discount(self, item_discount_amount, item_idx):
+        if not item_discount_amount:
+            return
         
+        self.__ui.fetch_item_line(item_idx)
+        self.__ui.item_discount_amount = item_discount_amount
+
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price) - float(self.__ui.item_discount_amount)
+        self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
+        self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+        self.__ui.cgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100
+        self.__ui.sgst_tax_amount = float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100
+        self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+        
+        self.__ui.update_item_line(item_idx)
+        self.sum_item_list()
+        self.__ui.focus_items_list_row(item_idx)
 
     def process_count(self, idx, operator):
         self.__ui.item_line_to_elements(idx)
@@ -842,15 +1003,20 @@ class Estimate():
             self.__ui.qty = qty + 1
         else:
             if qty > 1:
-                self.__ui.qty = qty - 1            
-        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.selling_price)
+                print('qty:', qty)
+                self.__ui.qty = qty - 1
+
+        self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price) - float(self.__ui.item_discount_amount)
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
-        self.__ui.tax_amount = float(self.__ui.selling_amount) * float(self.__ui.tax_rate) / 100
+        self.__ui.cgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.cgst_tax_rate) / 100), 2)
+        self.__ui.sgst_tax_amount = round((float(self.__ui.selling_amount) * float(self.__ui.sgst_tax_rate) / 100), 2)
+        
+        self.__ui.tax_amount = float(self.__ui.cgst_tax_amount) + float(self.__ui.sgst_tax_amount)
         self.__ui.item_net_amount = float(self.__ui.selling_amount) + float(self.__ui.tax_amount)
+
         self.__ui.update_item_line(idx)
         self.sum_item_list()
         self.__ui.focus_items_list_row(idx)
-
     
     def process_barcode(self):
         if not self.__ui.barcode:
@@ -911,7 +1077,6 @@ class Estimate():
         for db_row in db_query.result:
             self.__ui.estimate_number = db_row[0]
 
-        print('here1')
         customer_number = 'CUST-00000'
         db_customer_row = self.__db_customer_table.get_row(customer_number)
         if db_customer_row:
@@ -924,7 +1089,7 @@ class Estimate():
 
         db_estimate_row.name = self.__ui.estimate_number
         db_estimate_row.customer = customer_number
-        db_estimate_row.posting_date = self.__ui.current_date    
+        #db_estimate_row.posting_date = self.__ui.current_date    
         db_estimate_row.total_amount = self.__ui.total_amount
         db_estimate_row.net_amount = self.__ui.net_amount
         db_estimate_row.estimate_amount = self.__ui.estimate_amount
@@ -942,11 +1107,16 @@ class Estimate():
             db_estimate_item_row.name = self.__ui.estimate_number + f"{idx:04d}"
             db_estimate_item_row.parent = self.__ui.estimate_number
             db_estimate_item_row.item = self.__ui.item_code
+            db_estimate_item_row.item_name = self.__ui.item_name
             db_estimate_item_row.qty = self.__ui.qty
-            db_estimate_item_row.standard_selling_price = self.__ui.selling_price
-            db_estimate_item_row.applied_selling_price = self.__ui.selling_price
+            db_estimate_item_row.standard_selling_price = self.__ui.standard_selling_price
+            db_estimate_item_row.applied_selling_price = self.__ui.applied_selling_price
+            db_estimate_item_row.item_discount_amount = self.__ui.item_discount_amount
+            db_estimate_item_row.selling_amount = self.__ui.selling_amount
             db_estimate_item_row.cgst_tax_rate = self.__ui.cgst_tax_rate
             db_estimate_item_row.sgst_tax_rate = self.__ui.sgst_tax_rate
+            db_estimate_item_row.cgst_tax_amount = self.__ui.cgst_tax_amount
+            db_estimate_item_row.sgst_tax_amount = self.__ui.sgst_tax_amount
           
             self.__db_estimate_item_table.create_row(db_estimate_item_row)
 
@@ -957,7 +1127,7 @@ class Estimate():
 
         if not db_estimate_row:
             return
-        db_estimate_row.posting_date = self.__ui.current_date    
+        #db_estimate_row.posting_date = self.__ui.current_date    
         db_estimate_row.customer = self.__ui.customer_number
         db_estimate_row.total_amount = self.__ui.total_amount
         db_estimate_row.net_amount = self.__ui.net_amount
@@ -981,11 +1151,16 @@ class Estimate():
             db_estimate_item_row.name = self.__ui.estimate_number + f"{idx:04d}"
             db_estimate_item_row.parent = self.__ui.estimate_number
             db_estimate_item_row.item = self.__ui.item_code
+            db_estimate_item_row.item_name = self.__ui.item_name
             db_estimate_item_row.qty = self.__ui.qty
-            db_estimate_item_row.standard_selling_price = self.__ui.selling_price
-            db_estimate_item_row.applied_selling_price = self.__ui.selling_price
+            db_estimate_item_row.standard_selling_price = self.__ui.standard_selling_price
+            db_estimate_item_row.applied_selling_price = self.__ui.applied_selling_price
+            db_estimate_item_row.item_discount_amount = self.__ui.item_discount_amount
+            db_estimate_item_row.selling_amount = self.__ui.selling_amount
             db_estimate_item_row.cgst_tax_rate = self.__ui.cgst_tax_rate
             db_estimate_item_row.sgst_tax_rate = self.__ui.sgst_tax_rate
+            db_estimate_item_row.cgst_tax_amount = self.__ui.cgst_tax_amount
+            db_estimate_item_row.sgst_tax_amount = self.__ui.sgst_tax_amount
           
             self.__db_estimate_item_table.create_row(db_estimate_item_row)
 
@@ -1017,15 +1192,26 @@ class Estimate():
     ######
     # Print Estimate into PDF file
     def print_estimate(self):
-        if not self.__ui.estimate_number:
-            Message('INFO', 'Plese save the estimate before printing.')
-            return
-        
-        print('here1', 'term:', self.__ui.terminal_id)
+        if self.__type == 'estimate':
+            if not self.__ui.estimate_number:
+                Message('INFO', 'Plese save the estimate before printing.')
+                return
 
+        print('print:', self.__type, self.__ui.order_number)
+        if self.__type == 'estimate':
+            if self.__ui.order_number:
+                title = 'ORDER'
+                estimate_number = self.__ui.order_number
+            else:
+                title = 'ESTIMATE'
+                estimate_number = self.__ui.estimate_number
+        else:    
+            title = 'ORDER'
+            estimate_number = self.__ui.order_number
+                
         barcode_file = 'barcode-' + self.__ui.terminal_id + '.jpeg'
         with open(barcode_file, 'wb') as f:
-            Code128(self.__ui.estimate_number, writer=ImageWriter()).write(f)
+            Code128(estimate_number, writer=ImageWriter()).write(f)
 
         config = pdfkit.configuration(wkhtmltopdf = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe")
         options = {
@@ -1038,7 +1224,6 @@ class Estimate():
             'enable-local-file-access': None,
             'quiet': None
         } 
-        print('here2')
 
         print_str = """
                     <style>
@@ -1052,7 +1237,7 @@ class Estimate():
                     <table style="width:100%">
                         <tr>
                             <td>
-                                <img src="c:\\alignpos\\images\\al_fareeda_logo.png" alt="al-fareeda" width="125" height="60">
+                                <img src="c:\\alignpos\\images\\client_logo.png" alt="al-fareeda" width="125" height="60">
                             </td>
                             <td>
                                 &nbsp
@@ -1068,9 +1253,9 @@ class Estimate():
                         </tr>
                     </table>                       
                     <p style="font-size:18px; font-weight: bold; font-family:Courier; text-align:center">
-                        Estimate
+                        {}
                     </p>            
-                """    
+                """.format(title)   
 
         print_str += """
                 <p  class="aligncenter" style="font-size:14px; font-weight: bold; font-family:Courier">
@@ -1083,7 +1268,7 @@ class Estimate():
                     Estimate No: {}<br>
                     Date: {}<br>
                 </p>            
-                """.format( self.__ui.estimate_number, 
+                """.format( estimate_number, 
                             self.__ui.current_date
                     )    
 
@@ -1096,7 +1281,6 @@ class Estimate():
                 </p>
                 <hr style="width:95%;text-align:left;margin-left:0">
             """
-        print('here3')
             
         for idx in range(len(self.__ui.items_list)): 
             self.__ui.item_line_to_elements(idx)        
@@ -1144,15 +1328,12 @@ class Estimate():
                 Net&nbspAmt&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
             </p>
             """.format(self.__ui.estimate_amount.rjust(10,'*').replace('*', '&nbsp'))
-        print('here4')
         print_file = 'print-' + self.__ui.terminal_id + '.pdf'
         
         try:    
             pdfkit.from_string(print_str, print_file, options=options)
-            print('here6')            
             os.startfile(print_file)
         except:
-            print('hereE')                    
             pass
 
     
@@ -1212,6 +1393,12 @@ class ChangeQty:
 
         self.__window.close()
 
+    ######
+    # Wrapper function for Keypad
+    def keypad(self, current_value):
+        keypad = Keypad(current_value)
+        return(keypad.input_value)
+
     def set_new_qty(self, new_qty):
         self.__new_qty = new_qty
         
@@ -1220,15 +1407,87 @@ class ChangeQty:
 
     new_qty = property(get_new_qty, set_new_qty)
 
+
+class Discount:
+
+    def __init__(self, item_line):
+        self.__kb = Controller()
+        
+        self.__item_discount_amount = 0
+        
+        self.__canvas = DiscountCanvas()
+        
+        self.__window = sg.Window("Disount", 
+                        self.__canvas.layout, 
+                        location=(300,250), 
+                        size=(350,250), 
+                        modal=True, 
+                        finalize=True,
+                        keep_on_top = True,
+                        icon='images/favicon.ico',
+                        return_keyboard_events=True,
+                    )
+
+        self.__ui = DiscountUi(self.__window)
+
+        self.__ui.item_name = item_line[2]
+        self.__ui.selling_price = item_line[5]
+        
+        self.handler()
+        
+    def handler(self):
+        prev_event = '' 
+        focus = None
+        while True:
+            event, values = self.__window.read()
+            #print('discount=', event)
+            
+            if self.__window.FindElementWithFocus():
+                focus = self.__window.FindElementWithFocus().Key
+            print('discount=', event, 'prev=', prev_event, 'focus:', focus)
+                            
+            if event == '_KEYPAD_':        
+                result = self.keypad(0)
+                self.__ui.item_discount_value = result
+                self.__ui.item_discount_value = self.__ui.item_discount_value
+                self.__ui.focus_item_discount_value()
+
+            if event in ('Exit', '_DISCOUNT_ESC_', 'Escape:27', sg.WIN_CLOSED):
+                break             
+                
+            if event == '\t':
+                self.__ui.item_discount_amount_f = self.__ui.item_discount_amount
+ 
+            if event in ('_DISCOUNT_OK_', 'F12:123', '\r'):
+                if self.__ui.item_discount_option == 'Amount':
+                    self.__item_discount_amount = self.__ui.item_discount_value
+                else:
+                    self.__item_discount_amount = round((float(self.__ui.selling_price) * float(self.__ui.item_discount_value) / 100),2)
+                
+                break
+
+        self.__window.close()
+
     ######
     # Wrapper function for Keypad
     def keypad(self, current_value):
         keypad = Keypad(current_value)
         return(keypad.input_value)
 
+    def set_item_discount_amount(self, item_discount_amount):
+        self.__item_discount_amount = item_discount_amount
+        
+    def get_item_discount_amount(self):
+        return self.__item_discount_amount
+
+    item_discount_amount = property(get_item_discount_amount, set_item_discount_amount)
+
 
 class EstimateList:
-    def __init__(self):    
+    def __init__(self, type):    
+        self.__type = type
+        print('type:', self.__type)
+
         self.__estimate_number = ''
 
         self.__db_conn = DbConn()
@@ -1261,7 +1520,8 @@ class EstimateList:
         
         self.__ui.estimates_list = []
 
-        self.__base_query = 'select tabEstimate.name, \
+        if self.__type == 'estimate':
+            self.__base_query = 'select tabEstimate.name, \
 tabEstimate.total_amount, \
 (tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) as tax_amount, \
 (tabEstimate.total_amount + tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) as net_amount,\
@@ -1272,9 +1532,25 @@ tabEstimate.estimate_amount, \
 (select count(*) from tabEstimate_Item where tabEstimate_Item.parent = tabEstimate.name) as line_count, \
 tabCustomer.mobile_number \
 from tabEstimate, tabCustomer \
-where tabEstimate.customer = tabCustomer.name '
-
-        db_query = DbQuery(self.__db_conn, self.__base_query)
+where tabEstimate.customer = tabCustomer.name and tabEstimate.order_number is null'
+            self.__order_by = ''
+        else:
+            self.__base_query = 'select tabEstimate.order_number, \
+tabEstimate.total_amount, \
+(tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) as tax_amount, \
+(tabEstimate.total_amount + tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) as net_amount,\
+ifnull(tabEstimate.discount_amount,0) as discount_amount,\
+tabEstimate.estimate_amount - ((tabEstimate.total_amount + tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) - \
+(ifnull(tabEstimate.discount_amount,0))) as roundoff_amount, \
+tabEstimate.estimate_amount, \
+(select count(*) from tabEstimate_Item where tabEstimate_Item.parent = tabEstimate.name) as line_count, \
+tabCustomer.mobile_number \
+from tabEstimate, tabCustomer \
+where tabEstimate.customer = tabCustomer.name and tabEstimate.order_number is not null'
+            self.__order_by = ' order by tabEstimate.order_number'
+            print(self.__base_query + self.__order_by)
+                
+        db_query = DbQuery(self.__db_conn, self.__base_query + self.__order_by)
         if  db_query.result:
             for db_row in db_query.result:
                 self.__ui.estimate_number = db_row[0]
@@ -1313,10 +1589,12 @@ where tabEstimate.customer = tabCustomer.name '
                 if self.__ui.mobile_number_search:
                     if not self.__ui.mobile_number_search == '':
                         this_query = ' and tabCustomer.mobile_number = "' + self.__ui.mobile_number_search + '"'
-                db_query = DbQuery(self.__db_conn, self.__base_query + this_query)        
+                new_query = self.__base_query + this_query + self.__order_by
+                print('query:', self.__base_query + this_query + self.__order_by)
+                db_query = DbQuery(self.__db_conn, self.__base_query + this_query + self.__order_by)     
                 if  db_query.result:
-                    self.__ui.estimates_list = []
-                    self.__ui.clear_estimates_list()
+                    self.__ui.estimates_list = [] 
+                    self.__ui.clear_estimates_list()                   
                     for db_row in db_query.result:
                         self.__ui.estimate_number = db_row[0]
                         self.__ui.total_amount = db_row[1]
@@ -1337,13 +1615,6 @@ where tabEstimate.customer = tabCustomer.name '
                 else:
                     self.__estimate_number = ''                
                 break
-            '''
-            if event == prev_event and values == prev_values:
-                estimate_idx = values['_ESTIMATES_LIST_'][0]
-                self.__ui.estimate_line_to_elements(estimate_idx)
-                self.__estimate_number = self.__ui.estimate_number
-                break
-            '''
             if event not in ('\t', 'Up:38', 'Down:40', 'UP', 'DOWN'):               
                 prev_event = event
             prev_values = values
@@ -1359,4 +1630,153 @@ where tabEstimate.customer = tabCustomer.name '
     estimate_number = property(get_estimate_number)  
 
 
+class Payment:
+
+    def __init__(self, input_param):
+        self.__order_number = ''
+        self.__output_param = dict()
+        self.__estimate_number = input_param['estimate_number'] 
+        self.__mobile_number = input_param['mobile_number'] 
+        self.__customer_number = input_param['customer_number']
+        self.__customer_name = input_param['customer_name']
+        self.__customer_address = input_param['customer_address']        
+        self.__net_amount = input_param['net_amount'] 
+        
+        self.__discount_amount = 0
+        self.__paid_amount = 0
+
+        self.__kb = Controller()
+
+        self.__db_conn = DbConn()
+        self.__db_session = self.__db_conn.session
+        self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
+        self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
+        
+        self.__canvas = PaymentCanvas()
+        
+        self.__window = sg.Window("Payment", 
+                        self.__canvas.layout, 
+                        location=(400,40), 
+                        size=(500,510), 
+                        modal=True, 
+                        finalize=True,
+                        keep_on_top = True,
+                        icon='images/favicon.ico',
+                        return_keyboard_events=True,
+                    )
+
+        self.__ui = PaymentUi(self.__window)
+
+        self.initialize_payment_elements()    
+        
+        self.handler()
+        self.__window.close()
+        
+    def handler(self):
+        prev_event = '' 
+        focus = None
+        while True:
+            event, values = self.__window.read()
+            if event in ('\t', 'TAB') and prev_event == '_MOBILE_NUMBER_':
+                if not self.__ui.mobile_number == '':
+                    self.process_mobile_number()
+
+            if event == '_MOBILE_NUMBER_' and len(self.__ui.mobile_number) > 9:
+                self.process_mobile_number()
+
+            if event in ('\t', 'TAB') and prev_event == '_DISCOUNT_AMOUNT_':
+                self.__ui.discount_amount = self.__ui.discount_amount       
+                self.__ui.discount_amount_hd = self.__ui.discount_amount
+                self.__ui.cash_amount = 0
+                self.__ui.cash_return = 0            
+                self.set_payment_elements()
+                                
+            if event in ("Exit", '_PAYMENT_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
+                break
+                
+            if event == "_PAYMENT_OK_" or event == "F12:123":
+                self.set_payment_elements()
+                self.generate_estimate_number()
+                self.set_output_parameters()
+                self.update_estimate()
+                msg = 'Estimate ' + str(self.__order_number) + ' generated'
+                Message('INFO', msg)
+                break
+                                
+            prev_event = event
+
+    def initialize_payment_elements(self):
+        self.__ui.mobile_number = self.__mobile_number        
+        self.__ui.customer_name = self.__customer_name
+        self.__ui.mobile_number_header = self.__mobile_number
+        self.__ui.customer_name_header = self.__customer_name
+        self.__ui.customer_number = self.__customer_number
+        self.__ui.customer_address = self.__customer_address
+        self.__ui.net_amount = self.__net_amount
+        self.__ui.discount_amount = 0
+        estimate_actual_amount = float(self.__ui.net_amount) - float(self.__ui.discount_amount)
+        estimate_rounded_amount = round(estimate_actual_amount, 0)
+        self.__ui.estimate_amount = estimate_rounded_amount
+        self.__ui.roundoff_adjustment = estimate_rounded_amount - estimate_actual_amount
+        
+
+    def process_mobile_number(self):    
+        filter = "mobile_number='{}'"
+        db_customer_row = self.__db_customer_table.first(filter.format(self.__ui.mobile_number))
+        if db_customer_row:
+            self.__ui.customer_number = db_customer_row.name
+            self.__ui.customer_name = db_customer_row.customer_name
+            self.__ui.customer_address = db_customer_row.address
+            self.__ui.mobile_number_header = db_customer_row.mobile_number
+            self.__ui.customer_name_header = db_customer_row.customer_name
+            self.__mobile_number = db_customer_row.mobile_number
+            self.__customer_number = db_customer_row.name
+            self.__customer_name = db_customer_row.customer_name
+            self.__customer_address = db_customer_row.address
+
+    def set_payment_elements(self):
+        if not self.__ui.discount_amount or self.__ui.discount_amount == '':
+           self.__ui.discount_amount = 0
+     
+        self.__discount_amount = float(self.__ui.discount_amount)
+     
+        estimate_actual_amount = float(self.__ui.net_amount) - float(self.__ui.discount_amount)
+        estimate_rounded_amount = round(estimate_actual_amount, 0)
+        self.__ui.estimate_amount = estimate_rounded_amount
+        self.__ui.roundoff_adjustment = estimate_rounded_amount - estimate_actual_amount
+
+    def generate_estimate_number(self):
+        db_query = DbQuery(self.__db_conn, 'SELECT nextval("ORDER_NUMBER")')
+        for db_row in db_query.result:
+            self.__order_number = db_row[0]
+
+    def set_output_parameters(self):
+        self.__output_param['order_number'] = self.__order_number
+        self.__output_param['customer_number'] = self.__ui.customer_number
+        self.__output_param['mobile_number'] = self.__ui.mobile_number
+        self.__output_param['customer_name'] = self.__ui.customer_name
+        self.__output_param['customer_address'] = self.__ui.customer_address        
+        self.__output_param['estimate_amount'] = float(self.__ui.estimate_amount)
+        self.__output_param['roundoff_adjustment'] = float(self.__ui.roundoff_adjustment)
+        self.__output_param['discount_amount'] = float(self.__ui.discount_amount)
+
+    def update_estimate(self):
+        db_estimate_row = self.__db_estimate_table.get_row(self.__estimate_number)
+
+        if not db_estimate_row:
+            return
+        print('here1:', self.__estimate_number, self.__ui.customer_number)
+            
+        db_estimate_row.order_number = self.__order_number
+        db_estimate_row.customer = self.__ui.customer_number
+        db_estimate_row.discount_amount = self.__ui.discount_amount
+        db_estimate_row.estimate_amount = self.__ui.estimate_amount
+        
+        self.__db_session.commit()
+
+
+    def get_output_param(self):
+        return self.__output_param
+
     
+    output_param = property(get_output_param)  

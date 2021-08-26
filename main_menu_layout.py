@@ -16,7 +16,7 @@ class MainMenuCanvas:
 
         menu_def = [
                 ['&File', ['E&xit']],      
-                ['&Operations', ['&Estimate', '&Draft Invoice', '&Tax Invoice', '&Cash', '---', 'Day Close']],      
+                ['&Operations', ['&Estimate', '&Order', '&Draft Invoice', '&Tax Invoice', '&Cash', '---', 'Day Close']],      
                 ['&Interface', ['&Download Customer', '&Download Item', '&Download Exchange', '---', '&Upload Invoice']],      
                 ['&Reports', ['&Daily Sales', 'Cash &Position']],      
                 ['&Help', '&About'], 
@@ -39,10 +39,7 @@ class MainMenuCanvas:
                             sg.Button(key='_ESTIMATE_', button_text='E̲stimate',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_DRAFT_INVOICE_', button_text='D̲raft Invoice',**ap_style.menu_button),
-                        ],
-                        [
-                            sg.Button(key='_TAX_INVOICE_', button_text='T̲ax Invoice',**ap_style.menu_button),
+                            sg.Button(key='_DRAFT_INVOICE_', button_text='Invoice',**ap_style.menu_button),
                         ],
                         [
                             sg.Button(key='_CASH_OPTION_', button_text='C̲ash',**ap_style.menu_button),
@@ -79,6 +76,15 @@ class MainMenuCanvas:
                 ),
                 sg.Column(
                     [
+                        [
+                            sg.Text('Views',**ap_style.menu_text),
+                        ],
+                        [
+                            sg.Button(key='_ORDER_', button_text='Estimate History',**ap_style.menu_button),
+                        ],
+                        [
+                            sg.Button(key='_TAX_INVOICE_', button_text='Invoice History',**ap_style.menu_button),
+                        ],
                         [
                             sg.Text('Reports',**ap_style.menu_text),
                         ],

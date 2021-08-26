@@ -68,6 +68,9 @@ class MainMenu():
             if event in ('E', 'e', 'Estimate', '_ESTIMATE_'):
                 self.estimate_window(self.__user_id, self.__terminal_id)
 
+            if event in ('O', 'o', 'Order', '_ORDER_'):
+                self.order_window(self.__user_id, self.__terminal_id)
+
             if event in ('D', 'd', 'Draft Invoice', '_DRAFT_INVOICE_'):
                 self.draft_invoice_window(self.__user_id, self.__terminal_id)
 
@@ -82,7 +85,12 @@ class MainMenu():
     ######
     # Wrapper function for Estimate window
     def estimate_window(self, user_id, terminal_id):
-        estimate = Estimate(user_id, terminal_id)
+        estimate = Estimate('operation', user_id, terminal_id)
+
+    ######
+    # Wrapper function for Order window
+    def order_window(self, user_id, terminal_id):
+        estimate = Estimate('history', user_id, terminal_id)
 
     ######
     # Wrapper function for Billing window

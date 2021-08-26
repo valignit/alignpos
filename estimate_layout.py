@@ -7,8 +7,8 @@ from utilities import Config
 ###
 # Estimate Layout               
 class EstimateCanvas:
-    def __init__(self, fav_item_codes_list, fav_item_names_list, fast_item_codes_list, fast_item_names_list):
-        
+    def __init__(self, menu, fav_item_codes_list, fav_item_names_list, fast_item_codes_list, fast_item_names_list):
+       
         config = Config()
         
         w, h = sg.Window.get_screen_size()        
@@ -16,21 +16,47 @@ class EstimateCanvas:
         rw = w*25/100                
         lh = h
         rh = h
-        background_color='seashell2',
+        
+        if menu == 'operation':
+            title = 'ESTIMATE'
+            background_color='seashell2'
+            alternating_row_color = 'MistyRose2'
+            item_rows = 13
+            bottom_pane_top = 16
+            print_left_pad = 0
+            exit_left_pad = 20          
+        else:
+            title = 'ESTIMATE'        
+            background_color='grey90'
+            alternating_row_color = 'MistyRose2'        
+            item_rows = 19
+            bottom_pane_top = 24
+            print_left_pad = 4
+            exit_left_pad = 775         
 
-        menu_def = [
-                ['&File', ['New', 'Delete', 'Save', 'Submit', 'Print', '---', 'Exit']],      
-                ['&Edit', ['Specs', 'Quantity', 'Weight', 'Price', '---', 'Add', 'Less', '---', 'Addon', 'Bundle' ]],      
-                ['&View', ['First', 'Previous', 'Next',  'Last']],      
-                ['&Help', 'About'], 
-        ]
+        if menu == 'operation':
+            menu_def = [
+                    ['&File', ['New', 'Delete', 'Save', 'Submit', 'Print', '---', 'Exit']],      
+                    ['&Edit', ['Specs', 'Quantity', 'Weight', 'Discount', '---', 'Add', 'Less', '---', 'Addon', 'Bundle' ]],      
+                    ['&View', ['First', 'Previous', 'Next',  'Last']],      
+                    ['&Help', 'About']
+            ]
+            right_click_menu=["that",["Specs","Quantity","Weight", "Discount", "---", "Add", "Less", "---", "Delete"]]          
+        else:
+            menu_def = [
+                    ['&File', ['Print', '---', 'Exit']],      
+                    ['&View', ['First', 'Previous', 'Next',  'Last']],      
+                    ['&Help', 'About'], 
+            ]
+            right_click_menu=["that",[]]   
         
         ui_header_pane_layout = [
             [
-                sg.Text('Estimate', **ap_style.page_title, pad=((0,0),(0,3)), background_color=background_color),
-                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_ESTIMATE_NUMBER_', background_color=background_color),
-                sg.Text('', **ap_style.page_title, pad=((0,70),(0,3)), key='_MOBILE_NUMBER_', background_color=background_color),
-                sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.action_button, pad = ((0,7),(0,0))),
+                sg.Text(title, **ap_style.page_title, pad=((0,0),(0,3)), background_color=background_color),
+                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_DRAFT_NUMBER_', background_color=background_color,visible=(eval("menu=='operation'"))),
+                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_FINAL_NUMBER_', background_color=background_color,visible=(eval("menu=='history'"))),
+                sg.Text('', **ap_style.page_title, pad=((0,67),(0,3)), key='_MOBILE_NUMBER_', background_color=background_color,visible=False),
+                sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.action_button, pad = ((266,7),(0,0))),
                 sg.Button(key='_BEGIN_', button_text='BEGN\nHome',**ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_PREVIOUS_', button_text='PREV\n←', **ap_style.nav_button, pad = ((3,5),(0,0))),
                 sg.Button(key='_NEXT_', button_text='NEXT\n→', **ap_style.nav_button, pad = ((3,5),(0,0))),
@@ -47,7 +73,7 @@ class EstimateCanvas:
                 sg.Input(key='_SEARCH_NAME_', size=(35,1), **ap_style.search_input),
                 sg.Button(key='_KEYPAD2_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))), 
                 sg.Text('Item Group:', **ap_style.search_text, background_color=background_color),
-                sg.Combo([''], key='_ITEM_GROUP_',default_value = 'None'),                
+                sg.Combo([''], key='_SEARCH_ITEM_GROUP_',default_value = 'None'),                
             ]
         ]
 
@@ -63,7 +89,7 @@ class EstimateCanvas:
                             ) for fav_count, fav_item_name in enumerate(fav_item_names_list, start=0)
                         ] 
                     ],
-                    size=(958,105), background_color=background_color 
+                    size=(958,105), background_color=background_color,
                 )
             ]
         ]
@@ -71,35 +97,35 @@ class EstimateCanvas:
         ui_detail_pane_layout = [
             [
                 sg.Table(values=[], key='_ITEMS_LIST_', enable_events=True,
-                     headings= ['Item code', 'Barcode', 'Item Name', 'Unit', 'Qty', 'Price', 'Amount', 'Tax Rate', 'Tax', 'Net'],
+                     headings= ['Item code', 'Barcode', 'Item Name', 'Unit', 'Qty', 'Price', 'Disc', 'Amount', 'Tax Rate', 'Tax', 'Net'],
                      font=(("Helvetica", 11)),
                      auto_size_columns=False,
                      justification='right',
                      row_height=24,
-                     alternating_row_color='MistyRose2',
-                     num_rows=14,
+                     alternating_row_color= alternating_row_color,
+                     num_rows=item_rows,
                      display_row_numbers=True,
-                     right_click_menu=["that",["Specs","Quantity","Weight", "Price", "---", "Add", "Less", "---", "Delete"]],
+                     right_click_menu=right_click_menu,
                      bind_return_key=True,
-                     col_widths=[10, 13, 24, 5, 5, 8, 9, 8, 10, 10],
+                     col_widths=[9, 13, 24, 5, 5, 7, 8, 7, 8, 7, 9],
                 )            
             ],
         ]
 
         ui_action_pane_layout = [
             [
-                sg.Button(key='F1',  button_text='\nF1', **ap_style.action_button, pad=((3,5),(5,0))),
-                sg.Button(key='F2',  button_text='\nF2', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F3',  button_text='\nF3', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F4',  button_text='\nF4', **ap_style.action_button, pad=((0,5),(5,0))),
-                sg.Button(key='F5',  button_text='\nF5', **ap_style.action_button, pad=((0,25),(5,0))),
-                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='+',  button_text='\n+', **ap_style.action_button_small, pad=((20,5),(5,0))),
-                sg.Button(key='-',  button_text='\n-', **ap_style.action_button_small, pad=((0,5),(5,0))),
-                sg.Button(key='ESC', button_text='Exit\nEsc', **ap_style.exit_button, pad=((20,0),(5,0))),
+                sg.Button(key='F1',  button_text='\nF1', **ap_style.action_button, pad=((3,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='F2',  button_text='\nF2', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='F3',  button_text='\nF3', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='F4',  button_text='\nF4', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='F5',  button_text='\nF5', **ap_style.action_button, pad=((print_left_pad,25),(5,0))),
+                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='+',  button_text='\n+', **ap_style.action_button_small, pad=((20,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='-',  button_text='\n-', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='ESC', button_text='Exit\nEsc', **ap_style.exit_button, pad=((exit_left_pad,0),(5,0))),
             ]               
         ]
 
@@ -130,34 +156,66 @@ class EstimateCanvas:
                 sg.Input(key='_TOTAL_AMOUNT_', **ap_style.summary_input),
             ],
             [
-                sg.Text('Tax:', **ap_style.summary_text),
-                sg.Input(key='_TOTAL_TAX_AMOUNT_', **ap_style.summary_input),
+                sg.Text('CGST:', **ap_style.summary_text),
+                sg.Input(key='_TOTAL_CGST_AMOUNT_', **ap_style.summary_input),
             ],
             [
-                sg.Text('Net Amount:', **ap_style.summary_text),
-                sg.Input(key='_NET_AMOUNT_', **ap_style.summary_input),
+                sg.Text('SGST:', **ap_style.summary_text),
+                sg.Input(key='_TOTAL_SGST_AMOUNT_', **ap_style.summary_input),
             ],
             [
-                sg.Text('Discount:', **ap_style.summary_text),
-                sg.Input(key='_DISCOUNT_AMOUNT_', **ap_style.summary_input),
+                sg.Text('Tax:', **ap_style.summary_text, visible=False),
+                sg.Input(key='_TOTAL_TAX_AMOUNT_', **ap_style.summary_input, visible=False),
+            ],
+            [
+                sg.Text('Net Amount:', **ap_style.summary_text_bold, pad=((5,0),(5,0))),
+                sg.Input(key='_NET_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(5,7))),
+            ],
+            [
+                sg.Text('Discount:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
+                sg.Input(key='_DISCOUNT_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
             ],
             [
                 sg.Text('Roundoff:', **ap_style.summary_text),
                 sg.Input(key='_ROUNDOFF_AMOUNT_', **ap_style.summary_input),
             ],
             [
-                sg.Text('Estimate:', **ap_style.summary_text_bold, pad=((5,0),(10,10))),
-                sg.Input(key='_ESTIMATE_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(10,10))),
+                sg.Text('Estimated:', **ap_style.summary_text_bold, pad=((5,0),(5,0))),
+                sg.Input(key='_ESTIMATE_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(5,7))),
+            ],
+            [
+                sg.Text('Cash:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
+                sg.Input(key='_CASH_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
+            ],
+            [
+                sg.Text('Card:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
+                sg.Input(key='_CARD_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
+            ],
+            [
+                sg.Text('Exchange:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
+                sg.Input(key='_EXCHANGE_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
+            ],
+            [
+                sg.Text('Redeem:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
+                sg.Input(key='_REDEEMED_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
+            ],
+            [
+                sg.Text('Received:', **ap_style.summary_text_bold ,pad=((5,0),(10,0)), visible=(eval("menu=='tax'"))),
+                sg.Input(key='_PAID_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(10,10)), visible=(eval("menu=='tax'")))
+            ],          
+            [
+                sg.Text('Returned:', **ap_style.summary_text_bold,pad=((5,0),(10,0)), visible=(eval("menu=='tax'"))),
+                sg.Input(key='_CASH_RETURN_', **ap_style.summary_input_bold, pad=((0,0),(5,10)), visible=(eval("menu=='tax'"))),
             ],
         ]        
         
         ui_tools_pane_layout = [
             [
-                sg.Button('ADDON  (Alt-A)', key='Addon', **ap_style.search_button_wide)
+                sg.Button('ADDON  (Alt-A)', key='Addon', **ap_style.search_button_wide,visible=(eval("menu=='operation'")))
             ],
             [
-                sg.Button('BUNDLE  (Alt-B)', key='Bundle', **ap_style.search_button_wide)
-            ]
+                sg.Button('BUNDLE  (Alt-B)', key='Bundle', **ap_style.search_button_wide,visible=(eval("menu=='operation'")))
+            ],
         ]
 
         ui_fast_pane_layout = [
@@ -186,7 +244,7 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(7,5)),
-                    background_color=background_color,
+                    background_color=background_color, visible=(eval("menu=='operation'"))
                 )     
             ],
             [
@@ -195,7 +253,7 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((2,0),(0,0)),
-                    background_color=background_color,
+                    background_color=background_color, visible=(eval("menu=='operation'"))
                 )     
              ],
             [
@@ -221,7 +279,7 @@ class EstimateCanvas:
                     ui_footer_pane_layout, 
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((5,0),(5,0)),
+                    pad = ((5,0),(10,0)),
                     background_color=background_color,
                 )     
             ],
@@ -267,11 +325,11 @@ class EstimateCanvas:
                     background_color = 'grey90',
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((4,0),(8,12)),
+                    pad = ((4,0),(20,10)),
                 )     
             ],            
             [
-                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(5,10))),
+                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(bottom_pane_top,10))),
             ],
             [
                 sg.Frame('',
@@ -365,13 +423,67 @@ class ChangeQtyCanvas:
     layout = property(get_layout)         
 
 
+class DiscountCanvas:
+    def __init__(self):
+    
+        discount_layout = [
+            [
+                sg.Text('', key='_ITEM_NAME_', size=(25,2),  font=("Helvetica Bold", 14))
+            ],
+            [
+                sg.Text('Selling Price:', size=(15,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_SELLING_PRICE_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('Option:', size=(15,1),  font=("Helvetica", 11), pad=((5,5),(10,10))),             
+                sg.Combo(['Amount', 'Percentage'], key='_ITEM_DISCOUNT_OPTION_',default_value = 'Amount'),                            
+            ],
+            [
+                sg.Text('Discount:', size=(15,1),  font=("Helvetica", 11), pad=((5,5),(10,10))),             
+                sg.Input(key='_ITEM_DISCOUNT_VALUE_',
+                    readonly=False, 
+                    focus=True, 
+                    background_color='white',
+                    font=("Helvetica", 11),
+                    size=(15,1), 
+                    enable_events=True,
+                    justification = 'right'
+                ),
+                sg.Button(key='_KEYPAD_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))),                
+            ],
+            [
+                sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(20,10)))
+            ],                        
+            [
+                sg.Button('Ok-F12', **ap_style.search_button_short, key='_DISCOUNT_OK_'), 
+                sg.Button('Exit-Esc', **ap_style.search_button_short, key='_DISCOUNT_ESC_'), 
+            ]           
+        ]
+        
+        self.__layout = [
+            [
+                sg.Column(discount_layout, vertical_alignment = 'top', pad = None),
+            ]
+        ]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)         
+
+
 class EstimateListCanvas:
     def __init__(self):
     
         estimate_list_layout = [
             [
                 sg.Text('Estimate No:', size=(15,1),  font=("Helvetica", 11)),     
-                sg.Input(key='_ESTIMATE_NUMBER_SEARCH_',
+                sg.Input(key='_DRAFT_NUMBER_SEARCH_',
                     font=("Helvetica", 11),
                     size=(15,1),
                     justification = 'right'
@@ -396,7 +508,7 @@ class EstimateListCanvas:
                      num_rows=10,
                      display_row_numbers=False,
                      bind_return_key = True,
-                     col_widths=[10, 12, 5, 9, 9, 9, 9, 9, 12],
+                     col_widths=[15, 12, 5, 9, 9, 9, 9, 9, 12],
                      pad=((5,0),(5,5))
                 )            
             ],
@@ -416,6 +528,168 @@ class EstimateListCanvas:
         return self.__layout
     
     layout = property(get_layout)         
+
+
+###
+class PaymentCanvas:
+    def __init__(self):
+    
+        ui_customer_tab_layout = [
+            [
+                sg.Text('', font=("Helvetica", 5)),
+            ],
+            [
+                sg.Text('Mobile No.:', size=(12,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_MOBILE_NUMBER_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(15,1),
+                    enable_events=True,                                
+                    justification = 'left'
+                )
+            ],
+            [
+                sg.Text('Name:', size=(12,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_CUSTOMER_NAME_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(30,1),
+                    justification = 'left'
+                )
+            ],
+            [
+                sg.Text('Address:', size=(12,1),  font=("Helvetica", 11)),         
+            ],
+            [
+                sg.Input(key='_CUSTOMER_ADDRESS_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(45,1),
+                    justification = 'left'
+                )
+            ]
+        ]
+
+        ui_receive_tab_layout = [
+            [
+                sg.Text('', font=("Helvetica", 5)),
+            ],
+            [
+                sg.Text('Net Amount:', size=(17,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_NET_AMOUNT_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('Discount Amount:', size=(17,1),  font=("Helvetica", 11)),             
+                sg.Input(key='_DISCOUNT_AMOUNT_HD_',
+                    readonly=True, 
+                    font=("Helvetica", 11),size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('Roundoff Adjustment:', size=(17,1),  font=("Helvetica", 11)),             
+                sg.Input(key='_ROUNDOFF_ADJUSTMENT_',
+                    readonly=True, 
+                    font=("Helvetica", 11),size=(15,1),
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('Estimate Amount:', size=(15,1), font=("Helvetica 12 bold"), text_color='Blue'),             
+                sg.Input(key='_ESTIMATE_AMOUNT_',
+                    readonly=True, 
+                    size=(11,1),                
+                    font=("Helvetica 14 bold"),
+                    pad = ((8,0),(0,0)),                
+                    justification = 'right'
+                )
+            ],
+        ]
+
+        ui_discount_tab_layout = [
+            [
+                sg.Text('', font=("Helvetica", 5)),
+            ],
+            [
+                sg.Text('Discount:', size=(10,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_DISCOUNT_AMOUNT_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(15,1),
+                    enable_events=True,                                
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('PIN:', size=(10,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_DISCOUNT_PIN_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(5,1),
+                    enable_events=True,                                
+                    justification = 'left'
+                )
+            ],
+        ]
+    
+        self.__layout = [
+            [
+                sg.Text('Customer:', size=(8,1),  font=("Helvetica", 11), pad=((10,0),(10,5))),     
+                sg.Input(key='_MOBILE_NUMBER_HEADER_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(12,1),
+                    justification = 'left',
+                    pad=((5,0),(10,5))            
+                ),    
+                sg.Input(key='_CUSTOMER_NAME_HEADER_',
+                    readonly=True, 
+                    font=("Helvetica", 11),
+                    size=(34,1),
+                    justification = 'left', 
+                    pad=((5,0),(10,5))
+                )
+            ],
+            [
+                sg.TabGroup(
+                    [
+                        [
+                            sg.Tab('Receive-F1', ui_receive_tab_layout, key='_RECEIVE_TAB_'),
+                            sg.Tab('Discount-F4', ui_discount_tab_layout, key='_DISCOUNT_TAB_'),
+                            sg.Tab('Customer-F5', ui_customer_tab_layout, key='_CUSTOMER_TAB_'),
+                        ]
+                    ],
+                    key='-group2-', 
+                    title_color='grey32',
+                    font=("Helvetica 11"),
+                    selected_title_color='white',
+                    tab_location='topleft'
+                ),
+            ],
+            [
+                sg.Button('Ok-F12', 
+                    size=(8, 1), 
+                    font='Calibri 12 bold', 
+                    key='_PAYMENT_OK_',
+                    pad = ((5,0),(10,10)),                            
+                ),
+
+                sg.Button('Exit-Esc', 
+                    size=(8, 1), 
+                    font='Calibri 12 bold', 
+                    key='_PAYMENT_ESC_', 
+                    pad = ((15,0),(10,10)),                            
+                )
+            ]                   
+        ]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)         
+
 
 
 ###
