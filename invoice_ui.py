@@ -48,6 +48,7 @@ class InvoiceUi:
         # Initialize Footer Pane
         self.__user_id = ''
         self.__terminal_id = ''
+        self.__branch_id = ''
         self.__current_date = datetime.datetime(1900, 1, 1)
         
         # Initialize Summary Pane
@@ -121,6 +122,7 @@ class InvoiceUi:
         # Unfocus Footer Pane
         self.__window['_USER_ID_'].Widget.config(takefocus=0)
         self.__window['_TERMINAL_ID_'].Widget.config(takefocus=0)
+        self.__window['_BRANCH_ID_'].Widget.config(takefocus=0)
         self.__window['_CURRENT_DATE_'].Widget.config(takefocus=0)
         
 
@@ -348,6 +350,14 @@ class InvoiceUi:
     def get_terminal_id(self):
         self.__terminal_id = self.__window.Element('_TERMINAL_ID_').get()    
         return self.__terminal_id
+        
+    def set_branch_id(self, branch_id):
+        self.__branch_id = branch_id
+        self.__window.Element('_BRANCH_ID_').update(value = self.__branch_id)        
+        
+    def get_branch_id(self):
+        self.__branch_id = self.__window.Element('_BRANCH_ID_').get()    
+        return self.__branch_id
         
     def set_current_date(self, current_date):
         self.__current_date = current_date
@@ -647,6 +657,7 @@ class InvoiceUi:
     # Properties for Footer Pane    
     user_id = property(get_user_id, set_user_id) 
     terminal_id = property(get_terminal_id, set_terminal_id)
+    branch_id = property(get_branch_id, set_branch_id)
     current_date = property(get_current_date, set_current_date)
     
     # Properties for Summary Pane    

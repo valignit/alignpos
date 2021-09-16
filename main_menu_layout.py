@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 from styles import ElementStyle as ap_style
-from utilities import Config
+from config import Config
 
 ###
 # Main Menu Layout               
@@ -16,8 +16,9 @@ class MainMenuCanvas:
 
         menu_def = [
                 ['&File', ['E&xit']],      
-                ['&Operations', ['&Estimate', '&Order', '&Draft Invoice', '&Tax Invoice', '&Cash', '---', 'Day Close']],      
-                ['&Interface', ['&Download Customer', '&Download Item', '&Download Exchange', '---', '&Upload Invoice']],      
+                ['&Operations', ['&Estimate', 'I&nvoice', '&Cash', '---', 'Day Close']],      
+                ['&Interface', ['Download C&ustomer', 'Download I&tem', 'Download Exc&hange', '---', 'Upload In&voice']], 
+                ['&Views', ['E&stimate history', 'I&nvoice history']],      
                 ['&Reports', ['&Daily Sales', 'Cash &Position']],      
                 ['&Help', '&About'], 
         ]
@@ -39,7 +40,7 @@ class MainMenuCanvas:
                             sg.Button(key='_ESTIMATE_', button_text='E̲stimate',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_DRAFT_INVOICE_', button_text='Invoice',**ap_style.menu_button),
+                            sg.Button(key='_INVOICE_', button_text='In̲voice',**ap_style.menu_button),
                         ],
                         [
                             sg.Button(key='_CASH_OPTION_', button_text='C̲ash',**ap_style.menu_button),
@@ -80,10 +81,10 @@ class MainMenuCanvas:
                             sg.Text('Views',**ap_style.menu_text),
                         ],
                         [
-                            sg.Button(key='_ORDER_', button_text='Estimate History',**ap_style.menu_button),
+                            sg.Button(key='_ESTIMATE_HISTORY_', button_text='Estimate History',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_TAX_INVOICE_', button_text='Invoice History',**ap_style.menu_button),
+                            sg.Button(key='_INVOICE_HISTORY_', button_text='Invoice History',**ap_style.menu_button),
                         ],
                         [
                             sg.Text('Reports',**ap_style.menu_text),
@@ -108,6 +109,8 @@ class MainMenuCanvas:
                 sg.Input(key='_USER_ID_', **ap_style.footer_input),
                 sg.Text('COUNTER:', **ap_style.footer_text),
                 sg.Input(key='_TERMINAL_ID_', **ap_style.footer_input),
+                sg.Text('BRANCH:', **ap_style.footer_text),
+                sg.Input(key='_BRANCH_ID_', **ap_style.footer_input),
                 sg.Text('DATE:', **ap_style.footer_text),
                 sg.Input(key='_CURRENT_DATE_', **ap_style.footer_input)
             ]
@@ -124,7 +127,7 @@ class MainMenuCanvas:
                 sg.Image(filename = config.application_path + '/images/domain.PNG', background_color = 'white', pad = ((0,0),(10,0)))
             ],
             [
-                sg.Text('', key='_WELCOME_TEXT_', **ap_style.welcome_text, pad = ((5,5),(10,5))),
+                sg.Text('', key='_WELCOME_TEXT_', **ap_style.welcome_text, pad = ((5,5),(10,5)), justification = 'center'),
             ],
         ]        
         

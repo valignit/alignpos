@@ -6,8 +6,9 @@ from barcode import Code128
 from barcode import Code128
 from barcode.writer import ImageWriter
 
-from utilities import Config, Message, Keypad
-from db_nosql import KvConn
+from config import Config
+from utilities import Message, Keypad
+from db_nosql import KvDatabase
 from db_orm import DbConn, DbTable, DbQuery
 from estimate_layout import EstimateCanvas, ChangeQtyCanvas, EstimateListCanvas, PaymentCanvas, DiscountCanvas
 from estimate_ui import EstimateUi, ChangeQtyUi, EstimateListUi, PaymentUi, DiscountUi
@@ -16,7 +17,7 @@ from common import ItemList, CustomerList
 
 class Estimate():
 
-    def __init__(self, menu, user_id, terminal_id):
+    def __init__(self, menu, user_id, terminal_id, branch_id):
     
         config = Config()
         
@@ -24,9 +25,10 @@ class Estimate():
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
         
-        self.__kv = KvConn()
+        self.__kv_settings = KvDatabase('kv_settings')
+        self.__kv_strings = KvDatabase('kv_strings')
 
-        self.tax_included = self.__kv.get('tax_included')
+        self.tax_included = self.__kv_settings.get('tax_included')
         
         kb = Controller()
         self.__kb = kb
@@ -66,7 +68,7 @@ class Estimate():
                         font='Helvetica 11', 
                         finalize=True, 
                         location=(0,0), 
-                        size=(w,h-60),
+                        size=(w,h-20),
                         keep_on_top=False, 
                         resizable=False,
                         return_keyboard_events=True, 
@@ -88,6 +90,7 @@ class Estimate():
         self.initialize_ui()        
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
+        self.__ui.branch_id = branch_id    
         
         # Creating Item Groups list to populate search combo
         item_groups_list = ['None']
@@ -138,7 +141,7 @@ class Estimate():
                 focus = self.__window.FindElementWithFocus().Key
                 
             #print('---main---', '\nevent=', event, '\nprev=', prev_event, '\nfocus=', focus, '\nval=', values)
-            print('---main---', '\nevent=', event, '\nprev=', prev_event, '\nfocus=', focus)
+            #print('---main---', '\nevent=', event, '\nprev=', prev_event, '\nfocus=', focus)
 
             if event in (sg.WIN_CLOSED, 'Escape:27', 'Escape', 'Exit'):
                 break
@@ -348,6 +351,7 @@ class Estimate():
                     continue
                 else:
                     if not self.__ui.draft_number or self.__ui.draft_number == '':
+                        Message('WARN', 'Please save the Estimate')
                         continue
                     confirm_delete = Message('OPT', 'Delete current Estimate?')
                     if not confirm_delete.ok:
@@ -600,20 +604,20 @@ class Estimate():
         max_fast_ct = 3
         fav_ct = 0
         fast_ct = 0
-        for key in self.__kv.getall():
+        for key in self.__kv_settings.getall():
             if key[:13] == 'favorite_item':
                 fav_ct += 1
                 if fav_ct > max_fav_ct:
                     continue
                 item_key = 'favorite_item_' + str(fav_ct)
-                self.__fav_item_codes_list.append(self.__kv.get(item_key))
+                self.__fav_item_codes_list.append(self.__kv_settings.get(item_key))
 
             elif key[:16] == 'fast_moving_item':
                 fast_ct += 1
                 if fast_ct > max_fast_ct:
                     continue
                 item_key = 'fast_moving_item_' + str(fast_ct)
-                self.__fast_item_codes_list.append(self.__kv.get(item_key))
+                self.__fast_item_codes_list.append(self.__kv_settings.get(item_key))
 
         for fav_item_code in self.__fav_item_codes_list:
             db_item_row = self.__db_item_table.get_row(fav_item_code)
@@ -629,7 +633,7 @@ class Estimate():
         self.__ui.draft_number = ''
         self.__ui.final_number = ''
         self.__ui.payment_status = ''
-        walk_in_customer = self.__kv.get('walk_in_customer')  
+        walk_in_customer = self.__kv_settings.get('walk_in_customer')  
         db_customer_row = self.__db_customer_table.get_row(walk_in_customer)
         if db_customer_row:        
             self.__ui.mobile_number = db_customer_row.mobile_number
@@ -680,6 +684,7 @@ class Estimate():
     def initialize_footer_pane(self):
         self.__ui.user_id = ''
         self.__ui.terminal_id = ''
+        self.__ui.branch_id = ''
         self.__ui.current_date = '2021/06/13'
 
     def initialize_summary_pane(self):
@@ -1659,7 +1664,7 @@ class Payment:
         self.__window = sg.Window("Payment", 
                         self.__canvas.layout, 
                         location=(400,40), 
-                        size=(500,510), 
+                        size=(500,250), 
                         modal=True, 
                         finalize=True,
                         keep_on_top = True,

@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 
 from styles import ElementStyle as ap_style
-from utilities import Config
+from config import Config
 
 
 ###
@@ -135,6 +135,8 @@ class EstimateCanvas:
                 sg.Input(key='_USER_ID_', **ap_style.footer_input),
                 sg.Text('COUNTER:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_TERMINAL_ID_', **ap_style.footer_input),
+                sg.Text('BRANCH:', **ap_style.footer_text, background_color=background_color),
+                sg.Input(key='_BRANCH_ID_', **ap_style.footer_input),
                 sg.Text('DATE:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_CURRENT_DATE_', **ap_style.footer_input)
             ]

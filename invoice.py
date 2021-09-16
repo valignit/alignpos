@@ -1,12 +1,14 @@
 import PySimpleGUI as sg
+import subprocess
 from pynput.keyboard import Key, Controller
 import pdfkit
 import os
 from barcode import Code128
 from barcode.writer import ImageWriter
 
-from utilities import Config, Message, Keypad
-from db_nosql import KvConn
+from config import Config
+from utilities import Message, Keypad
+from db_nosql import KvDatabase
 from db_orm import DbConn, DbTable, DbQuery
 from invoice_layout import InvoiceCanvas, ChangeQtyCanvas, InvoiceListCanvas, PaymentCanvas, DiscountCanvas
 from invoice_ui import InvoiceUi, ChangeQtyUi, InvoiceListUi, PaymentUi, DiscountUi
@@ -15,7 +17,7 @@ from common import ItemList, CustomerList
 
 class Invoice():
 
-    def __init__(self, type, user_id, terminal_id):
+    def __init__(self, type, user_id, terminal_id, branch_id):
     
         config = Config()
         
@@ -23,9 +25,10 @@ class Invoice():
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
         
-        self.__kv = KvConn()
+        self.__kv_settings = KvDatabase('kv_settings')
+        self.__kv_strings = KvDatabase('kv_strings')
 
-        self.tax_included = self.__kv.get('tax_included')
+        self.tax_included = self.__kv_settings.get('tax_included')
         
         kb = Controller()
         self.__kb = kb
@@ -85,6 +88,7 @@ class Invoice():
         self.initialize_ui()        
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
+        self.__ui.branch_id = branch_id    
         
         # Creating Item Groups list to populate search combo
         item_groups_list = ['None']
@@ -114,6 +118,7 @@ class Invoice():
         
       
         self.goto_last_row()
+        self.download_process()
         
         self.handler()
         self.__db_conn.close()
@@ -345,6 +350,7 @@ class Invoice():
                     continue
                 else:
                     if not self.__ui.draft_invoice_number or self.__ui.draft_invoice_number == '':
+                        Message('WARN', 'Please save the Invoice')
                         continue
                     confirm_delete = Message('OPT', 'Delete current Invoice?')
                     if not confirm_delete.ok:
@@ -368,7 +374,8 @@ class Invoice():
 
             if event in ('F4:115', 'F4', 'Submit'):
                 self.payment()
-                #self.save_invoice()
+                self.upload_process()
+                self.download_process()                
                 if self.__ui.tax_invoice_number:               
                     self.print_invoice()
                     self.clear_ui()
@@ -609,20 +616,20 @@ class Invoice():
         max_fast_ct = 3
         fav_ct = 0
         fast_ct = 0
-        for key in self.__kv.getall():
+        for key in self.__kv_settings.getall():
             if key[:13] == 'favorite_item':
                 fav_ct += 1
                 if fav_ct > max_fav_ct:
                     continue
                 item_key = 'favorite_item_' + str(fav_ct)
-                self.__fav_item_codes_list.append(self.__kv.get(item_key))
+                self.__fav_item_codes_list.append(self.__kv_settings.get(item_key))
 
             elif key[:16] == 'fast_moving_item':
                 fast_ct += 1
                 if fast_ct > max_fast_ct:
                     continue
                 item_key = 'fast_moving_item_' + str(fast_ct)
-                self.__fast_item_codes_list.append(self.__kv.get(item_key))
+                self.__fast_item_codes_list.append(self.__kv_settings.get(item_key))
 
         for fav_item_code in self.__fav_item_codes_list:
             db_item_row = self.__db_item_table.get_row(fav_item_code)
@@ -638,7 +645,7 @@ class Invoice():
         self.__ui.draft_invoice_number = ''
         self.__ui.tax_invoice_number = ''
         self.__ui.payment_status = ''
-        walk_in_customer = self.__kv.get('walk_in_customer')  
+        walk_in_customer = self.__kv_settings.get('walk_in_customer')  
         db_customer_row = self.__db_customer_table.get_row(walk_in_customer)
         if db_customer_row:        
             self.__ui.mobile_number = db_customer_row.mobile_number
@@ -689,6 +696,7 @@ class Invoice():
     def initialize_footer_pane(self):
         self.__ui.user_id = ''
         self.__ui.terminal_id = ''
+        self.__ui.branch_id = ''
         self.__ui.current_date = '2021/06/13'
 
     def initialize_summary_pane(self):
@@ -1098,6 +1106,7 @@ class Invoice():
             
         self.clear_ui()
 
+
     def save_invoice(self):
         if not len(self.__ui.items_list) > 0:
             return    
@@ -1107,6 +1116,7 @@ class Invoice():
         else:
             self.update_invoice()
         self.__actual_items_list = self.__ui.items_list
+
 
     def insert_invoice(self):
         db_query = DbQuery(self.__db_conn, 'SELECT nextval("DRAFT_INVOICE_NUMBER")')
@@ -1372,7 +1382,19 @@ class Invoice():
         except:
             pass
 
-    
+    ######
+    # Download details from ERPNext
+    def download_process(self):
+        pid = subprocess.Popen(["python", "download_customers.py"])
+        pid = subprocess.Popen(["python", "download_items.py"])
+        pid = subprocess.Popen(["python", "download_exchange_adjustments.py"])
+
+    ######
+    # Upload details to ERPNext
+    def upload_process(self):   
+        pid = subprocess.Popen(["python", "upload_invoices.py"])
+
+
 class ChangeQty:
 
     def __init__(self, item_line):
@@ -1543,7 +1565,7 @@ class InvoiceList:
         self.__window = sg.Window("List Invoice",
                         self.__canvas.layout,
                         location=(100,100), 
-                        size=(800,360), 
+                        size=(900,360), 
                         modal=True, 
                         finalize=True,
                         return_keyboard_events=True, 

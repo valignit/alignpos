@@ -20,6 +20,14 @@ class SigninUi:
         self.__signin_terminal_id = self.__window.Element('_SIGNIN_TERMINAL_ID_').get()        
         return self.__signin_terminal_id
         
+    def set_signin_branch_id(self, signin_branch_id):
+        self.__signin_branch_id = signin_branch_id
+        self.__window.Element('_SIGNIN_BRANCH_ID_').update(value = self.__signin_branch_id)
+        
+    def get_signin_branch_id(self):
+        self.__signin_branch_id = self.__window.Element('_SIGNIN_BRANCH_ID_').get()        
+        return self.__signin_branch_id
+        
     def set_signin_user_id(self, signin_user_id):
         self.__signin_user_id = signin_user_id
         self.__window.Element('_SIGNIN_USER_ID_').update(value = self.__signin_user_id)
@@ -46,6 +54,7 @@ class SigninUi:
        
        
     signin_terminal_id = property(get_signin_terminal_id, set_signin_terminal_id)     
+    signin_branch_id = property(get_signin_branch_id, set_signin_branch_id)     
     signin_user_id = property(get_signin_user_id, set_signin_user_id)     
     signin_passwd = property(get_signin_passwd, set_signin_passwd)     
 

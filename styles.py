@@ -170,6 +170,13 @@ class ElementStyle:
                         'enable_events':True                    
                     }
 
+    search_input_ar:  dict = {           
+                        'justification':'right', 
+                        'font':("Helvetica", 10),
+                        'background_color': 'White',
+                        'enable_events':True                    
+                    }
+                    
     search_button:  dict = {
                         'size':(7, 1), 
                         'font':('Calibri 11 bold'),

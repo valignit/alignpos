@@ -1,12 +1,32 @@
 import PySimpleGUI as sg
+from config import Config
 from styles import ElementStyle
 
 
 class MessageCanvas:
 
     def __init__(self, type):
+        config = Config()
+        self.__language = config.language
         
-        self.__layout = [
+        switcher = {
+            'INFO': 'Information',
+            'OPT': 'Option',
+            'STOP': 'Error',
+            'WARN': 'Warning',
+        }
+        self.__title_en = switcher.get(type)
+
+        switcher = {
+            'INFO': 'معلومة',
+            'OPT': 'خيار',
+            'STOP': 'خطأ',
+            'WARN': 'تحذير',
+        }
+        self.__title_ar = switcher.get(type)
+        
+ 
+        self.__layout_en = [
             [
                 sg.Image(filename = 'c:/alignpos/images/' + type + '.PNG', size=(25,25), pad = ((10,10),(0,5)))
             ],
@@ -19,10 +39,40 @@ class MessageCanvas:
             ]
         ]
 
+        self.__layout_ar = [
+            [
+                sg.Image(filename = 'c:/alignpos/images/' + type + '.PNG', size=(25,25), pad = ((10,10),(0,5)))
+            ],
+            [
+                sg.T(key='_MESSAGE_',size=(30,1), background_color = 'White', pad = ((10,10),(5,15)),justification = 'right',),
+            ], 
+            [
+                sg.B(key='_CANCEL_', button_text='Esc-يلغي', visible=True, pad = ((10,10),(5,5))),
+                sg.B(key='_OK_', button_text='Ent-نعم', pad = ((10,10),(5,5)))
+            ]
+        ]
+
     def get_layout(self):
-        return self.__layout
+        if self.__language == 'ar': 
+            return self.__layout_ar
+        else:
+            return self.__layout_en
     
+    def get_title(self):
+        if self.__language == 'ar': 
+            return self.__title_ar
+        else:
+            return self.__title_en
+    
+    def get_justification(self):
+        if self.__language == 'ar': 
+            return 'right'
+        else:
+            return 'left'
+
     layout = property(get_layout)      
+    title = property(get_title)      
+    justification = property(get_justification)      
 
 
 class KeypadCanvas:

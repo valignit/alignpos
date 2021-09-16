@@ -3,7 +3,8 @@ import PySimpleGUI as sg
 import json
 from pynput.keyboard import Key, Controller
 
-from utilities import Config, Keypad, Message
+from config import Config
+from utilities import Message, Keypad
 from db_orm import DbConn, DbTable, DbQuery
 from common_layout import SigninCanvas, ItemListCanvas, CustomerListCanvas
 from common_ui import SigninUi, ItemListUi, CustomerListUi
@@ -17,17 +18,21 @@ class Signin():
         config = Config()
         
         self.__terminal_id = config.terminal_id
+        self.__branch_id = config.branch_id
+        self.__language = config.language
         
         self.__canvas = SigninCanvas()
 
-        self.__window = sg.Window("AlignPOS Signin", 
+        self.__window = sg.Window(self.__canvas.title, 
                         self.__canvas.layout,
                         background_color = 'White',
                         keep_on_top = True, 
                         return_keyboard_events = True, 
                         modal=True, 
                         icon='c:/alignpos/images/favicon.ico',
-                        finalize=True
+                        finalize=True,                  
+                        text_justification = self.__canvas.justification,
+                        element_justification = self.__canvas.justification
                     )
 
         self.__ui = SigninUi(self.__window)
@@ -46,6 +51,7 @@ class Signin():
         self.__ok = False
 
         self.__ui.signin_terminal_id = self.__terminal_id
+        self.__ui.signin_branch_id = self.__branch_id
         self.__ui.focus_signin_user_id()
         
         self.handler()
@@ -58,7 +64,7 @@ class Signin():
 
         while True:
             event, values = self.__window.read()
-            print('signin:', event, values)
+            #print('signin:', event, values)
 
             ### following code will be removed later
             if event in ('F1', 'F1:112'):
@@ -84,20 +90,27 @@ class Signin():
         db_query = DbQuery(self.__db_conn, 'select name, DECODE(passwd, "secret") as passwd, role, enabled from tabUser where name = "{}"'.format(self.__ui.signin_user_id))
         if  db_query.result:
             for db_row in db_query.result:
-                #print('passwd:', db_row[0], self.__ui.signin_passwd, db_row[1].decode("utf-8"))
                 if self.__ui.signin_passwd == db_row[1].decode("utf-8"):
                     if db_row[3] == 1:                    
                         return True
                     else:
-                        Message('STOP', 'Inactive User')
+                        message = 'مستخدم غير نشط' if self.__language == 'ar' else 'Inactive User'
+                        Message('STOP', message)
                         self.__ui.focus_signin_user_id()
                         return False                                   
                 else:
-                    Message('STOP', 'Password mismatch')
+                    message = 'كلمة المرور غير متطابقة' if self.__language == 'ar' else 'Password mismatch'
+                    Message('STOP', message)
                     self.__ui.focus_signin_passwd()
-                    return False                
+                    return False
+            else:
+                message = 'اسم المستخدم غير صالح' if self.__language == 'ar' else 'Invalid User'
+                Message('STOP', message)
+                self.__ui.focus_signin_user_id()
+                return False           
         else:
-            Message('STOP', 'Invalid User')
+            message = 'اسم المستخدم غير صالح' if self.__language == 'ar' else 'Invalid User'
+            Message('STOP', message)
             self.__ui.focus_signin_user_id()
             return False
    
@@ -110,9 +123,13 @@ class Signin():
     def get_sign_in_terminal_id(self):
         return self.__ui.signin_terminal_id
 
+    def get_sign_in_branch_id(self):
+        return self.__ui.signin_branch_id
+
     ok = property(get_ok)         
     user_id = property(get_sign_in_user_id)         
     terminal_id = property(get_sign_in_terminal_id)         
+    branch_id = property(get_sign_in_branch_id)         
 
     
 class ItemList:
@@ -267,7 +284,6 @@ class CustomerList:
         while True:
             event, values = self.__window.read()
             #print('customer_list=', event, prev_event, values)
-            print('customer_list=', event, prev_event)
             if event in ("Exit", '_CUSTOMER_LIST_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
                 break
 

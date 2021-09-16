@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-from utilities import Config
+from config import Config
 from styles import ElementStyle
 
 
@@ -7,10 +7,14 @@ class SigninCanvas:
 
     def __init__(self):
         config = Config()
-        self.__layout = [
+        self.__language = config.language
+
+        self.__title_en = 'Signin'
+        self.__title_ar = 'تسجيل الدخول'
+        
+        self.__layout_en = [
             [
                 sg.Image(filename = config.application_path + '/images/application_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
-            
             ],
             [
                 sg.Frame('',
@@ -20,11 +24,15 @@ class SigninCanvas:
                             sg.Input(key='_SIGNIN_TERMINAL_ID_', readonly='True', size=(15,1), **ElementStyle.search_input, pad=((10,5),(15,5)))          
                         ], 
                         [
+                            sg.Text('Branch:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
+                            sg.Input(key='_SIGNIN_BRANCH_ID_', readonly='True', size=(15,1), **ElementStyle.search_input, pad=((10,5),(15,5)))          
+                        ], 
+                        [
                             sg.Text('User Id:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
                             sg.Input(key='_SIGNIN_USER_ID_', size=(15,1), **ElementStyle.search_input, pad=((10,5),(15,5)))          
                         ], 
                         [
-                            sg.Text('Password:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(5,5))),
+                            sg.Text('Password:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
                             sg.Input(key='_SIGNIN_PASSWD_', size=(15,1), **ElementStyle.search_input, password_char='*', pad=((10,5),(5,5)))          
                         ], 
                         [
@@ -38,12 +46,66 @@ class SigninCanvas:
                 )
             ]
         ]
+        self.__layout_ar = [
+            [
+                sg.Image(filename = config.application_path + '/images/application_logo.PNG', background_color = 'white', pad = ((52,53),(0,0))),
+            
+            ],
+            [
+                sg.Frame('',
+                    [
+                        [
+                            sg.Input(key='_SIGNIN_TERMINAL_ID_', readonly='True', size=(15,1), **ElementStyle.search_input_ar, pad=((10,5),(15,5))),         
+                            sg.Text(':رقم المحطة', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
+                        ], 
+                        [
+                            sg.Input(key='_SIGNIN_BRANCH_ID_', readonly='True', size=(15,1), **ElementStyle.search_input_ar, pad=((10,5),(15,5))),         
+                            sg.Text(':معرف الفرع', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
+                        ], 
+                        [
+                            sg.Input(key='_SIGNIN_USER_ID_', size=(15,1), **ElementStyle.search_input_ar, pad=((10,5),(15,5))),         
+                            sg.Text(':اسم االمستخدم', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
+                        ], 
+                        [
+                            sg.Input(key='_SIGNIN_PASSWD_', size=(15,1), **ElementStyle.search_input_ar, password_char='*', pad=((10,5),(5,5))),         
+                            sg.Text(':كلمه السر', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
+                        ], 
+                        [
+                            sg.B(key='_CANCEL_', button_text='Esc-يلغي', **ElementStyle.search_button_short, visible=True, pad=((10,12),(15,10))),
+                            sg.B(key='_OK_', button_text='Ent-نعم', **ElementStyle.search_button_short, pad=((10,5),(15,10))), 
+                        ]
+                    ],
+                    background_color = 'grey90',
+                    border_width = 0,
+                    pad=((7,5),(10,10)),
+                    element_justification = "right",
+                )
+            ]
+        ]
+        
 
     def get_layout(self):
-        return self.__layout
+        if self.__language == 'ar': 
+            return self.__layout_ar
+        else:
+            return self.__layout_en
+        
+    def get_title(self):
+        if self.__language == 'ar': 
+            return self.__title_ar
+        else:
+            return self.__title_en
     
-    layout = property(get_layout)      
+    def get_justification(self):
+        if self.__language == 'ar': 
+            return 'right'
+        else:
+            return 'left'
 
+    layout = property(get_layout)      
+    title = property(get_title)      
+    justification = property(get_justification)      
+    
 
 class ItemListCanvas:
     def __init__(self):

@@ -2,7 +2,7 @@ import PySimpleGUI as sg
 import json
 from subprocess import run
 
-from db_nosql import KvConn
+from db_nosql import KvDatabase
 from main_menu_layout import MainMenuCanvas
 from main_menu_ui import MainMenuUi
 from estimate import Estimate
@@ -13,12 +13,16 @@ sg.theme('DefaultNoMoreNagging')
 
 class MainMenu():   
     
-    def __init__(self, user_id, terminal_id):
+    def __init__(self, user_id, terminal_id, branch_id):
         self.__user_id = user_id
         self.__terminal_id = terminal_id
+        self.__branch_id = branch_id
 
-        self.__kv = KvConn()
-        self.__welcome_text = self.__kv.get('welcome_text')   
+        #self.__kv = KvDatabase()
+        self.__kv_settings = KvDatabase('kv_settings')
+        self.__kv_strings = KvDatabase('kv_strings')
+        
+        self.__welcome_text = self.__kv_settings.get('welcome_text')   
                 
         w, h = sg.Window.get_screen_size()
         
@@ -66,16 +70,16 @@ class MainMenu():
                 break
                 
             if event in ('E', 'e', 'Estimate', '_ESTIMATE_'):
-                self.estimate_window(self.__user_id, self.__terminal_id)
+                self.estimate_window(self.__user_id, self.__terminal_id, self.__branch_id)
 
-            if event in ('O', 'o', 'Order', '_ORDER_'):
-                self.order_window(self.__user_id, self.__terminal_id)
+            if event in ('I', 'i', 'Invoice', '_INVOICE_'):
+                self.invoice_window(self.__user_id, self.__terminal_id, self.__branch_id)
 
-            if event in ('D', 'd', 'Draft Invoice', '_DRAFT_INVOICE_'):
-                self.draft_invoice_window(self.__user_id, self.__terminal_id)
+            if event in ('N', 'n', 'Invoice History', '_INVOICE_HISTORY_'):
+                self.invoice_history_window(self.__user_id, self.__terminal_id, self.__branch_id)
 
-            if event in ('T', 't', 'Tax Invoice', '_TAX_INVOICE_'):
-                self.tax_invoice_window(self.__user_id, self.__terminal_id)
+            if event in ('S', 's', 'Estimate History', '_ESTIMATE_HISTORY_'):
+                self.estimate_history_window(self.__user_id, self.__terminal_id, self.__branch_id)
                 
             if event == 'Exit':
                 break
@@ -84,23 +88,23 @@ class MainMenu():
 
     ######
     # Wrapper function for Estimate window
-    def estimate_window(self, user_id, terminal_id):
-        estimate = Estimate('operation', user_id, terminal_id)
+    def estimate_window(self, user_id, terminal_id, branch_id):
+        estimate = Estimate('operation', user_id, terminal_id, branch_id)
 
     ######
     # Wrapper function for Order window
-    def order_window(self, user_id, terminal_id):
-        estimate = Estimate('history', user_id, terminal_id)
+    def estimate_history_window(self, user_id, terminal_id, branch_id):
+        estimate = Estimate('history', user_id, terminal_id, branch_id)
 
     ######
     # Wrapper function for Billing window
-    def draft_invoice_window(self, user_id, terminal_id):
-        draft_invoice = Invoice('draft', user_id, terminal_id)
+    def invoice_window(self, user_id, terminal_id, branch_id):
+        draft_invoice = Invoice('draft', user_id, terminal_id, branch_id)
           
     ######
     # Wrapper function for Invoice window
-    def tax_invoice_window(self, user_id, terminal_id):
-        tax_invoice = Invoice('tax', user_id, terminal_id)
+    def invoice_history_window(self, user_id, terminal_id, branch_id):
+        tax_invoice = Invoice('tax', user_id, terminal_id, branch_id)
           
     def initialize_ui_detail_pane(self):
         None
@@ -108,7 +112,8 @@ class MainMenu():
     def initialize_ui_footer_pane(self):
         self.__ui.user_id = self.__user_id
         self.__ui.terminal_id = self.__terminal_id
-        self.__ui.current_date = '2021/06/13'
+        self.__ui.branch_id = self.__branch_id
+        self.__ui.current_date = '2021/09/15'
 
     def initialize_ui_summary_pane(self):
         self.__ui.welcome_text = self.__welcome_text

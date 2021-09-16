@@ -121,6 +121,10 @@ except requests.exceptions.RequestException as ws_err:
 # Fetch each Item from Item List from ERP
 
 item_create_count = 0
+item_uom = ''
+item_barcode = ''
+item_tax_template = ''
+
 for ws_item_row in ws_erp_resp_json["items"]:
     print_log("Creating Item: " + ws_item_row["name"])
     item_count+=1
@@ -152,6 +156,10 @@ for ws_item_row in ws_erp_resp_json["items"]:
         item_tax_template = tax["item_tax_template"]
         #print_log(item_tax_template)        
         break
+    
+    if item_uom == '' or item_barcode == '' or item_tax_template == '':
+        print_log('Item not processed since UOM/Barcode/Tax template missing')
+        continue
 
     # Fetch Item Tax Template details 
     ws_erp_method = '/api/resource/Item Tax Template/' 
@@ -261,6 +269,10 @@ for ws_item_row in ws_erp_resp_json["items"]:
         item_tax_template = tax["item_tax_template"]
         #print_log(item_tax_template)        
         break
+
+    if item_uom == '' or item_barcode == '' or item_tax_template == '':
+        print_log('Item not processed since UOM/Barcode/Tax template missing')
+        continue
 
     # Fetch Item Tax Template details 
     ws_erp_method = '/api/resource/Item Tax Template/' 

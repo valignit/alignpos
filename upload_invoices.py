@@ -231,7 +231,7 @@ approved_by
         payload_item = '{' + payload_item + '},'
         payload_invoice = payload_invoice + payload_item
     payload_invoice = payload_invoice[:-1] + ']}'
-    print(payload_invoice)
+    print_log(payload_invoice)
 
     ws_erp_method = 'api/resource/Alignpos Invoice'
     try:
