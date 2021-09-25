@@ -32,12 +32,11 @@ class DbConn():
         conn_str = 'mariadb+mariadbconnector://{}:{}@{}:{}/{}'.format(db_user, db_passwd, db_host, db_port, db_database)
         self.__engine = create_engine(conn_str)
         self.__session = Session(self.__engine)
-        metadata = MetaData()
-        metadata.reflect(self.__engine)
-        self.__base = automap_base(metadata=metadata)        
+        self.__metadata = MetaData()
+        self.__metadata.reflect(self.__engine)
+        self.__base = automap_base(metadata=self.__metadata)        
         self.__base.prepare(self.__engine, reflect=True)
-        
-              
+                     
     def get_session(self):
         return self.__session
         
@@ -46,7 +45,7 @@ class DbConn():
         
     def get_base(self):
         return self.__base
-
+    
     def close(self):
         self.__session.close()    
         self.__engine.dispose()    
@@ -60,13 +59,14 @@ class DbConn():
 # alignpos Database Table interface
 class DbTable():
 
-    def __init__(self, conn, table_name):
+    def __init__(self, conn, table):
         self.__conn = conn
-        self.__table_name = table_name
-        self.__list = None        
+        #self.__table_name = table_name
+        self.__list = None
         self.__row = None
         self.__count = 0
 
+        '''
         switcher = {
             'tabCustomer': conn.base.classes.tabCustomer,
             'tabItem': conn.base.classes.tabItem,
@@ -79,6 +79,8 @@ class DbTable():
             'tabUser': conn.base.classes.tabUser,
         }
         self.__table = switcher.get(table_name)
+        '''
+        self.__table = table
         
     def new_row(self):
         self.__row = self.__table()

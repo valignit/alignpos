@@ -17,16 +17,15 @@ from common import ItemList, CustomerList
 
 class Estimate():
 
-    def __init__(self, menu, user_id, terminal_id, branch_id):
+    def __init__(self, menu_opt, user_id, terminal_id, branch_id):
     
         config = Config()
         
-        self.__menu = menu
+        self.__menu_opt = menu_opt
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
         
         self.__kv_settings = KvDatabase('kv_settings')
-        self.__kv_strings = KvDatabase('kv_strings')
 
         self.tax_included = self.__kv_settings.get('tax_included')
         
@@ -37,6 +36,8 @@ class Estimate():
         
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
+
+        '''
         self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
         self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
         self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
@@ -44,20 +45,28 @@ class Estimate():
         self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
         self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
         self.__db_exchange_table = DbTable(self.__db_conn, 'tabExchange')
+        '''
+        self.__db_customer_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCustomer)
+        self.__db_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabItem)
+        self.__db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate)
+        self.__db_estimate_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate_Item)
+        self.__db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate)
+        self.__db_estimate_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate_Item)
+        self.__db_exchange_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabExchange)   
         
         # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
         self.__fav_item_codes_list = []
         self.__fast_item_codes_list = []
         self.__fav_item_names_list = []
         self.__fast_item_names_list = []
-        
-        if self.__menu == 'operation':
+       
+        if self.__menu_opt == 'operation':
             title = 'Estimate'
             self.fill_item_lists()
         else:
-            title = 'Estimate History'        
+            title = 'Estimate History'
 
-        self.__canvas = EstimateCanvas( self.__menu,
+        self.__canvas = EstimateCanvas( self.__menu_opt,
                                         self.__fav_item_codes_list,
                                         self.__fav_item_names_list,
                                         self.__fast_item_codes_list,                                  
@@ -223,7 +232,7 @@ class Estimate():
                 self.goto_last_row()
                 continue
 
-            if self.__menu == 'history' and event not in ('F5:116', 'F5', 'Print', 'F10', 'F10:121', '_FIND_'):
+            if self.__menu_opt == 'history' and event not in ('F5:116', 'F5', 'Print', 'F10', 'F10:121', '_FIND_'):
                 continue
 
             if event == '\t':
@@ -553,7 +562,7 @@ class Estimate():
     ######
     # Wrapper function for Estimate List
     def estimate_list(self):
-        estimate_list = EstimateList(self.__menu)
+        estimate_list = EstimateList(self.__menu_opt)
         return estimate_list.estimate_number
 
 
@@ -721,7 +730,7 @@ class Estimate():
     def goto_this_row(self, estimate_number):
         print('goto:', estimate_number)
         if estimate_number:
-            if self.__menu == 'operation':
+            if self.__menu_opt == 'operation':
                 filter = "name = '{}'"
             else:
                 filter = "estimate_number = '{}'"
@@ -735,7 +744,7 @@ class Estimate():
             self.goto_last_row()
 
     def goto_first_row(self):
-        if self.__menu == 'operation':
+        if self.__menu_opt == 'operation':
             filter = "estimate_number is null"
         else:
             filter = "estimate_number is not null"
@@ -748,7 +757,7 @@ class Estimate():
 
     def goto_previous_row(self): 
         db_estimate_row = None  
-        if self.__menu == 'operation':            
+        if self.__menu_opt == 'operation':            
             if self.__ui.draft_number:
                 name = self.__ui.draft_number
                 filter = "name < '{}' and estimate_number is null"
@@ -767,7 +776,7 @@ class Estimate():
 
     def goto_next_row(self):
         db_estimate_row = None  
-        if self.__menu == 'operation':            
+        if self.__menu_opt == 'operation':            
             if self.__ui.draft_number:
                 name = self.__ui.draft_number
                 filter = "name > '{}' and estimate_number is null"
@@ -787,7 +796,7 @@ class Estimate():
             self.goto_last_row()
 
     def goto_last_row(self):
-        if self.__menu == 'operation':            
+        if self.__menu_opt == 'operation':            
             filter = "estimate_number is null"
         else:
             filter = "estimate_number is not null"
@@ -803,7 +812,7 @@ class Estimate():
             return
 
         self.__reference_number = db_estimate_row.name
-        if self.__menu == 'operation':
+        if self.__menu_opt == 'operation':
             self.__ui.draft_number = db_estimate_row.name
         else:
             self.__ui.final_number = db_estimate_row.estimate_number        
@@ -1199,13 +1208,13 @@ class Estimate():
     ######
     # Print Estimate into PDF file
     def print_estimate(self):
-        if self.__menu == 'operation':
+        if self.__menu_opt == 'operation':
             if not self.__ui.draft_number:
                 Message('INFO', 'Plese save the estimate before printing.')
                 return
 
-        print('print:', self.__menu, self.__ui.final_number)
-        if self.__menu == 'operation':
+        print('print:', self.__menu_opt, self.__ui.final_number)
+        if self.__menu_opt == 'operation':
             if self.__ui.final_number:
                 title = 'ESTIMATE'
                 estimate_number = self.__ui.final_number
@@ -1492,8 +1501,8 @@ class Discount:
 
 class EstimateList:
     def __init__(self, type):    
-        self.__menu = type
-        print('type:', self.__menu)
+        self.__menu_opt = type
+        print('type:', self.__menu_opt)
 
         self.__draft_number = ''
 
@@ -1527,7 +1536,7 @@ class EstimateList:
         
         self.__ui.estimates_list = []
 
-        if self.__menu == 'operation':
+        if self.__menu_opt == 'operation':
             self.__base_query = 'select tabEstimate.name, \
 tabEstimate.total_amount, \
 (tabEstimate.cgst_tax_amount + tabEstimate.sgst_tax_amount) as tax_amount, \
@@ -1656,8 +1665,9 @@ class Payment:
 
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
-        self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
-        self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
+        self.__db_customer_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCustomer)
+        self.__db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate)
+        
         
         self.__canvas = PaymentCanvas()
         

@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 from config import Config
+from db_nosql import KvDatabase
 from styles import ElementStyle
 
 
@@ -7,10 +8,12 @@ class SigninCanvas:
 
     def __init__(self):
         config = Config()
+        self.__kv_strings = KvDatabase('kv_strings')
+        
         self.__language = config.language
 
         self.__title_en = 'Signin'
-        self.__title_ar = 'تسجيل الدخول'
+        self.__title_ar = self.__kv_strings.get(self.__title_en)
         
         self.__layout_en = [
             [
@@ -21,11 +24,11 @@ class SigninCanvas:
                     [
                         [
                             sg.Text('Counter:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
-                            sg.Input(key='_SIGNIN_TERMINAL_ID_', readonly='True', size=(15,1), **ElementStyle.search_input, pad=((10,5),(15,5)))          
+                            sg.Input(key='_SIGNIN_TERMINAL_ID_', readonly='True', size=(15,1), **ElementStyle.search_input, disabled_readonly_background_color='grey90',pad=((10,5),(15,5)))          
                         ], 
                         [
                             sg.Text('Branch:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
-                            sg.Input(key='_SIGNIN_BRANCH_ID_', readonly='True', size=(15,1), **ElementStyle.search_input, pad=((10,5),(15,5)))          
+                            sg.Input(key='_SIGNIN_BRANCH_ID_', readonly='True', size=(15,1), **ElementStyle.search_input, disabled_readonly_background_color='grey90', pad=((10,5),(15,5)))          
                         ], 
                         [
                             sg.Text('User Id:', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
@@ -55,11 +58,11 @@ class SigninCanvas:
                 sg.Frame('',
                     [
                         [
-                            sg.Input(key='_SIGNIN_TERMINAL_ID_', readonly='True', size=(15,1), **ElementStyle.search_input_ar, pad=((10,5),(15,5))),         
+                            sg.Input(key='_SIGNIN_TERMINAL_ID_', readonly='True', size=(15,1), **ElementStyle.search_input_ar, disabled_readonly_background_color='grey90', pad=((10,5),(15,5))),         
                             sg.Text(':رقم المحطة', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
                         ], 
                         [
-                            sg.Input(key='_SIGNIN_BRANCH_ID_', readonly='True', size=(15,1), **ElementStyle.search_input_ar, pad=((10,5),(15,5))),         
+                            sg.Input(key='_SIGNIN_BRANCH_ID_', readonly='True', size=(15,1), **ElementStyle.search_input_ar, disabled_readonly_background_color='grey90', pad=((10,5),(15,5))),         
                             sg.Text(':معرف الفرع', background_color = 'grey90', **ElementStyle.search_text, pad=((10,5),(15,5))),
                         ], 
                         [

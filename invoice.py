@@ -17,11 +17,11 @@ from common import ItemList, CustomerList
 
 class Invoice():
 
-    def __init__(self, type, user_id, terminal_id, branch_id):
+    def __init__(self, menu_opt, user_id, terminal_id, branch_id):
     
         config = Config()
         
-        self.__type = type
+        self.__menu_opt = menu_opt
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
         
@@ -37,6 +37,8 @@ class Invoice():
         
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
+        
+        '''
         self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
         self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
         self.__db_invoice_table = DbTable(self.__db_conn, 'tabInvoice')
@@ -44,6 +46,14 @@ class Invoice():
         self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
         self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
         self.__db_exchange_table = DbTable(self.__db_conn, 'tabExchange')
+        '''
+        self.__db_customer_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCustomer)
+        self.__db_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabItem)
+        self.__db_invoice_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice)
+        self.__db_invoice_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice_Item)
+        self.__db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate)
+        self.__db_estimate_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate_Item)
+        self.__db_exchange_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabExchange)            
         
         # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
         self.__fav_item_codes_list = []
@@ -51,16 +61,18 @@ class Invoice():
         self.__fav_item_names_list = []
         self.__fast_item_names_list = []
         
-        if self.__type == 'draft':
+        if self.__menu_opt == 'operation':
+            title = 'Invoice'
             self.fill_item_lists()
+        else:
+            title = 'Invoice History'
 
-        self.__canvas = InvoiceCanvas(  type,
+        self.__canvas = InvoiceCanvas(  menu_opt,
                                         self.__fav_item_codes_list,
                                         self.__fav_item_names_list,
                                         self.__fast_item_codes_list,                                  
                                         self.__fast_item_names_list)
         
-        title = self.__type.capitalize() + ' Invoice'
         self.__window = sg.Window(title, 
                         self.__canvas.layout,
                         font='Helvetica 11', 
@@ -222,7 +234,7 @@ class Invoice():
                 self.goto_last_row()
                 continue
 
-            if self.__type == 'tax' and event not in ('F5:116', 'F5', 'Print', 'F10', 'F10:121', '_FIND_'):
+            if self.__menu_opt == 'history' and event not in ('F5:116', 'F5', 'Print', 'F10', 'F10:121', '_FIND_'):
                 continue
 
             if event == '\t':
@@ -555,7 +567,7 @@ class Invoice():
     ######
     # Wrapper function for Invoice List
     def invoice_list(self):
-        invoice_list = InvoiceList(self.__type)
+        invoice_list = InvoiceList(self.__menu_opt)
         return invoice_list.invoice_number
 
 
@@ -733,7 +745,7 @@ class Invoice():
     def goto_this_row(self, invoice_number):
         print('goto:', invoice_number)
         if invoice_number:
-            if self.__type == 'draft':
+            if self.__menu_opt == 'operation':
                 filter = "name = '{}'"
             else:
                 filter = "invoice_number = '{}'"
@@ -747,7 +759,7 @@ class Invoice():
             self.goto_last_row()
 
     def goto_first_row(self):
-        if self.__type == 'draft':
+        if self.__menu_opt == 'operation':
             filter = "invoice_number is null"
         else:
             filter = "invoice_number is not null"
@@ -760,7 +772,7 @@ class Invoice():
 
     def goto_previous_row(self): 
         db_invoice_row = None  
-        if self.__type == 'draft':            
+        if self.__menu_opt == 'operation':            
             if self.__ui.draft_invoice_number:
                 name = self.__ui.draft_invoice_number
                 filter = "name < '{}' and invoice_number is null"
@@ -779,7 +791,7 @@ class Invoice():
 
     def goto_next_row(self):
         db_invoice_row = None  
-        if self.__type == 'draft':            
+        if self.__menu_opt == 'operation':            
             if self.__ui.draft_invoice_number:
                 name = self.__ui.draft_invoice_number
                 filter = "name > '{}' and invoice_number is null"
@@ -799,7 +811,7 @@ class Invoice():
             self.goto_last_row()
 
     def goto_last_row(self):
-        if self.__type == 'draft':            
+        if self.__menu_opt == 'operation':            
             filter = "invoice_number is null"
         else:
             filter = "invoice_number is not null"
@@ -815,7 +827,7 @@ class Invoice():
             return
 
         self.__reference_number = db_invoice_row.name
-        if self.__type == 'draft':
+        if self.__menu_opt == 'operation':
             self.__ui.draft_invoice_number = db_invoice_row.name
         else:
             self.__ui.tax_invoice_number = db_invoice_row.invoice_number        
@@ -1238,13 +1250,13 @@ class Invoice():
     ######
     # Print Invoice into PDF file
     def print_invoice(self):
-        if self.__type == 'draft':
+        if self.__menu_opt == 'operation':
             if not self.__ui.draft_invoice_number:
                 Message('INFO', 'Plese save the invoice before printing.')
                 return
 
-        print('print:', self.__type, self.__ui.tax_invoice_number)
-        if self.__type == 'draft':
+        print('print:', self.__menu_opt, self.__ui.tax_invoice_number)
+        if self.__menu_opt == 'operation':
             if self.__ui.tax_invoice_number:
                 title = 'TAX INVOICE'
                 invoice_number = self.__ui.tax_invoice_number
@@ -1542,9 +1554,9 @@ class Discount:
 
 
 class InvoiceList:
-    def __init__(self, type):    
-        self.__type = type
-        print('type:', self.__type)
+    def __init__(self, menu_opt):    
+        self.__menu_opt = menu_opt
+        print('menu_opt:', self.__menu_opt)
 
         self.__invoice_number = ''
 
@@ -1578,7 +1590,7 @@ class InvoiceList:
         
         self.__ui.invoices_list = []
 
-        if self.__type == 'draft':
+        if self.__menu_opt == 'operation':
             self.__base_query = 'select tabInvoice.name, \
 tabInvoice.total_amount, \
 (tabInvoice.cgst_tax_amount + tabInvoice.sgst_tax_amount) as tax_amount, \
@@ -1717,9 +1729,9 @@ class Payment:
 
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
-        self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
-        self.__db_exchange_table = DbTable(self.__db_conn, 'tabExchange')
-        self.__db_invoice_table = DbTable(self.__db_conn, 'tabInvoice')
+        self.__db_customer_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCustomer)
+        self.__db_exchange_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabExchange)
+        self.__db_invoice_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice)
         
         self.__canvas = PaymentCanvas()
         

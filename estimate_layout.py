@@ -2,14 +2,16 @@ import PySimpleGUI as sg
 
 from styles import ElementStyle as ap_style
 from config import Config
+from db_nosql import KvDatabase
 
 
 ###
 # Estimate Layout               
 class EstimateCanvas:
-    def __init__(self, menu, fav_item_codes_list, fav_item_names_list, fast_item_codes_list, fast_item_names_list):
+    def __init__(self, menu_opt, fav_item_codes_list, fav_item_names_list, fast_item_codes_list, fast_item_names_list):
        
         config = Config()
+        self.__kv_strings = KvDatabase('kv_strings')
         
         w, h = sg.Window.get_screen_size()        
         lw = w*78/100
@@ -17,7 +19,7 @@ class EstimateCanvas:
         lh = h
         rh = h
         
-        if menu == 'operation':
+        if menu_opt == 'operation':
             title = 'ESTIMATE'
             background_color='seashell2'
             alternating_row_color = 'MistyRose2'
@@ -26,7 +28,7 @@ class EstimateCanvas:
             print_left_pad = 0
             exit_left_pad = 20          
         else:
-            title = 'ESTIMATE'        
+            title = 'ESTIMATE HISTORY'        
             background_color='grey90'
             alternating_row_color = 'MistyRose2'        
             item_rows = 19
@@ -34,7 +36,7 @@ class EstimateCanvas:
             print_left_pad = 4
             exit_left_pad = 775         
 
-        if menu == 'operation':
+        if menu_opt == 'operation':
             menu_def = [
                     ['&File', ['New', 'Delete', 'Save', 'Submit', 'Print', '---', 'Exit']],      
                     ['&Edit', ['Specs', 'Quantity', 'Weight', 'Discount', '---', 'Add', 'Less', '---', 'Addon', 'Bundle' ]],      
@@ -53,8 +55,8 @@ class EstimateCanvas:
         ui_header_pane_layout = [
             [
                 sg.Text(title, **ap_style.page_title, pad=((0,0),(0,3)), background_color=background_color),
-                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_DRAFT_NUMBER_', background_color=background_color,visible=(eval("menu=='operation'"))),
-                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_FINAL_NUMBER_', background_color=background_color,visible=(eval("menu=='history'"))),
+                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_DRAFT_NUMBER_', background_color=background_color,visible=(eval("menu_opt=='operation'"))),
+                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_FINAL_NUMBER_', background_color=background_color,visible=(eval("menu_opt=='history'"))),
                 sg.Text('', **ap_style.page_title, pad=((0,67),(0,3)), key='_MOBILE_NUMBER_', background_color=background_color,visible=False),
                 sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.action_button, pad = ((266,7),(0,0))),
                 sg.Button(key='_BEGIN_', button_text='BEGN\nHome',**ap_style.nav_button, pad = ((3,5),(0,0))),
@@ -114,17 +116,17 @@ class EstimateCanvas:
 
         ui_action_pane_layout = [
             [
-                sg.Button(key='F1',  button_text='\nF1', **ap_style.action_button, pad=((3,5),(5,0)),visible=(eval("menu=='operation'"))),
-                sg.Button(key='F2',  button_text='\nF2', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
-                sg.Button(key='F3',  button_text='\nF3', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
-                sg.Button(key='F4',  button_text='\nF4', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='F1',  button_text='\nF1', **ap_style.action_button, pad=((3,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
+                sg.Button(key='F2',  button_text='\nF2', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
+                sg.Button(key='F3',  button_text='\nF3', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
+                sg.Button(key='F4',  button_text='\nF4', **ap_style.action_button, pad=((0,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
                 sg.Button(key='F5',  button_text='\nF5', **ap_style.action_button, pad=((print_left_pad,25),(5,0))),
-                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
-                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
-                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
-                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
-                sg.Button(key='+',  button_text='\n+', **ap_style.action_button_small, pad=((20,5),(5,0)),visible=(eval("menu=='operation'"))),
-                sg.Button(key='-',  button_text='\n-', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu=='operation'"))),
+                sg.Button(key='F6',  button_text='\nF6', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
+                sg.Button(key='F7',  button_text='\nF7', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
+                sg.Button(key='F8',  button_text='\nF8', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
+                sg.Button(key='F9',  button_text='\nF9', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
+                sg.Button(key='+',  button_text='\n+', **ap_style.action_button_small, pad=((20,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
+                sg.Button(key='-',  button_text='\n-', **ap_style.action_button_small, pad=((0,5),(5,0)),visible=(eval("menu_opt=='operation'"))),
                 sg.Button(key='ESC', button_text='Exit\nEsc', **ap_style.exit_button, pad=((exit_left_pad,0),(5,0))),
             ]               
         ]
@@ -174,8 +176,8 @@ class EstimateCanvas:
                 sg.Input(key='_NET_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(5,7))),
             ],
             [
-                sg.Text('Discount:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
-                sg.Input(key='_DISCOUNT_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
+                sg.Text('Discount:', **ap_style.summary_text, visible=(eval("menu_opt=='tax'"))),
+                sg.Input(key='_DISCOUNT_AMOUNT_', **ap_style.summary_input, visible=(eval("menu_opt=='tax'"))),
             ],
             [
                 sg.Text('Roundoff:', **ap_style.summary_text),
@@ -186,37 +188,37 @@ class EstimateCanvas:
                 sg.Input(key='_ESTIMATE_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(5,7))),
             ],
             [
-                sg.Text('Cash:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
-                sg.Input(key='_CASH_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
+                sg.Text('Cash:', **ap_style.summary_text, visible=(eval("menu_opt=='tax'"))),
+                sg.Input(key='_CASH_AMOUNT_', **ap_style.summary_input, visible=(eval("menu_opt=='tax'"))),
             ],
             [
-                sg.Text('Card:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
-                sg.Input(key='_CARD_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
+                sg.Text('Card:', **ap_style.summary_text, visible=(eval("menu_opt=='tax'"))),
+                sg.Input(key='_CARD_AMOUNT_', **ap_style.summary_input, visible=(eval("menu_opt=='tax'"))),
             ],
             [
-                sg.Text('Exchange:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
-                sg.Input(key='_EXCHANGE_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
+                sg.Text('Exchange:', **ap_style.summary_text, visible=(eval("menu_opt=='tax'"))),
+                sg.Input(key='_EXCHANGE_AMOUNT_', **ap_style.summary_input, visible=(eval("menu_opt=='tax'"))),
             ],
             [
-                sg.Text('Redeem:', **ap_style.summary_text, visible=(eval("menu=='tax'"))),
-                sg.Input(key='_REDEEMED_AMOUNT_', **ap_style.summary_input, visible=(eval("menu=='tax'"))),
+                sg.Text('Redeem:', **ap_style.summary_text, visible=(eval("menu_opt=='tax'"))),
+                sg.Input(key='_REDEEMED_AMOUNT_', **ap_style.summary_input, visible=(eval("menu_opt=='tax'"))),
             ],
             [
-                sg.Text('Received:', **ap_style.summary_text_bold ,pad=((5,0),(10,0)), visible=(eval("menu=='tax'"))),
-                sg.Input(key='_PAID_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(10,10)), visible=(eval("menu=='tax'")))
+                sg.Text('Received:', **ap_style.summary_text_bold ,pad=((5,0),(10,0)), visible=(eval("menu_opt=='tax'"))),
+                sg.Input(key='_PAID_AMOUNT_', **ap_style.summary_input_bold, pad=((0,0),(10,10)), visible=(eval("menu_opt=='tax'")))
             ],          
             [
-                sg.Text('Returned:', **ap_style.summary_text_bold,pad=((5,0),(10,0)), visible=(eval("menu=='tax'"))),
-                sg.Input(key='_CASH_RETURN_', **ap_style.summary_input_bold, pad=((0,0),(5,10)), visible=(eval("menu=='tax'"))),
+                sg.Text('Returned:', **ap_style.summary_text_bold,pad=((5,0),(10,0)), visible=(eval("menu_opt=='tax'"))),
+                sg.Input(key='_CASH_RETURN_', **ap_style.summary_input_bold, pad=((0,0),(5,10)), visible=(eval("menu_opt=='tax'"))),
             ],
         ]        
         
         ui_tools_pane_layout = [
             [
-                sg.Button('ADDON  (Alt-A)', key='Addon', **ap_style.search_button_wide,visible=(eval("menu=='operation'")))
+                sg.Button('ADDON  (Alt-A)', key='Addon', **ap_style.search_button_wide,visible=(eval("menu_opt=='operation'")))
             ],
             [
-                sg.Button('BUNDLE  (Alt-B)', key='Bundle', **ap_style.search_button_wide,visible=(eval("menu=='operation'")))
+                sg.Button('BUNDLE  (Alt-B)', key='Bundle', **ap_style.search_button_wide,visible=(eval("menu_opt=='operation'")))
             ],
         ]
 
@@ -246,7 +248,7 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(7,5)),
-                    background_color=background_color, visible=(eval("menu=='operation'"))
+                    background_color=background_color, visible=(eval("menu_opt=='operation'"))
                 )     
             ],
             [
@@ -255,7 +257,7 @@ class EstimateCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((2,0),(0,0)),
-                    background_color=background_color, visible=(eval("menu=='operation'"))
+                    background_color=background_color, visible=(eval("menu_opt=='operation'"))
                 )     
              ],
             [

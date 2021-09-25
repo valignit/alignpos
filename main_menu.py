@@ -99,12 +99,12 @@ class MainMenu():
     ######
     # Wrapper function for Billing window
     def invoice_window(self, user_id, terminal_id, branch_id):
-        draft_invoice = Invoice('draft', user_id, terminal_id, branch_id)
+        draft_invoice = Invoice('operation', user_id, terminal_id, branch_id)
           
     ######
     # Wrapper function for Invoice window
     def invoice_history_window(self, user_id, terminal_id, branch_id):
-        tax_invoice = Invoice('tax', user_id, terminal_id, branch_id)
+        tax_invoice = Invoice('history', user_id, terminal_id, branch_id)
           
     def initialize_ui_detail_pane(self):
         None
