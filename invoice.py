@@ -596,7 +596,6 @@ class Invoice():
         input_param['customer_address'] = self.__ui.customer_address        
         input_param['net_amount'] = self.__ui.net_amount        
         payment = Payment(input_param)
-        print(payment.output_param)
         if not payment.output_param:
             return
         self.__ui.tax_invoice_number = payment.output_param['tax_invoice_number']
@@ -604,15 +603,15 @@ class Invoice():
         self.__ui.discount_amount = payment.output_param['discount_amount']
         self.__ui.roundoff_amount = payment.output_param['roundoff_adjustment']
         self.__ui.cash_amount = payment.output_param['cash_amount']
-        self.__ui.card_amount = payment.output_param['card_amount']
-        self.__ui.card_reference = payment.output_param['card_reference']
+        self.__ui.other_payment_mode = payment.output_param['other_payment_mode']
+        self.__ui.other_payment_amount = payment.output_param['other_payment_amount']
+        self.__ui.other_payment_reference = payment.output_param['other_payment_reference']
         self.__ui.cash_return = payment.output_param['cash_return']
         self.__ui.exchange_amount = payment.output_param['exchange_adjustment']
         self.__ui.redeem_points = payment.output_param['redeem_points']
         self.__ui.redeem_amount = payment.output_param['redeem_adjustment']
         self.__ui.paid_amount = payment.output_param['invoice_amount']
         self.__ui.exchange_voucher = payment.output_param['exchange_voucher']
-        print('pay:', self.__ui.paid_amount)
         return 
 
 
@@ -723,7 +722,8 @@ class Invoice():
         self.__ui.roundoff_amount = 0.00          
         self.__ui.invoice_amount = 0.00
         self.__ui.cash_amount = 0.00
-        self.__ui.card_amount = 0.00
+        self.__ui.other_payment_mode = ''
+        self.__ui.other_payment_amount = 0.00
         self.__ui.exchange_amount = 0.00
         self.__ui.redeem_amount = 0.00
         self.__ui.paid_amount = 0.00
@@ -859,10 +859,14 @@ class Invoice():
             self.__ui.cash_amount = db_invoice_row.cash_amount
         else:
             self.__ui.cash_amount = 0.00
-        if db_invoice_row.card_amount:
-            self.__ui.card_amount = db_invoice_row.card_amount
+        if db_invoice_row.other_payment_mode:
+            self.__ui.other_payment_mode = db_invoice_row.other_payment_mode
         else:
-            self.__ui.card_amount = 0.00
+            self.__ui.other_payment_mode = ''
+        if db_invoice_row.other_payment_amount:
+            self.__ui.other_payment_amount = db_invoice_row.other_payment_amount
+        else:
+            self.__ui.other_payment_amount = 0.00
         if db_invoice_row.exchange_amount:
             self.__ui.exchange_amount = db_invoice_row.exchange_amount
         else:
@@ -1386,6 +1390,16 @@ class Invoice():
                 Net&nbspAmt&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
             </p>
             """.format(self.__ui.invoice_amount.rjust(10,'*').replace('*', '&nbsp'))
+        print_str += """
+            <p style="font-size:15px; font-family:Courier; font-weight: bold">
+                Cash&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
+            </p>
+            """.format(self.__ui.cash_amount.rjust(10,'*').replace('*', '&nbsp'))
+        print_str += """
+            <p style="font-size:15px; font-family:Courier; font-weight: bold">
+                {}&nbsp&nbsp:&nbsp&nbsp&nbsp&nbsp{}
+            </p>
+            """.format(self.__ui.other_payment_mode, self.__ui.other_payment_amount.rjust(10,'*').replace('*', '&nbsp'))
         print_file = 'print-' + self.__ui.terminal_id + '.pdf'
         
         try:    
@@ -1781,10 +1795,10 @@ class Payment:
                 self.__ui.cash_return = 0
                 self.set_payment_elements()
                 
-            if event in ('\t', 'TAB') and prev_event == '_CARD_AMOUNT_':
-                if not self.__ui.card_amount:
-                    self.__ui.card_amount = 0
-                self.__ui.card_amount = self.__ui.card_amount 
+            if event in ('\t', 'TAB') and prev_event == '_OTHER_PAYMENT_AMOUNT_':
+                if not self.__ui.other_payment_amount:
+                    self.__ui.other_payment_amount = 0
+                self.__ui.other_payment_amount = self.__ui.other_payment_amount 
                 self.__ui.cash_return = 0            
                 self.set_payment_elements()
                 
@@ -1813,9 +1827,9 @@ class Payment:
             if event == "_PAYMENT_OK_" or event == "F12:123":
                 self.set_payment_elements()
                 if float(self.__ui.balance_amount) == 0:
-                    if float(self.__ui.card_amount) > 0 and self.__ui.card_reference == '':
+                    if float(self.__ui.other_payment_amount) > 0 and self.__ui.other_payment_reference == '':
                         Message('INFO', 'Enter Card Reference')
-                        self.__ui.focus_card_reference()                    
+                        self.__ui.focus_other_payment_reference()                    
                     else:
                         if float(self.__ui.cash_return) > 0:
                             msg = 'Please return back ' + self.__ui.cash_return + ' cash to customer'
@@ -1847,7 +1861,7 @@ class Payment:
         self.__ui.roundoff_adjustment = invoice_rounded_amount - invoice_actual_amount
         self.__ui.cash_amount = invoice_rounded_amount
         self.__ui.total_received_amount = float(self.__ui.cash_amount) + \
-                                float(self.__ui.card_amount) + \
+                                float(self.__ui.other_payment_amount) + \
                                 float(self.__ui.exchange_adjustment) + \
                                 float(self.__ui.redeem_adjustment)
         self.__ui.cash_return = 0.00
@@ -1890,8 +1904,8 @@ class Payment:
     def set_payment_elements(self):
         if not self.__ui.cash_amount or self.__ui.cash_amount == '':
            self.__ui.cash_amount = 0
-        if not self.__ui.card_amount or self.__ui.card_amount == '':
-           self.__ui.card_amount = 0
+        if not self.__ui.other_payment_amount or self.__ui.other_payment_amount == '':
+           self.__ui.other_payment_amount = 0
         if not self.__ui.exchange_adjustment or self.__ui.exchange_adjustment == '':
            self.__ui.exchange_adjustment = 0
         if not self.__ui.discount_amount or self.__ui.discount_amount == '':
@@ -1905,7 +1919,7 @@ class Payment:
         self.__ui.roundoff_adjustment = invoice_rounded_amount - invoice_actual_amount
 
         self.__ui.total_received_amount = float(self.__ui.cash_amount) + \
-                                float(self.__ui.card_amount) + \
+                                float(self.__ui.other_payment_amount) + \
                                 float(self.__ui.exchange_adjustment) + \
                                 float(self.__ui.redeem_adjustment)
 
@@ -1932,8 +1946,9 @@ class Payment:
         self.__output_param['roundoff_adjustment'] = float(self.__ui.roundoff_adjustment)
         self.__output_param['discount_amount'] = float(self.__ui.discount_amount)
         self.__output_param['cash_amount'] = float(self.__ui.cash_amount)
-        self.__output_param['card_amount'] = float(self.__ui.card_amount)
-        self.__output_param['card_reference'] = self.__ui.card_reference
+        self.__output_param['other_payment_mode'] = self.__ui.other_payment_mode
+        self.__output_param['other_payment_amount'] = float(self.__ui.other_payment_amount)
+        self.__output_param['other_payment_reference'] = self.__ui.other_payment_reference
         self.__output_param['cash_return'] = float(self.__ui.cash_return)
         self.__output_param['exchange_adjustment'] = float(self.__ui.exchange_adjustment)
         self.__output_param['redeem_points'] = self.__ui.redeem_points
@@ -1957,8 +1972,9 @@ class Payment:
         db_invoice_row.redeemed_points = self.__ui.redeem_points
         db_invoice_row.redeemed_amount = self.__ui.redeem_adjustment
         db_invoice_row.cash_amount = self.__ui.cash_amount
-        db_invoice_row.card_amount = self.__ui.card_amount
-        db_invoice_row.card_reference = self.__ui.card_reference
+        db_invoice_row.other_payment_mode = self.__ui.other_payment_mode
+        db_invoice_row.other_payment_amount = self.__ui.other_payment_amount
+        db_invoice_row.other_payment_reference = self.__ui.other_payment_reference
         db_invoice_row.cash_return = self.__ui.cash_return
         db_invoice_row.paid_amount = self.__ui.total_received_amount
 

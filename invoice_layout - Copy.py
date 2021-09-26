@@ -190,8 +190,8 @@ class InvoiceCanvas:
                 sg.Input(key='_CASH_AMOUNT_', **ap_style.summary_input, visible=(eval("menu_opt=='history'"))),
             ],
             [
-                sg.Text(key='_OTHER_PAYMENT_MODE_', **ap_style.summary_text, visible=(eval("menu_opt=='history'"))),
-                sg.Input(key='_OTHER_PAYMENT_AMOUNT_', **ap_style.summary_input, visible=(eval("menu_opt=='history'"))),
+                sg.Text('Card:', **ap_style.summary_text, visible=(eval("menu_opt=='history'"))),
+                sg.Input(key='_CARD_AMOUNT_', **ap_style.summary_input, visible=(eval("menu_opt=='history'"))),
             ],
             [
                 sg.Text('Exchange:', **ap_style.summary_text, visible=(eval("menu_opt=='history'"))),
@@ -630,7 +630,7 @@ class PaymentCanvas:
                 )
             ],
             [
-                sg.Text('Cash:', size=(17,1),  font=("Helvetica", 11)),     
+                sg.Text('Cash Amount:', size=(17,1),  font=("Helvetica", 11)),     
                 sg.Input(key='_CASH_AMOUNT_',
                     focus=True, 
                     background_color='white',
@@ -640,15 +640,15 @@ class PaymentCanvas:
                 ),
             ],
             [
-                sg.Combo(['Debit Card', 'Credit Card', 'Phone Pe', 'Google Pay'], key='_OTHER_PAYMENT_MODE_', default_value = 'Credit Card', size=(17,1), font=("Helvetica", 11), pad=((10,3),(0,0))),                
-                sg.Input(key='_OTHER_PAYMENT_AMOUNT_',
+                sg.Text('Card Amount:', size=(17,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_CARD_AMOUNT_',
                     background_color='white',
                     font=("Helvetica", 11),size=(15,1),
                     enable_events=True,                                
                     justification = 'right'
                 ), 
                 sg.Text('Ref:', font=("Helvetica", 11)),                         
-                sg.Input(key='_OTHER_PAYMENT_REFERENCE_',
+                sg.Input(key='_CARD_REFERENCE_',
                     background_color='white',
                     font=("Helvetica", 11),size=(15,1),
                     enable_events=True,                                

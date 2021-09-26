@@ -120,13 +120,14 @@ for invoice_row in db_invoice_rows :
     redeemed_points = invoice_row[11]
     redeemed_amount = invoice_row[12]
     cash_amount = invoice_row[13]
-    card_amount = invoice_row[14]
-    card_reference = invoice_row[15]
-    cash_return = invoice_row[16]
-    paid_amount = invoice_row[17]
-    home_delivery = invoice_row[18]
-    terminal_id = invoice_row[19]
-    approved_by = invoice_row[20]
+    other_mode = invoice_row[14]
+    other_amount = invoice_row[15]
+    other_reference = invoice_row[16]
+    cash_return = invoice_row[17]
+    paid_amount = invoice_row[18]
+    home_delivery = invoice_row[19]
+    terminal_id = invoice_row[20]
+    approved_by = invoice_row[21]
 
     if not discount_amount:
         discount_amount = 0

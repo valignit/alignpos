@@ -62,7 +62,7 @@ class InvoiceUi:
         self.__roundoff_amount = float(0.00)
         self.__invoice_amount = float(0.00)
         self.__cash_amount = float(0.00)
-        self.__card_amount = float(0.00)
+        self.__other_payment_amount = float(0.00)
         self.__exchange_amount = float(0.00)
         self.__redeem_amount = float(0.00)
         self.__paid_amount = float(0.00)
@@ -95,7 +95,7 @@ class InvoiceUi:
         self.__window['_ROUNDOFF_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_INVOICE_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_CASH_AMOUNT_'].Widget.config(takefocus=0)
-        self.__window['_CARD_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_OTHER_PAYMENT_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_EXCHANGE_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_REDEEMED_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_PAID_AMOUNT_'].Widget.config(takefocus=0)
@@ -449,13 +449,21 @@ class InvoiceUi:
         self.__cash_amount = self.__window.Element('_CASH_AMOUNT_').get()        
         return self.__cash_amount
 
-    def set_card_amount(self, card_amount):
-        self.__card_amount = card_amount
-        self.__window.Element('_CARD_AMOUNT_').update(value = "{:.2f}".format(self.__card_amount))
+    def set_other_payment_mode(self, other_payment_mode):
+        self.__other_payment_mode = other_payment_mode
+        self.__window.Element('_OTHER_PAYMENT_MODE_').update(value = self.__other_payment_mode)
         
-    def get_card_amount(self):
-        self.__card_amount = self.__window.Element('_CARD_AMOUNT_').get()        
-        return self.__card_amount
+    def get_other_payment_mode(self):
+        self.__other_payment_mode = self.__window.Element('_OTHER_PAYMENT_MODE_').get()        
+        return self.__other_payment_mode
+
+    def set_other_payment_amount(self, other_payment_amount):
+        self.__other_payment_amount = other_payment_amount
+        self.__window.Element('_OTHER_PAYMENT_AMOUNT_').update(value = "{:.2f}".format(self.__other_payment_amount))
+        
+    def get_other_payment_amount(self):
+        self.__other_payment_amount = self.__window.Element('_OTHER_PAYMENT_AMOUNT_').get()        
+        return self.__other_payment_amount
 
     def set_exchange_amount(self, exchange_amount):
         self.__exchange_amount = exchange_amount
@@ -671,7 +679,8 @@ class InvoiceUi:
     roundoff_amount = property(get_roundoff_amount, set_roundoff_amount)
     invoice_amount = property(get_invoice_amount, set_invoice_amount)
     cash_amount = property(get_cash_amount, set_cash_amount)
-    card_amount = property(get_card_amount, set_card_amount)
+    other_payment_mode = property(get_other_payment_mode, set_other_payment_mode)
+    other_payment_amount = property(get_other_payment_amount, set_other_payment_amount)
     exchange_amount = property(get_exchange_amount, set_exchange_amount)
     redeemed_amount = property(get_redeemed_amount, set_redeemed_amount)
     paid_amount = property(get_paid_amount, set_paid_amount)
@@ -1007,8 +1016,9 @@ class PaymentUi:
 		self.__redeem_adjustment_hd = float(0.00)
 		self.__exchange_adjustment_hd = float(0.00)
 		self.__cash_amount = float(0.00)
-		self.__card_amount = float(0.00)
-		self.__card_reference = ""
+		self.__other_mode = ""
+		self.__other_payment_amount = float(0.00)
+		self.__other_payment_reference = ""
 		self.__cash_return = float(0.00)
 		self.__exchange_voucher = ['None']
 		self.__exchange_adjustment = float(0.00)
@@ -1035,8 +1045,8 @@ class PaymentUi:
 		self.__popup.Element("_REDEEM_ADJUSTMENT_HD_").update(value = "{:.2f}".format(self.__redeem_adjustment_hd))
 		self.__popup.Element("_EXCHANGE_ADJUSTMENT_HD_").update(value = "{:.2f}".format(self.__exchange_adjustment_hd))
 		self.__popup.Element("_CASH_AMOUNT_").update(value = "{:.2f}".format(self.__cash_amount))
-		self.__popup.Element("_CARD_AMOUNT_").update(value = "{:.2f}".format(self.__card_amount))
-		self.__popup.Element("_CARD_REFERENCE_").update(value = self.__card_reference)
+		self.__popup.Element("_OTHER_PAYMENT_AMOUNT_").update(value = "{:.2f}".format(self.__other_payment_amount))
+		self.__popup.Element("_OTHER_PAYMENT_REFERENCE_").update(value = self.__other_payment_reference)
 		self.__popup.Element("_CASH_RETURN_").update(value = "{:.2f}".format(self.__cash_return))
 		self.__popup.Element("_TOTAL_RECEIVED_AMOUNT_").update(value = "{:.2f}".format(self.__total_received_amount))
 		self.__popup.Element("_EXCHANGE_VOUCHER_").update(value = self.__exchange_voucher)
@@ -1114,13 +1124,13 @@ class PaymentUi:
 		self.__cash_amount = cash_amount
 		self.__popup.Element("_CASH_AMOUNT_").update(value = "{:.2f}".format(float(self.__cash_amount)))
 
-	def set_card_amount(self, card_amount):
-		self.__card_amount = card_amount
-		self.__popup.Element("_CARD_AMOUNT_").update(value = "{:.2f}".format(float(self.__card_amount)))
+	def set_other_payment_amount(self, other_payment_amount):
+		self.__other_payment_amount = other_payment_amount
+		self.__popup.Element("_OTHER_PAYMENT_AMOUNT_").update(value = "{:.2f}".format(float(self.__other_payment_amount)))
 
-	def set_card_reference(self, card_reference):
-		self.__card_reference = card_reference
-		self.__popup.Element("_CARD_REFERENCE_").update(value = self.__card_reference)
+	def set_other_payment_reference(self, other_payment_reference):
+		self.__other_payment_reference = other_payment_reference
+		self.__popup.Element("_OTHER_PAYMENT_REFERENCE_").update(value = self.__other_payment_reference)
 
 	def set_cash_return(self, cash_return):
 		self.__cash_return = cash_return
@@ -1219,13 +1229,17 @@ class PaymentUi:
 		self.__cash_amount = self.__popup.Element("_CASH_AMOUNT_").get()
 		return self.__cash_amount
 
-	def get_card_amount(self):
-		self.__card_amount = self.__popup.Element("_CARD_AMOUNT_").get()
-		return self.__card_amount
+	def get_other_payment_mode(self):
+		self.__other_payment_mode = self.__popup.Element('_OTHER_PAYMENT_MODE_').get()
+		return self.__other_payment_mode
 
-	def get_card_reference(self):
-		self.__card_reference = self.__popup.Element("_CARD_REFERENCE_").get()
-		return self.__card_reference
+	def get_other_payment_amount(self):
+		self.__other_payment_amount = self.__popup.Element("_OTHER_PAYMENT_AMOUNT_").get()
+		return self.__other_payment_amount
+
+	def get_other_payment_reference(self):
+		self.__other_payment_reference = self.__popup.Element("_OTHER_PAYMENT_REFERENCE_").get()
+		return self.__other_payment_reference
 
 	def get_cash_return(self):
 		self.__cash_return = self.__popup.Element("_CASH_RETURN_").get()
@@ -1292,9 +1306,9 @@ class PaymentUi:
 		self.__popup.Element('_CASH_AMOUNT_').SetFocus()
 		self.__popup.Element('_CASH_AMOUNT_').update(select=True)        
     
-	def focus_card_reference(self):
-		self.__popup.Element('_CARD_REFERENCE_').SetFocus()
-		self.__popup.Element('_CARD_REFERENCE_').update(select=True)        
+	def focus_other_payment_reference(self):
+		self.__popup.Element('_OTHER_PAYMENT_REFERENCE_').SetFocus()
+		self.__popup.Element('_OTHER_PAYMENT_REFERENCE_').update(select=True)        
 
 	#property
 	mobile_number = property(get_mobile_number, set_mobile_number)
@@ -1307,8 +1321,9 @@ class PaymentUi:
 	redeem_adjustment_hd = property(get_redeem_adjustment_hd, set_redeem_adjustment_hd)
 	exchange_adjustment_hd = property(get_exchange_adjustment_hd, set_exchange_adjustment_hd)
 	cash_amount = property(get_cash_amount, set_cash_amount)
-	card_amount = property(get_card_amount, set_card_amount)
-	card_reference = property(get_card_reference, set_card_reference)
+	other_payment_mode = property(get_other_payment_mode)
+	other_payment_amount = property(get_other_payment_amount, set_other_payment_amount)
+	other_payment_reference = property(get_other_payment_reference, set_other_payment_reference)
 	cash_return = property(get_cash_return, set_cash_return)
 	exchange_voucher = property(get_exchange_voucher, set_exchange_voucher)
 	exchange_adjustment = property(get_exchange_adjustment, set_exchange_adjustment)
