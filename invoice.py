@@ -1157,6 +1157,7 @@ class Invoice():
         db_invoice_row.invoice_amount = self.__ui.invoice_amount
         db_invoice_row.cgst_tax_amount = self.__ui.total_cgst_amount
         db_invoice_row.sgst_tax_amount = self.__ui.total_sgst_amount
+        db_invoice_row.branch_id = self.__ui.branch_id  
         db_invoice_row.terminal_id = self.__ui.terminal_id  
 
         self.__db_invoice_table.create_row(db_invoice_row)
@@ -1960,7 +1961,6 @@ class Payment:
 
         if not db_invoice_row:
             return
-        print('here1:', self.__draft_invoice_number, self.__ui.customer_number)
             
         db_invoice_row.invoice_number = self.__tax_invoice_number
         db_invoice_row.customer = self.__ui.customer_number
@@ -1968,7 +1968,7 @@ class Payment:
         db_invoice_row.invoice_amount = self.__ui.invoice_amount
         
         db_invoice_row.exchange_amount = self.__ui.exchange_adjustment
-        db_invoice_row.exchange_reference = self.__ui.exchange_voucher
+        db_invoice_row.exchange_reference = self.__ui.exchange_voucher.rpartition('|')[0]
         db_invoice_row.redeemed_points = self.__ui.redeem_points
         db_invoice_row.redeemed_amount = self.__ui.redeem_adjustment
         db_invoice_row.cash_amount = self.__ui.cash_amount
@@ -1977,6 +1977,14 @@ class Payment:
         db_invoice_row.other_payment_reference = self.__ui.other_payment_reference
         db_invoice_row.cash_return = self.__ui.cash_return
         db_invoice_row.paid_amount = self.__ui.total_received_amount
+
+        db_exchange_row = self.__db_exchange_table.get_row(self.__ui.exchange_voucher.rpartition('|')[0])
+        print('H1')
+        if not db_exchange_row:
+            return
+        print('H2')    
+        db_exchange_row.invoice_number = self.__tax_invoice_number
+        print('H3')    
 
         self.__db_session.commit()
 

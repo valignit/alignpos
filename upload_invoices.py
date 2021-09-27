@@ -116,18 +116,19 @@ for invoice_row in db_invoice_rows :
     discount_amount = invoice_row[7]
     invoice_amount = invoice_row[8]
     exchange_amount = invoice_row[9]
-    exchange_reference = ''
+    exchange_reference = invoice_row[10]
     redeemed_points = invoice_row[11]
     redeemed_amount = invoice_row[12]
     cash_amount = invoice_row[13]
-    other_mode = invoice_row[14]
-    other_amount = invoice_row[15]
-    other_reference = invoice_row[16]
+    other_payment_mode = invoice_row[14]
+    other_payment_amount = invoice_row[15]
+    other_payment_reference = invoice_row[16]
     cash_return = invoice_row[17]
     paid_amount = invoice_row[18]
     home_delivery = invoice_row[19]
-    terminal_id = invoice_row[20]
-    approved_by = invoice_row[21]
+    branch_id = invoice_row[20]
+    terminal_id = invoice_row[21]
+    approved_by = invoice_row[22]
 
     if not discount_amount:
         discount_amount = 0
@@ -135,6 +136,10 @@ for invoice_row in db_invoice_rows :
         exchange_amount = 0
     if not redeemed_amount:
         redeemed_amount = 0
+    if not cash_amount:
+        cash_amount = 0
+    if not other_payment_amount:
+        other_payment_amount = 0
     if not paid_amount:
         paid_amount = 0
         
@@ -154,11 +159,13 @@ for invoice_row in db_invoice_rows :
 "redeemed_points": "{}",\
 "redeemed_amount": "{}",\
 "cash_amount": "{}",\
-"card_amount": "{}",\
-"card_reference": "{}",\
+"other_payment_mode": "{}",\
+"other_payment_amount": "{}",\
+"other_payment_reference": "{}",\
 "cash_return": "{}",\
 "paid_amount": "{}",\
 "home_delivery": "No",\
+"branch_id": "{}",\
 "terminal_id": "{}",'.format(
 invname,
 invoice_number,
@@ -173,11 +180,12 @@ exchange_reference,
 redeemed_points,
 "{:.2f}".format(redeemed_amount),
 "{:.2f}".format(cash_amount),
-"{:.2f}".format(card_amount),
-card_reference,
+other_payment_mode,
+"{:.2f}".format(other_payment_amount),
+other_payment_reference,
 "{:.2f}".format(cash_return),
 "{:.2f}".format(paid_amount),
-home_delivery,
+branch_id,
 terminal_id
 )
     payload_invoice = '{ ' + payload_invoice + '"items": ['
@@ -198,9 +206,9 @@ terminal_id
         qty = invoice_item_row[3]
         standard_selling_price = invoice_item_row[4]
         applied_selling_price = invoice_item_row[5]
-        cgst_tax_rate = invoice_item_row[7]
-        sgst_tax_rate = invoice_item_row[8]
-        approved_by = invoice_item_row[9]
+        cgst_tax_rate = invoice_item_row[10]
+        sgst_tax_rate = invoice_item_row[11]
+        approved_by = invoice_item_row[12]
 
         if not standard_selling_price:
             standard_selling_price = 0
@@ -240,7 +248,7 @@ approved_by
         ws_erp_resp.raise_for_status()   
         ws_erp_resp_text = ws_erp_resp.text
         ws_erp_resp_json = json.loads(ws_erp_resp_text)
-        #print(ws_erp_resp_text)
+        print(ws_erp_resp_text)
     except requests.exceptions.HTTPError as ws_err:
         print_log(f"ERP web service error 202a: {ws_err}")
         sys.exit(1)

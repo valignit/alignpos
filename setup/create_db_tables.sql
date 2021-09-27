@@ -66,6 +66,7 @@ CREATE TABLE `tabInvoice` (
 	`cash_return` DECIMAL(18,6) NULL DEFAULT NULL,
 	`paid_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`home_delivery` INT(1) NULL DEFAULT NULL,
+	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`creation` DATETIME(6) NULL DEFAULT NULL,

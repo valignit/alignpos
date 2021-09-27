@@ -4,6 +4,7 @@ doc_invoice = frappe.get_doc({
     "name" : doc.name,
     "company" : "Al Faridha Super Market",
     "customer" : doc.customer,
+    "discount_amount" : float(doc.discount_amount),
     "posting_date" : frappe.utils.nowdate(),
     "due_date" : frappe.utils.nowdate(),
     "currency" : "INR",
@@ -56,7 +57,7 @@ if float(cash_amount) > 0:
         "party_type" : "Customer",
         "party" : doc.customer, 
         "mode_of_payment" : "Cash",
-        "reference_no" : "1122",
+        "reference_no" : "",
         "reference_date" : frappe.utils.nowdate(),
         "paid_from" : "Debtors - AFSM",
         "paid_to" : "Cash - AFSM",
@@ -74,7 +75,7 @@ if float(cash_amount) > 0:
     doc_payment_entry.submit()
 
 ###
-if float(doc.card_amount) > 0:
+if float(doc.other_payment_amount) > 0:
     doc_payment_entry = frappe.get_doc({
         "doctype" : "Payment Entry",
         "company" : "Al Faridha Super Market",
@@ -82,20 +83,20 @@ if float(doc.card_amount) > 0:
         "posting_date" : frappe.utils.nowdate(),
         "party_type" : "Customer",
         "party" : doc.customer, 
-        "mode_of_payment" : "Credit Card",
-        "reference_no" : "1122",
+        "mode_of_payment" : doc.other_payment_mode,
+        "reference_no" : doc.other_payment_reference,
         "reference_date" : frappe.utils.nowdate(),
         "paid_from" : "Debtors - AFSM",
         "paid_to" : "Bank - AFSM",
         "paid_to_account_currency" : "INR",
-        "paid_amount" : doc.card_amount,
-        "received_amount" : doc.card_amount
+        "paid_amount" : doc.other_payment_amount,
+        "received_amount" : doc.other_payment_amount
     })
 
     doc_payment_entry.append('references', {
         'reference_doctype': "Sales Invoice",
         'reference_name': doc.name,
-        'allocated_amount': doc.card_amount
+        'allocated_amount': doc.other_payment_amount
     })
     doc_payment_entry.insert()
     doc_payment_entry.submit()
@@ -110,7 +111,7 @@ if float(doc.exchange_amount) > 0:
         "party_type" : "Customer",
         "party" : doc.customer, 
         "mode_of_payment" : "Exchange Adjustment",
-        "reference_no" : "1122",
+        "reference_no" : doc.exchange_reference,
         "reference_date" : frappe.utils.nowdate(),
         "paid_from" : "Debtors - AFSM",
         "paid_to" : "Exchange Adjustment - AFSM",
