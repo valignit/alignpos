@@ -7,6 +7,7 @@ from main_menu_layout import MainMenuCanvas
 from main_menu_ui import MainMenuUi
 from estimate import Estimate
 from invoice import Invoice
+from cash import Cash
 
 sg.theme('DefaultNoMoreNagging')
 
@@ -81,6 +82,9 @@ class MainMenu():
             if event in ('S', 's', 'Estimate History', '_ESTIMATE_HISTORY_'):
                 self.estimate_history_window(self.__user_id, self.__terminal_id, self.__branch_id)
                 
+            if event in ('C', 'c', 'Cash', '_CASH_'):
+                self.cash_window(self.__user_id, self.__terminal_id, self.__branch_id)
+                
             if event == 'Exit':
                 break
                 
@@ -106,6 +110,12 @@ class MainMenu():
     def invoice_history_window(self, user_id, terminal_id, branch_id):
         tax_invoice = Invoice('history', user_id, terminal_id, branch_id)
           
+    ######
+    # Wrapper function for Cash window
+    def cash_window(self, user_id, terminal_id, branch_id):
+        cash = Cash('operation', user_id, terminal_id, branch_id)
+        
+
     def initialize_ui_detail_pane(self):
         None
 

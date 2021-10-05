@@ -638,6 +638,7 @@ class PaymentCanvas:
                     enable_events=True,                                
                     justification = 'right'
                 ),
+                sg.Button('$', key='_CASH_DENOMINATION_', **ap_style.pad_button_small)                
             ],
             [
                 sg.Combo(['Debit Card', 'Credit Card', 'Phone Pe', 'Google Pay'], key='_OTHER_PAYMENT_MODE_', default_value = 'Credit Card', size=(17,1), font=("Helvetica", 11), pad=((10,3),(0,0))),                
@@ -674,7 +675,8 @@ class PaymentCanvas:
                     font=("Helvetica 14 bold"),
                     pad = ((12,0),(0,15)),                
                     justification = 'right'
-                )
+                ),
+                sg.Button('$', key='_RETURN_DENOMINATION_', **ap_style.pad_button_small, pad = ((9,0),(0,15)))                                
             ],
         ]
 

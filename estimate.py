@@ -37,15 +37,6 @@ class Estimate():
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
 
-        '''
-        self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
-        self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
-        self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
-        self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
-        self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
-        self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
-        self.__db_exchange_table = DbTable(self.__db_conn, 'tabExchange')
-        '''
         self.__db_customer_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCustomer)
         self.__db_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabItem)
         self.__db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate)
@@ -1508,7 +1499,8 @@ class EstimateList:
 
         self.__db_conn = DbConn()
 
-        db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
+        db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate)
+
         filter=''
         db_estimate_cursor = db_estimate_table.list(filter)
 

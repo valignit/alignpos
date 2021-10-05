@@ -198,6 +198,13 @@ class ElementStyle:
                         'use_ttk_buttons': True
                     }
 
+    search_button_medium:  dict = {
+                        'size':(16, 1), 
+                        'font':('Calibri 12 bold'), 
+                        'button_color': ('grey20', 'grey80'),
+                        'use_ttk_buttons': True
+                    }
+
     fav_button:  dict = {
                         'font':('Calibri 11 bold'), 
                         'button_color': ('grey20', 'grey80'),

@@ -3,6 +3,7 @@ import subprocess
 from pynput.keyboard import Key, Controller
 import pdfkit
 import os
+from datetime import datetime
 from barcode import Code128
 from barcode.writer import ImageWriter
 
@@ -12,7 +13,7 @@ from db_nosql import KvDatabase
 from db_orm import DbConn, DbTable, DbQuery
 from invoice_layout import InvoiceCanvas, ChangeQtyCanvas, InvoiceListCanvas, PaymentCanvas, DiscountCanvas
 from invoice_ui import InvoiceUi, ChangeQtyUi, InvoiceListUi, PaymentUi, DiscountUi
-from common import ItemList, CustomerList
+from common import ItemList, CustomerList, Denomination
 
 
 class Invoice():
@@ -38,22 +39,12 @@ class Invoice():
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
         
-        '''
-        self.__db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
-        self.__db_item_table = DbTable(self.__db_conn, 'tabItem')
-        self.__db_invoice_table = DbTable(self.__db_conn, 'tabInvoice')
-        self.__db_invoice_item_table = DbTable(self.__db_conn, 'tabInvoice_Item')
-        self.__db_estimate_table = DbTable(self.__db_conn, 'tabEstimate')
-        self.__db_estimate_item_table = DbTable(self.__db_conn, 'tabEstimate_Item')
-        self.__db_exchange_table = DbTable(self.__db_conn, 'tabExchange')
-        '''
         self.__db_customer_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCustomer)
         self.__db_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabItem)
         self.__db_invoice_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice)
         self.__db_invoice_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice_Item)
         self.__db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate)
         self.__db_estimate_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate_Item)
-        self.__db_exchange_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabExchange)            
         
         # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
         self.__fav_item_codes_list = []
@@ -152,7 +143,7 @@ class Invoice():
                 focus = self.__window.FindElementWithFocus().Key
                 
             #print('---main---', '\nevent=', event, '\nprev=', prev_event, '\nfocus=', focus, '\nval=', values)
-            print('---main---', '\nevent=', event, '\nprev=', prev_event, '\nfocus=', focus)
+            #print('---main---', '\nevent=', event, '\nprev=', prev_event, '\nfocus=', focus)
 
             if event in (sg.WIN_CLOSED, 'Escape:27', 'Escape', 'Exit'):
                 break
@@ -385,14 +376,16 @@ class Invoice():
                 continue
 
             if event in ('F4:115', 'F4', 'Submit'):
-                self.payment()
-                self.upload_process()
-                self.download_process()                
-                if self.__ui.tax_invoice_number:               
-                    self.print_invoice()
-                    self.clear_ui()
-                    self.__actual_items_list = []                                
-                continue
+                if len(self.__ui.items_list) > 0:
+                    self.save_invoice()
+                    self.payment()
+                    self.upload_process()
+                    self.download_process()                
+                    if self.__ui.tax_invoice_number:               
+                        self.print_invoice()
+                        self.clear_ui()
+                        self.__actual_items_list = []                                
+                    continue
                 
             if event in ('F5:116', 'F5', 'Print'):
                 self.print_invoice()
@@ -456,7 +449,7 @@ class Invoice():
 
             if event in ('F10', 'F10:121', '_FIND_'):
                 if len(self.__ui.items_list) > 0:
-                    if not self.__actual_items_list == self.__ui.items_list:                
+                    if not self.__actual_items_list == self.__ui.items_list:
                         confirm_save = Message('OPT', 'Save current Invoice?')
                         if confirm_save.ok:
                             self.save_invoice()
@@ -589,12 +582,19 @@ class Invoice():
     # Wrapper function for Payment
     def payment(self):
         input_param = dict()
+
+        input_param['user_id'] = self.__ui.user_id
+        input_param['terminal_id'] = self.__ui.terminal_id
+        input_param['branch_id'] = self.__ui.branch_id
+        input_param['current_date'] = self.__ui.current_date
+        
         input_param['draft_invoice_number'] = self.__ui.draft_invoice_number
         input_param['customer_number'] = self.__ui.customer_number
         input_param['mobile_number'] = self.__ui.mobile_number
         input_param['customer_name'] = self.__ui.customer_name
         input_param['customer_address'] = self.__ui.customer_address        
-        input_param['net_amount'] = self.__ui.net_amount        
+        input_param['net_amount'] = self.__ui.net_amount
+        
         payment = Payment(input_param)
         if not payment.output_param:
             return
@@ -1260,7 +1260,7 @@ class Invoice():
                 Message('INFO', 'Plese save the invoice before printing.')
                 return
 
-        print('print:', self.__menu_opt, self.__ui.tax_invoice_number)
+        #print('print:', self.__menu_opt, self.__ui.tax_invoice_number)
         if self.__menu_opt == 'operation':
             if self.__ui.tax_invoice_number:
                 title = 'TAX INVOICE'
@@ -1412,14 +1412,17 @@ class Invoice():
     ######
     # Download details from ERPNext
     def download_process(self):
+        '''
         pid = subprocess.Popen(["python", "download_customers.py"])
         pid = subprocess.Popen(["python", "download_items.py"])
         pid = subprocess.Popen(["python", "download_exchange_adjustments.py"])
-
+        '''
+        
     ######
     # Upload details to ERPNext
     def upload_process(self):   
-        pid = subprocess.Popen(["python", "upload_invoices.py"])
+        #pid = subprocess.Popen(["python", "upload_invoices.py"])
+        None
 
 
 class ChangeQty:
@@ -1458,7 +1461,7 @@ class ChangeQty:
             
             if self.__window.FindElementWithFocus():
                 focus = self.__window.FindElementWithFocus().Key
-            print('change_qty=', event, 'prev=', prev_event, 'focus:', focus)
+            #print('change_qty=', event, 'prev=', prev_event, 'focus:', focus)
                             
             if event == '_KEYPAD_':        
                 result = self.keypad(self.__ui.new_qty)
@@ -1529,7 +1532,7 @@ class Discount:
             
             if self.__window.FindElementWithFocus():
                 focus = self.__window.FindElementWithFocus().Key
-            print('discount=', event, 'prev=', prev_event, 'focus:', focus)
+            #print('discount=', event, 'prev=', prev_event, 'focus:', focus)
                             
             if event == '_KEYPAD_':        
                 result = self.keypad(0)
@@ -1571,13 +1574,13 @@ class Discount:
 class InvoiceList:
     def __init__(self, menu_opt):    
         self.__menu_opt = menu_opt
-        print('menu_opt:', self.__menu_opt)
+        #print('menu_opt:', self.__menu_opt)
 
         self.__invoice_number = ''
 
         self.__db_conn = DbConn()
 
-        db_invoice_table = DbTable(self.__db_conn, 'tabInvoice')
+        db_invoice_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice)
         filter=''
         db_invoice_cursor = db_invoice_table.list(filter)
 
@@ -1633,7 +1636,7 @@ tabCustomer.mobile_number \
 from tabInvoice, tabCustomer \
 where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is not null'
             self.__order_by = ' order by tabInvoice.invoice_number'
-            print(self.__base_query + self.__order_by)
+            #print(self.__base_query + self.__order_by)
                 
         db_query = DbQuery(self.__db_conn, self.__base_query + self.__order_by)
         if  db_query.result:
@@ -1661,8 +1664,7 @@ where tabInvoice.customer = tabCustomer.name and tabInvoice.invoice_number is no
         
         while True:
             event, values = self.__window.read()
-            #print('invoice_list=', event, prev_event, values)
-            print('invoice_list=', event, prev_event)
+            #print('invoice_list=', event, prev_event)
             if event in ("Exit", '_INVOICE_LIST_ESC_', 'Escape:27') or event == sg.WIN_CLOSED:
                 break
 
@@ -1730,6 +1732,12 @@ class Payment:
     def __init__(self, input_param):
         self.__tax_invoice_number = ''
         self.__output_param = dict()
+
+        self.__user_id = input_param['user_id']
+        self.__terminal_id = input_param['terminal_id']
+        self.__branch_id = input_param['branch_id']
+        self.__current_date = input_param['current_date']
+
         self.__draft_invoice_number = input_param['draft_invoice_number'] 
         self.__mobile_number = input_param['mobile_number'] 
         self.__customer_number = input_param['customer_number']
@@ -1740,6 +1748,11 @@ class Payment:
         self.__discount_amount = 0
         self.__paid_amount = 0
 
+        self.__cash_denomination_list = []
+        self.__cash_denomination_dict = dict()
+        self.__return_denomination_dict = []
+        
+
         self.__kb = Controller()
 
         self.__db_conn = DbConn()
@@ -1747,13 +1760,15 @@ class Payment:
         self.__db_customer_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCustomer)
         self.__db_exchange_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabExchange)
         self.__db_invoice_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice)
+        self.__db_cash_transaction_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction)
+        self.__db_cash_transaction_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction_Denomination)
         
         self.__canvas = PaymentCanvas()
         
         self.__window = sg.Window("Payment", 
                         self.__canvas.layout, 
                         location=(400,40), 
-                        size=(500,510), 
+                        size=(500,520), 
                         modal=True, 
                         finalize=True,
                         keep_on_top = True,
@@ -1788,6 +1803,19 @@ class Payment:
                 self.__ui.cash_amount = 0
                 self.__ui.cash_return = 0
                 self.set_payment_elements()
+
+            if event == '_CASH_DENOMINATION_':
+                if float(self.__ui.cash_amount) > 0:
+                    default_amount_dict = dict()
+                    default_amount_dict['None'] = self.__ui.cash_amount
+                    self.__cash_denomination_dict = self.denomination(default_amount_dict, 'edit')
+                    print('REC1:', self.__cash_denomination_dict)
+
+            if event == '_RETURN_DENOMINATION_':
+                if float(self.__ui.cash_return) > 0:
+                    default_amount_dict = dict()
+                    default_amount_dict['None'] = self.__ui.cash_return
+                    self.__return_denomination_dict = self.denomination(default_amount_dict, 'edit')
 
             if event in ('\t', 'TAB') and prev_event == '_CASH_AMOUNT_':
                 if not self.__ui.cash_amount:
@@ -1837,7 +1865,7 @@ class Payment:
                             Message('INFO', msg)
                         self.generate_invoice_number()
                         self.set_output_parameters()
-                        self.update_invoice()
+                        self.update_database()
                         msg = 'Invoice ' + str(self.__tax_invoice_number) + ' generated'
                         Message('INFO', msg)
                         break
@@ -1846,6 +1874,13 @@ class Payment:
                     self.__ui.focus_cash_amount()
                                 
             prev_event = event
+
+    ######
+    # Wrapper function for Denomination
+    def denomination(self, amount, mode):
+        denomination = Denomination(amount, mode)
+        return denomination.denomination_count_dict
+
 
     def initialize_payment_elements(self):
         self.__ui.mobile_number = self.__mobile_number        
@@ -1956,7 +1991,7 @@ class Payment:
         self.__output_param['redeem_adjustment'] = float(self.__ui.redeem_adjustment)
         self.__output_param['exchange_voucher'] = self.__ui.exchange_voucher
 
-    def update_invoice(self):
+    def update_database(self):
         db_invoice_row = self.__db_invoice_table.get_row(self.__draft_invoice_number)
 
         if not db_invoice_row:
@@ -1979,13 +2014,79 @@ class Payment:
         db_invoice_row.paid_amount = self.__ui.total_received_amount
 
         db_exchange_row = self.__db_exchange_table.get_row(self.__ui.exchange_voucher.rpartition('|')[0])
-        print('H1')
-        if not db_exchange_row:
-            return
-        print('H2')    
-        db_exchange_row.invoice_number = self.__tax_invoice_number
-        print('H3')    
+        if db_exchange_row:
+            db_exchange_row.invoice_number = self.__tax_invoice_number
 
+        if float(self.__ui.cash_amount) > 0:
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_NUMBER")')
+            for db_row in db_query.result:
+                cash_transaction_number = db_row[0]
+
+            db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
+
+            db_cash_transaction_row.name = cash_transaction_number
+            db_cash_transaction_row.transaction_type = 'Receipt'     
+            db_cash_transaction_row.transaction_context = 'Invoice'
+            db_cash_transaction_row.transaction_reference = self.__tax_invoice_number
+            db_cash_transaction_row.transaction_date = self.__current_date
+            db_cash_transaction_row.receipt_amount = self.__ui.cash_amount
+            db_cash_transaction_row.payment_amount = 0
+            db_cash_transaction_row.party_type = 'Customer'
+            db_cash_transaction_row.customer = self.__ui.customer_number
+            db_cash_transaction_row.branch_id = self.__branch_id
+            db_cash_transaction_row.terminal_id = self.__terminal_id
+            now = datetime.now()
+            dt_string = now.strftime("%Y-%m-%d %H:%M:%S.000001")
+            db_cash_transaction_row.creation = dt_string
+            db_cash_transaction_row.owner = self.__user_id
+            self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
+
+            print('REC2:', self.__cash_denomination_dict)
+            for denomination, count in self.__cash_denomination_dict.items():
+                print('REC2:', denomination, 'count:', count)
+                if int(count) > 0:
+                    db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
+                    db_cash_transaction_denomination_row.name = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.parent = str(cash_transaction_number)
+                    db_cash_transaction_denomination_row.denomination = denomination
+                    db_cash_transaction_denomination_row.count = count
+                    self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
+###
+        if float(self.__ui.cash_return) > 0:
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_NUMBER")')
+            for db_row in db_query.result:
+                cash_transaction_number = db_row[0]
+
+            db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
+
+            db_cash_transaction_row.name = cash_transaction_number
+            db_cash_transaction_row.transaction_type = 'Payment'     
+            db_cash_transaction_row.transaction_context = 'Invoice'
+            db_cash_transaction_row.transaction_reference = self.__tax_invoice_number
+            db_cash_transaction_row.transaction_date = self.__current_date
+            db_cash_transaction_row.receipt_amount = 0
+            db_cash_transaction_row.payment_amount = self.__ui.cash_return
+            db_cash_transaction_row.party_type = 'Customer'
+            db_cash_transaction_row.customer = self.__ui.customer_number
+            db_cash_transaction_row.branch_id = self.__branch_id
+            db_cash_transaction_row.terminal_id = self.__terminal_id
+            now = datetime.now()
+            dt_string = now.strftime("%Y-%m-%d %H:%M:%S.000001")
+            db_cash_transaction_row.creation = dt_string
+            db_cash_transaction_row.owner = self.__user_id
+            self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
+
+            for denomination, count in self.__return_denomination_dict.items():
+                print('RET:', denomination, 'count:', count)
+                if int(count) > 0:
+                    db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
+                    db_cash_transaction_denomination_row.name = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.parent = str(cash_transaction_number)
+                    db_cash_transaction_denomination_row.denomination = denomination
+                    db_cash_transaction_denomination_row.count = count
+                    self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
+
+###            
         self.__db_session.commit()
 
 

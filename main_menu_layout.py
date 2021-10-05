@@ -16,8 +16,8 @@ class MainMenuCanvas:
 
         menu_def = [
                 ['&File', ['E&xit']],      
-                ['&Operations', ['&Estimate', 'I&nvoice', '&Cash', '---', 'Day Close']],      
-                ['&Interface', ['Download C&ustomer', 'Download I&tem', 'Download Exc&hange', '---', 'Upload In&voice']], 
+                ['&Operations', ['&Estimate', 'I&nvoice', '&Cash', '---', 'Day Close', 'Day Open']],      
+                ['&Interface', ['Download C&ustomer', 'Download I&tem', 'Download Exc&hange', 'Download Settings', '---', 'Upload In&voice']], 
                 ['&Views', ['E&stimate history', 'I&nvoice history']],      
                 ['&Reports', ['&Daily Sales', 'Cash &Position']],      
                 ['&Help', '&About'], 
@@ -43,10 +43,13 @@ class MainMenuCanvas:
                             sg.Button(key='_INVOICE_', button_text='In̲voice',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_CASH_OPTION_', button_text='C̲ash',**ap_style.menu_button),
+                            sg.Button(key='_CASH_', button_text='C̲ash',**ap_style.menu_button),
                         ],
                         [
                             sg.Button(key='_DAY_CLOSE_OPTION_', button_text='D̲ay Close',**ap_style.menu_button),
+                        ],
+                        [
+                            sg.Button(key='_DAY_OPEN_OPTION_', button_text='D̲ay Open',**ap_style.menu_button),
                         ],
                     ],
                     vertical_alignment = 'top', 
@@ -66,6 +69,9 @@ class MainMenuCanvas:
                         ],
                         [
                             sg.Button(key='_DOWNLOAD_EXCHANGES_', button_text='Download Exch̲ange',**ap_style.menu_button),
+                        ],
+                        [
+                            sg.Button(key='_DOWNLOAD_SETTINGS_', button_text='Download Settings',**ap_style.menu_button),
                         ],
                         [
                             sg.Button(key='_UPLOAD_INVOICES_', button_text='Upload Inv̲oice',**ap_style.menu_button),

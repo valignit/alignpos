@@ -170,6 +170,79 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
+
+CREATE TABLE `tabDenomination` (
+	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`cash_value` DECIMAL(18,6) NULL DEFAULT NULL,
+	`sort_order` int(1) NULL DEFAULT NULL,
+	PRIMARY KEY (`name`) USING BTREE
+) ENGINE=InnoDB
+;
+
+
+CREATE TABLE `tabCash` (
+	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`balance_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	PRIMARY KEY (`name`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+
+CREATE TABLE `tabCash_Denomination` (
+	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`parent` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`denomination` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`balance_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	PRIMARY KEY (`name`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+
+CREATE TABLE `tabCash_Transaction` (
+	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`transaction_type` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`transaction_context` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`transaction_reference` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`transaction_date` DATETIME(6) NULL DEFAULT NULL,
+	`posting_date` DATETIME(6) NULL DEFAULT NULL,
+	`receipt_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`payment_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`party_type` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`user` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`creation` DATETIME(6) NULL DEFAULT NULL,
+	`modified` DATETIME(6) NULL DEFAULT NULL,
+	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`name`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+
+CREATE TABLE `tabCash_Transaction_Denomination` (
+	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`parent` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`denomination` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`count` INT(1) NULL DEFAULT 0,
+	PRIMARY KEY (`name`) USING BTREE,
+	INDEX `FK_tabDrawer_cash_denomination_tabDrawer_cash` (`parent`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+
 CREATE TABLE `tabSequence` (
 	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
 	`increment` INT(11) NOT NULL DEFAULT '1',
@@ -184,6 +257,7 @@ CREATE TABLE `tabSequence` (
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
+
 
 CREATE TABLE `tabUser` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
@@ -204,3 +278,16 @@ insert into tabSequence (name) values ('DRAFT_INVOICE_NUMBER');
 insert into tabSequence (name, prefix) values ('TAX_INVOICE_NUMBER', 'SINV-');
 insert into tabSequence (name, prefix) values ('ESTIMATE_NUMBER', 'EST-');
 insert into tabSequence (name, prefix) values ('ORDER_NUMBER', 'ORD-');
+insert into tabSequence (name, prefix) values ('CASH_NUMBER', 'CASH-');
+insert into tabDenomination (name, cash_value, sort_order) values ('2000 Notes', 2000.00, 1);
+insert into tabDenomination (name, cash_value, sort_order) values ('500 Notes', 500.00, 2);
+insert into tabDenomination (name, cash_value, sort_order) values ('200 Notes', 200.00, 3);
+insert into tabDenomination (name, cash_value, sort_order) values ('100 Notes', 100.00, 4);
+insert into tabDenomination (name, cash_value, sort_order) values ('50 Notes', 50.00, 5);
+insert into tabDenomination (name, cash_value, sort_order) values ('20 Notes', 20.00, 6);
+insert into tabDenomination (name, cash_value, sort_order) values ('10 Notes', 10.00, 7);
+insert into tabDenomination (name, cash_value, sort_order) values ('10 Coins', 10.00, 8);
+insert into tabDenomination (name, cash_value, sort_order) values ('5 Coins', 5.00, 9);
+insert into tabDenomination (name, cash_value, sort_order) values ('2 Coins', 2.00, 10);
+insert into tabDenomination (name, cash_value, sort_order) values ('1 Coins', 1.00, 11);
+insert into tabDenomination (name, cash_value, sort_order) values ('None', 1.00, 12);

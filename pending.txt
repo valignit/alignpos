@@ -1,0 +1,5 @@
+1. Table audit
+2. Current Date
+
+
+1. Should not allow Empty Invoice to be submitted - Dont allow F4/Submit itself

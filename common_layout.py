@@ -197,3 +197,47 @@ class CustomerListCanvas:
     layout = property(get_layout)         
 
  
+class DenominationCanvas:
+    def __init__(self, denomination_list, menu_opt):
+
+        readonly = False
+        if menu_opt == 'view':
+            readonly = True
+
+        denomination_sublayout_1 = [
+            [sg.Text(denomination_list[i], size=(12,1), font=("Helvetica", 11)), sg.Input(key=denomination_list[i]+'_count', size=(5,1), **ElementStyle.search_input_ar, readonly = readonly), sg.Input(key=denomination_list[i]+'_amount', size=(10,1), **ElementStyle.search_input_ar, readonly=True)] for i in range(len(denomination_list))  
+        ]
+        
+        denomination_sublayout_2 = [
+            [sg.Button('Ok-F12', **ElementStyle.search_button_short, key='_DENOMINATION_OK_', visible=(eval("menu_opt=='edit'")) ),                
+             sg.Button('Exit-Esc', **ElementStyle.search_button_short, key='_DENOMINATION_ESC_')], 
+        ]
+
+        denomination_layout = [
+            [
+                sg.Frame('',
+                    denomination_sublayout_1, 
+                    border_width = 0,                   
+                    pad = ((5,0),(5,0))
+                )     
+            ],
+            [
+                sg.Frame('',
+                    denomination_sublayout_2,
+                    border_width = 0,                   
+                    pad = ((5,0),(10,0))
+                )     
+            ]
+        ]
+
+        self.__layout = [
+            [
+                sg.Column(denomination_layout, vertical_alignment = 'top', pad = ((0,0),(0,0))),
+            ]
+        ]
+
+    def get_layout(self):
+        return self.__layout
+    
+    layout = property(get_layout)
+    

@@ -1,8 +1,11 @@
+branch = frappe.db.get_value('Branch', {'abbr': doc.branch_id}, ['name'])
+
 doc_invoice = frappe.get_doc({
     "doctype" : "Sales Invoice",
     "tax_invoice_number" : doc.name,
     "name" : doc.name,
     "company" : "Al Faridha Super Market",
+    "branch" : branch,
     "customer" : doc.customer,
     "discount_amount" : float(doc.discount_amount),
     "posting_date" : frappe.utils.nowdate(),

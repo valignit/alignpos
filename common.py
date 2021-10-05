@@ -6,8 +6,8 @@ from pynput.keyboard import Key, Controller
 from config import Config
 from utilities import Message, Keypad
 from db_orm import DbConn, DbTable, DbQuery
-from common_layout import SigninCanvas, ItemListCanvas, CustomerListCanvas
-from common_ui import SigninUi, ItemListUi, CustomerListUi
+from common_layout import SigninCanvas, ItemListCanvas, CustomerListCanvas, DenominationCanvas
+from common_ui import SigninUi, ItemListUi, CustomerListUi, DenominationUi
 
 sg.theme('DefaultNoMoreNagging')
 
@@ -39,7 +39,8 @@ class Signin():
 
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
-        self.__db_user_table = DbTable(self.__db_conn, 'tabUser')
+        
+        self.__db_user_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabUser)        
 
         self.__window.bind('<FocusIn>', '+FOCUS IN+')
         self.__window.bind('<FocusOut>', '+FOCUS OUT+')
@@ -138,7 +139,8 @@ class ItemList:
 
         self.__db_conn = DbConn()
 
-        db_item_table = DbTable(self.__db_conn, 'tabItem')
+        db_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabItem)
+        
         self.__filter=filter
         db_item_cursor = db_item_table.list(filter)
 
@@ -225,7 +227,7 @@ class CustomerList:
 
         self.__db_conn = DbConn()
 
-        db_customer_table = DbTable(self.__db_conn, 'tabCustomer')
+        db_customer_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCustomer)
         filter=''
         db_customer_cursor = db_customer_table.list(filter)
 
@@ -336,4 +338,122 @@ class CustomerList:
 
     
     customer_number = property(get_customer_number)
-    mobile_number = property(get_mobile_number)         
+    mobile_number = property(get_mobile_number)
+
+
+class Denomination:
+    def __init__(self, payment_amount, mode):
+        self.__payment_amount = payment_amount
+        self.__mode = mode
+
+        self.__denomination_name = ''
+        self.__denomination_count = ''
+
+        self.__db_conn = DbConn()
+
+        db_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabDenomination)
+        filter=''
+        order='sort_order'
+        db_denomination_cursor = db_denomination_table.list(filter, order)
+
+        if (len(db_denomination_cursor) == 0):
+            sg.popup('Denomination(s) not found', keep_on_top = True, icon='images/INFO.png')
+            return
+
+        self.__denomination_list = []
+        self.__denomination_value_list = []
+        for db_denomination_row in db_denomination_cursor:
+            self.__denomination_list.append(db_denomination_row.name)
+            self.__denomination_value_list.append(db_denomination_row.cash_value)
+
+        self.__canvas = DenominationCanvas(self.__denomination_list, self.__mode)
+        self.__window = sg.Window("Denomination",
+                        self.__canvas.layout,
+                        location=(100,100), 
+                        size=(280,400), 
+                        modal=True,
+                        finalize=True,
+                        return_keyboard_events=True, 
+                        icon='images/favicon.ico',
+                        keep_on_top = True,                    
+                    )
+    
+        self.__ui = DenominationUi(self.__window, self.__denomination_list)
+        '''
+        self.__ui.denomination_name = 'None'
+        self.__ui.denomination_count = int(float(self.__payment_amount))
+        self.__ui.denomination_amount = self.__payment_amount
+        '''
+        idx = 0
+        self.__total_amount = 0
+        for denomination in self.__denomination_list:
+            self.__ui.denomination_name = denomination
+            if denomination in self.__payment_amount:
+                self.__ui.denomination_count = int(float(self.__payment_amount[denomination]))
+                self.__ui.denomination_amount = float(self.__denomination_value_list[idx])  * float(self.__ui.denomination_count)
+                self.__total_amount += float(self.__ui.denomination_amount)
+            idx += 1
+        '''        
+        self.__ui.denomination_name = 'None'
+        self.__ui.denomination_count = int(float(self.__payment_amount['None']))
+        '''
+        
+        self.__ui.focus_denomination_count() 
+        
+        self.handler()
+        
+        self.__denomination_count_dict = dict()
+        
+        self.set_return_value()
+        
+
+    def handler(self):  
+        prev_event = ''
+        prev_values = ''
+        
+        while True:
+            event, values = self.__window.read()
+            #print('denomination=', event, prev_event, values)
+
+            if event in ('_DENOMINATION_ESC_', 'Exit', 'Escape:27') or event == sg.WIN_CLOSED:
+                break
+
+            if event in ('_DENOMINATION_OK_', '\r', 'F12', 'F12:123'):
+                total_amount = 0.00
+                for denomination in self.__denomination_list:
+                    self.__ui.denomination_name = denomination
+                    total_amount += float(self.__ui.denomination_amount)
+                    
+                if float(total_amount) != float(self.__total_amount):
+                    #Message('INFO', 'Denomination amount mismatch ' + str(total_amount))
+                    self.__ui.focus_denomination_count()      
+                    continue
+                    
+                break
+                
+            idx = 0
+            for denomination in self.__denomination_list:
+                if event == denomination + '_count':
+                    self.__ui.denomination_name = denomination
+                    if self.__ui.denomination_count == '':
+                        self.__ui.denomination_count = 0
+                    self.__ui.denomination_amount = float(self.__denomination_value_list[idx]) * float(self.__ui.denomination_count)
+                idx+=1
+                
+        self.__db_conn.close()           
+        self.__window.close()    
+
+
+    def set_return_value(self):
+        for denomination in self.__denomination_list:
+            self.__ui.denomination_name = denomination
+            self.__denomination_count_dict[self.__ui.denomination_name] = self.__ui.denomination_count
+    
+    def get_denomination_count_dict(self):
+        return self.__denomination_count_dict
+
+    denomination_count_dict = property(get_denomination_count_dict)
+    
+        
+
+    

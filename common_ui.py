@@ -309,4 +309,52 @@ class CustomerListUi:
     customer_name = property(get_customer_name, set_customer_name)
     customer_type = property(get_customer_type, set_customer_type)
     customer_group = property(get_customer_group, set_customer_group)
+ 
+
+###
+# Denomination Interface
+class DenominationUi:
+
+    def __init__(self, window, denomination_list):
+        self.__window = window
+        self.__denomination_list = denomination_list
+        self.__denomination_name = ''
+        self.__denomination_count = 0
+        self.__denomination_amount = 0.00
+        for denomination in denomination_list:
+            self.__window[denomination + '_amount'].Widget.config(takefocus=0)
+            self.__window.Element(denomination + '_count').update(value = 0)
+            self.__window.Element(denomination + '_amount').update(value = 0.00)
+
+    def set_denomination_name(self, denomination_name):
+        self.__denomination_name = denomination_name
+        
+    def get_denomination_name(self):
+        return self.__denomination_name
+        
+    def set_denomination_count(self, denomination_count):
+        self.__denomination_count = denomination_count
+        self.__window.Element(self.__denomination_name + '_count').update(value = self.__denomination_count)
+        
+    def get_denomination_count(self):
+        self.__denomination_count = self.__window.Element(self.__denomination_name + '_count').get()        
+        return self.__denomination_count
+               
+    def set_denomination_amount(self, denomination_amount):
+        self.__denomination_amount = denomination_amount
+        self.__window.Element(self.__denomination_name + '_amount').update(value = self.__denomination_amount)
+        
+    def get_denomination_amount(self):
+        self.__denomination_amount = self.__window.Element(self.__denomination_name + '_amount').get()        
+        return self.__denomination_amount
+               
+    def focus_denomination_count(self):
+        self.__window.Element(self.__denomination_name + '_count').SetFocus()
+        self.__window.Element(self.__denomination_name + '_count').update(select=True)        
+        
        
+    denomination_name = property(get_denomination_name, set_denomination_name)     
+    denomination_count = property(get_denomination_count, set_denomination_count)     
+    denomination_amount = property(get_denomination_amount, set_denomination_amount)     
+
+ 

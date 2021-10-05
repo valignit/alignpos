@@ -93,7 +93,7 @@ class DbTable():
                 self.__row = self.__conn.session.query(self.__table).get(name)
                 return self.__row
             except exc.SQLAlchemyError as db_err:
-                print("Database error 201 while get_row() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 201 while get_row() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)
                    
     def create_row(self, row):
@@ -103,7 +103,7 @@ class DbTable():
                 self.__conn.session.add(row)
                 self.__conn.session.flush()               
             except exc.SQLAlchemyError as db_err:
-                print("Database error 202 while create_row() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 202 while create_row() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)
                 
     def update_row(self, row):
@@ -113,7 +113,7 @@ class DbTable():
                 self.__conn.session.add(row)
                 self.__conn.session.flush()                               
             except exc.SQLAlchemyError as db_err:
-                print("Database error 203 while update_row() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 203 while update_row() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)
 
     def delete_row(self, row):
@@ -123,7 +123,7 @@ class DbTable():
                 self.__conn.session.delete(row)
                 self.__conn.session.flush()                               
             except exc.SQLAlchemyError as db_err:
-                print("Database error 204 while delete_row() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 204 while delete_row() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)
 
     def count(self, filter):
@@ -136,9 +136,9 @@ class DbTable():
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=exc.SAWarning)
             try:
-                self.__list = self.__conn.session.query(self.__table).filter(text(filter)).order_by('name').all()      
+                self.__list = self.__conn.session.query(self.__table).filter(text(filter)).order_by('name').all()
             except exc.SQLAlchemyError as db_err:
-                print("Database error 205 while list() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 205a while list() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)    
             return self.__list
 
@@ -154,7 +154,7 @@ class DbTable():
             try:
                 self.__list = self.__conn.session.query(self.__table).filter(text(filter)).order_by(column).all()      
             except exc.SQLAlchemyError as db_err:
-                print("Database error 205 while list() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 205b while list() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)    
             return self.__list
 
@@ -165,7 +165,7 @@ class DbTable():
             try:
                 self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by('name').first()
             except exc.SQLAlchemyError as db_err:
-                print("Database error 206a while first() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 206a while first() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)
             return self.__row
 
@@ -181,7 +181,7 @@ class DbTable():
             try:
                 self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by(column).first()        
             except exc.SQLAlchemyError as db_err:
-                print("Database error 206b while first() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 206b while first() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)
             return self.__row
 
@@ -192,7 +192,7 @@ class DbTable():
             try:
                 self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by(self.__table.name.desc()).first()       
             except exc.SQLAlchemyError as db_err:
-                print("Database error 207 while last() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 207 while last() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)    
             return self.__row
 
@@ -208,7 +208,7 @@ class DbTable():
             try:
                 self.__row = self.__conn.session.query(self.__table).filter(text(filter)).order_by(column.desc()).first()       
             except exc.SQLAlchemyError as db_err:
-                print("Database error 207 while last() in {}\nProcess Terminated\n{}".format(self.__table_name, db_err))
+                print("Database error 207 while last() in {}\nProcess Terminated\n{}".format(self.__table, db_err))
                 sys.exit(1)    
             return self.__row
 
