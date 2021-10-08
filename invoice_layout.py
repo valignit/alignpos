@@ -238,7 +238,7 @@ class InvoiceCanvas:
                     border_width = 0,                   
                     pad = ((5,0),(5,0)),
                     background_color=background_color,
-                )     
+                )
             ],
             [
                 sg.Frame('',

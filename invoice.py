@@ -2051,7 +2051,7 @@ class Payment:
                     db_cash_transaction_denomination_row.denomination = denomination
                     db_cash_transaction_denomination_row.count = count
                     self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
-###
+
         if float(self.__ui.cash_return) > 0:
             db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_NUMBER")')
             for db_row in db_query.result:
@@ -2086,7 +2086,6 @@ class Payment:
                     db_cash_transaction_denomination_row.count = count
                     self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
 
-###            
         self.__db_session.commit()
 
 

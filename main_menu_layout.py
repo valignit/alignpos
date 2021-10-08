@@ -59,32 +59,7 @@ class MainMenuCanvas:
                 sg.Column(
                     [
                         [
-                            sg.Text('Interface',**ap_style.menu_text),
-                        ],
-                        [
-                            sg.Button(key='_DOWNLOAD_CUSTOMERS_', button_text='Download Cu̲stomer',**ap_style.menu_button),
-                        ],
-                        [
-                            sg.Button(key='_DOWNLOAD_ITEMS_', button_text='Download It̲em',**ap_style.menu_button),
-                        ],
-                        [
-                            sg.Button(key='_DOWNLOAD_EXCHANGES_', button_text='Download Exch̲ange',**ap_style.menu_button),
-                        ],
-                        [
-                            sg.Button(key='_DOWNLOAD_SETTINGS_', button_text='Download Settings',**ap_style.menu_button),
-                        ],
-                        [
-                            sg.Button(key='_UPLOAD_INVOICES_', button_text='Upload Inv̲oice',**ap_style.menu_button),
-                        ],
-                    ],
-                    vertical_alignment = 'top', 
-                    justification = 'left',
-                    pad = ((0,0),(50,0))
-                ),
-                sg.Column(
-                    [
-                        [
-                            sg.Text('Views',**ap_style.menu_text),
+                            sg.Text('Reports',**ap_style.menu_text),
                         ],
                         [
                             sg.Button(key='_ESTIMATE_HISTORY_', button_text='Estimate History',**ap_style.menu_button),
@@ -93,13 +68,7 @@ class MainMenuCanvas:
                             sg.Button(key='_INVOICE_HISTORY_', button_text='Invoice History',**ap_style.menu_button),
                         ],
                         [
-                            sg.Text('Reports',**ap_style.menu_text),
-                        ],
-                        [
-                            sg.Button(key='_OPTION1_', button_text='Daily S̲ales',**ap_style.menu_button),
-                        ],
-                        [
-                            sg.Button(key='_OPTION2_', button_text='Cash P̲osition',**ap_style.menu_button),
+                            sg.Button(key='_DAILY_SALES_', button_text='Daily S̲ales',**ap_style.menu_button),
                         ],
                     ],
                     vertical_alignment = 'top', 

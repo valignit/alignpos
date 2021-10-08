@@ -1,5 +1,8 @@
 1. Table audit
-2. Current Date
-
+2. System Date and Business Date
+3. Terminal specific views everywhere
+4. Day Begin
+5. Day End
+6. Daily Sales
 
 1. Should not allow Empty Invoice to be submitted - Dont allow F4/Submit itself

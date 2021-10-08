@@ -379,11 +379,6 @@ class Denomination:
                     )
     
         self.__ui = DenominationUi(self.__window, self.__denomination_list)
-        '''
-        self.__ui.denomination_name = 'None'
-        self.__ui.denomination_count = int(float(self.__payment_amount))
-        self.__ui.denomination_amount = self.__payment_amount
-        '''
         idx = 0
         self.__total_amount = 0
         for denomination in self.__denomination_list:
@@ -393,10 +388,6 @@ class Denomination:
                 self.__ui.denomination_amount = float(self.__denomination_value_list[idx])  * float(self.__ui.denomination_count)
                 self.__total_amount += float(self.__ui.denomination_amount)
             idx += 1
-        '''        
-        self.__ui.denomination_name = 'None'
-        self.__ui.denomination_count = int(float(self.__payment_amount['None']))
-        '''
         
         self.__ui.focus_denomination_count() 
         
