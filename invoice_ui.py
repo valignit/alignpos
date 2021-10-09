@@ -53,6 +53,7 @@ class InvoiceUi:
         
         # Initialize Summary Pane
         self.__line_items = 0
+        self.__total_item_discount_amount = float(0.00)
         self.__total_amount = float(0.00)
         self.__total_tax_amount = float(0.00)
         self.__total_cgst_amount = float(0.00)
@@ -87,6 +88,7 @@ class InvoiceUi:
         # Unfocus Summary Pane
         self.__window['_LINE_ITEMS_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_TOTAL_ITEM_DISCOUNT_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_CGST_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_SGST_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_TAX_AMOUNT_'].Widget.config(takefocus=0)
@@ -334,6 +336,7 @@ class InvoiceUi:
     def get_item_idx(self):
         return self.__item_idx  
 
+
     # Setters and Getters for Footer Pane    
     def set_user_id(self, user_id):
         self.__user_id = user_id
@@ -392,6 +395,14 @@ class InvoiceUi:
     def get_total_tax_amount(self):
         self.__total_tax_amount = self.__window.Element('_TOTAL_TAX_AMOUNT_').get()        
         return self.__total_tax_amount
+
+    def set_total_item_discount_amount(self, total_item_discount_amount):
+        self.__total_item_discount_amount = total_item_discount_amount
+        self.__window.Element('_TOTAL_ITEM_DISCOUNT_AMOUNT_').update(value = "{:.2f}".format(self.__total_item_discount_amount))
+        
+    def get_total_item_discount_amount(self):
+        self.__total_item_discount_amount = self.__window.Element('_TOTAL_ITEM_DISCOUNT_AMOUNT_').get()        
+        return self.__total_item_discount_amount
 
     def set_total_cgst_amount(self, total_cgst_amount):
         self.__total_cgst_amount = total_cgst_amount
@@ -671,6 +682,7 @@ class InvoiceUi:
     # Properties for Summary Pane    
     line_items = property(get_line_items, set_line_items)
     total_amount = property(get_total_amount, set_total_amount)
+    total_item_discount_amount = property(get_total_item_discount_amount, set_total_item_discount_amount)
     total_cgst_amount = property(get_total_cgst_amount, set_total_cgst_amount)
     total_sgst_amount = property(get_total_sgst_amount, set_total_sgst_amount)
     total_tax_amount = property(get_total_tax_amount, set_total_tax_amount)
@@ -1023,12 +1035,10 @@ class PaymentUi:
 		self.__exchange_voucher = ['None']
 		self.__exchange_adjustment = float(0.00)
 		self.__discount_amount = float(0.00)
-		self.__discount_pin = ""
 		self.__available_points = int(0)
 		self.__available_balance = float(0.00)
 		self.__redeem_points = int(0)
 		self.__redeem_adjustment = float(0.00)
-		self.__redeem_pin = ""
 		self.__mobile_number_header = ""
 		self.__customer_name_header = ""
 		self.__balance_amount = float(0.00)
@@ -1052,12 +1062,10 @@ class PaymentUi:
 		self.__popup.Element("_EXCHANGE_VOUCHER_").update(value = self.__exchange_voucher)
 		self.__popup.Element("_EXCHANGE_ADJUSTMENT_").update(value = "{:.2f}".format(self.__exchange_adjustment))
 		self.__popup.Element("_DISCOUNT_AMOUNT_").update(value = "{:.2f}".format(self.__discount_amount))
-		self.__popup.Element("_DISCOUNT_PIN_").update(value = self.__discount_pin)
 		self.__popup.Element("_AVAILABLE_POINTS_").update(value = self.__available_points)
 		self.__popup.Element("_AVAILABLE_BALANCE_").update(value = "{:.2f}".format(self.__available_balance))
 		self.__popup.Element("_REDEEM_POINTS_").update(value = self.__redeem_points)
 		self.__popup.Element("_REDEEM_ADJUSTMENT_").update(value = "{:.2f}".format(self.__redeem_adjustment))
-		self.__popup.Element("_REDEEM_PIN_").update(value = self.__redeem_pin)
 		self.__popup.Element("_MOBILE_NUMBER_HEADER_").update(value = self.__mobile_number_header)
 		self.__popup.Element("_CUSTOMER_NAME_HEADER_").update(value = self.__customer_name_header)
 		self.__popup.Element("_BALANCE_AMOUNT_").update(value = "{:.2f}".format(self.__balance_amount))
@@ -1148,10 +1156,6 @@ class PaymentUi:
 		self.__discount_amount = discount_amount
 		self.__popup.Element("_DISCOUNT_AMOUNT_").update(value = "{:.2f}".format(float(self.__discount_amount)))
 
-	def set_discount_pin(self, discount_pin):
-		self.__discount_pin = discount_pin
-		self.__popup.Element("_DISCOUNT_PIN_").update(value = self.__discount_pin)
-
 	def set_available_points(self, available_points):
 		self.__available_points = available_points
 		self.__popup.Element("_AVAILABLE_POINTS_").update(value = self.__available_points)
@@ -1167,10 +1171,6 @@ class PaymentUi:
 	def set_redeem_adjustment(self, redeem_adjustment):
 		self.__redeem_adjustment = redeem_adjustment
 		self.__popup.Element("_REDEEM_ADJUSTMENT_").update(value = "{:.2f}".format(float(self.__redeem_adjustment)))
-
-	def set_redeem_pin(self, redeem_pin):
-		self.__redeem_pin = redeem_pin
-		self.__popup.Element("_REDEEM_PIN_").update(value = self.__redeem_pin)
 
 	def set_mobile_number_header(self, mobile_number_header):
 		self.__mobile_number_header = mobile_number_header
@@ -1257,10 +1257,6 @@ class PaymentUi:
 		self.__discount_amount = self.__popup.Element("_DISCOUNT_AMOUNT_").get()
 		return self.__discount_amount
 
-	def get_discount_pin(self):
-		self.__discount_pin = self.__popup.Element("_DISCOUNT_PIN_").get()
-		return self.__discount_pin
-
 	def get_available_points(self):
 		self.__available_points = self.__popup.Element("_AVAILABLE_POINTS_").get()
 		return self.__available_points
@@ -1276,10 +1272,6 @@ class PaymentUi:
 	def get_redeem_adjustment(self):
 		self.__redeem_adjustment = self.__popup.Element("_REDEEM_ADJUSTMENT_").get()
 		return self.__redeem_adjustment
-
-	def get_redeem_pin(self):
-		self.__redeem_pin = self.__popup.Element("_REDEEM_PIN_").get()
-		return self.__redeem_pin
 
 	def get_mobile_number_header(self):
 		self.__mobile_number_header = self.__popup.Element("_MOBILE_NUMBER_HEADER_").get()
@@ -1328,12 +1320,10 @@ class PaymentUi:
 	exchange_voucher = property(get_exchange_voucher, set_exchange_voucher)
 	exchange_adjustment = property(get_exchange_adjustment, set_exchange_adjustment)
 	discount_amount = property(get_discount_amount, set_discount_amount)
-	discount_pin = property(get_discount_pin, set_discount_pin)
 	available_points = property(get_available_points, set_available_points)
 	available_balance = property(get_available_balance, set_available_balance)
 	redeem_points = property(get_redeem_points, set_redeem_points)
 	redeem_adjustment = property(get_redeem_adjustment, set_redeem_adjustment)
-	redeem_pin = property(get_redeem_pin, set_redeem_pin)
 	mobile_number_header = property(get_mobile_number_header, set_mobile_number_header)
 	customer_name_header = property(get_customer_name_header, set_customer_name_header)
 	balance_amount = property(get_balance_amount, set_balance_amount)

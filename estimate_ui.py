@@ -53,6 +53,7 @@ class EstimateUi:
         
         # Initialize Summary Pane
         self.__line_items = 0
+        self.__total_item_discount_amount = float(0.00)
         self.__total_amount = float(0.00)
         self.__total_tax_amount = float(0.00)
         self.__total_cgst_amount = float(0.00)
@@ -81,6 +82,7 @@ class EstimateUi:
         # Unfocus Summary Pane
         self.__window['_LINE_ITEMS_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_AMOUNT_'].Widget.config(takefocus=0)
+        self.__window['_TOTAL_ITEM_DISCOUNT_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_CGST_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_SGST_AMOUNT_'].Widget.config(takefocus=0)
         self.__window['_TOTAL_TAX_AMOUNT_'].Widget.config(takefocus=0)
@@ -380,6 +382,14 @@ class EstimateUi:
         self.__total_tax_amount = self.__window.Element('_TOTAL_TAX_AMOUNT_').get()        
         return self.__total_tax_amount
 
+    def set_total_item_discount_amount(self, total_item_discount_amount):
+        self.__total_item_discount_amount = total_item_discount_amount
+        self.__window.Element('_TOTAL_ITEM_DISCOUNT_AMOUNT_').update(value = "{:.2f}".format(self.__total_item_discount_amount))
+        
+    def get_total_item_discount_amount(self):
+        self.__total_item_discount_amount = self.__window.Element('_TOTAL_ITEM_DISCOUNT_AMOUNT_').get()        
+        return self.__total_item_discount_amount
+
     def set_total_cgst_amount(self, total_cgst_amount):
         self.__total_cgst_amount = total_cgst_amount
         self.__window.Element('_TOTAL_CGST_AMOUNT_').update(value = "{:.2f}".format(self.__total_cgst_amount))
@@ -607,6 +617,7 @@ class EstimateUi:
     # Properties for Summary Pane    
     line_items = property(get_line_items, set_line_items)
     total_amount = property(get_total_amount, set_total_amount)
+    total_item_discount_amount = property(get_total_item_discount_amount, set_total_item_discount_amount)
     total_cgst_amount = property(get_total_cgst_amount, set_total_cgst_amount)
     total_sgst_amount = property(get_total_sgst_amount, set_total_sgst_amount)
     total_tax_amount = property(get_total_tax_amount, set_total_tax_amount)

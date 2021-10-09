@@ -923,6 +923,7 @@ class Estimate():
     def sum_item_list(self):
         line_items = 0
         total_selling_amount = 0.00
+        total_item_discount_amount = 0.00
         total_tax_amount = 0.00
         total_cgst_amount = 0.00
         total_sgst_amount = 0.00
@@ -931,12 +932,14 @@ class Estimate():
         for item_line in self.__ui.items_list:
             self.__ui.item_line_to_elements(line_items)
             total_selling_amount += float(self.__ui.selling_amount)
+            total_item_discount_amount += (float(self.__ui.qty) * float(self.__ui.item_discount_amount))
             total_cgst_amount += float(self.__ui.cgst_tax_amount)
             total_sgst_amount += float(self.__ui.sgst_tax_amount)
             line_items += 1
 
         self.__ui.line_items = line_items
         self.__ui.total_amount = total_selling_amount
+        self.__ui.total_item_discount_amount = total_item_discount_amount
         self.__ui.total_cgst_amount = total_cgst_amount
         self.__ui.total_sgst_amount = total_sgst_amount
         self.__ui.total_tax_amount = total_cgst_amount + total_sgst_amount
@@ -1463,7 +1466,7 @@ class Discount:
                 break             
                 
             if event == '\t':
-                self.__ui.item_discount_amount_f = self.__ui.item_discount_amount
+                self.__ui.item_discount_value_f = self.__ui.item_discount_value
  
             if event in ('_DISCOUNT_OK_', 'F12:123', '\r'):
                 if self.__ui.item_discount_option == 'Amount':

@@ -734,13 +734,13 @@ class Invoice():
         self.initialize_detail_pane()
         self.initialize_action_pane()
         self.initialize_footer_pane()
-        self.initialize_summary_pane()
+        self.initialize_summary_pane()            
 
     def clear_ui(self):
         self.initialize_header_pane()
         self.initialize_search_pane()    
         self.initialize_detail_pane()
-        self.initialize_summary_pane()
+        self.initialize_summary_pane()        
     
     def goto_this_row(self, invoice_number):
         print('goto:', invoice_number)
@@ -976,6 +976,7 @@ class Invoice():
     def sum_item_list(self):
         line_items = 0
         total_selling_amount = 0.00
+        total_item_discount_amount = 0.00
         total_tax_amount = 0.00
         total_cgst_amount = 0.00
         total_sgst_amount = 0.00
@@ -984,12 +985,14 @@ class Invoice():
         for item_line in self.__ui.items_list:
             self.__ui.item_line_to_elements(line_items)
             total_selling_amount += float(self.__ui.selling_amount)
+            total_item_discount_amount += (float(self.__ui.qty) * float(self.__ui.item_discount_amount))
             total_cgst_amount += float(self.__ui.cgst_tax_amount)
             total_sgst_amount += float(self.__ui.sgst_tax_amount)
             line_items += 1
 
         self.__ui.line_items = line_items
         self.__ui.total_amount = total_selling_amount
+        self.__ui.total_item_discount_amount = total_item_discount_amount
         self.__ui.total_cgst_amount = total_cgst_amount
         self.__ui.total_sgst_amount = total_sgst_amount
         self.__ui.total_tax_amount = total_cgst_amount + total_sgst_amount
@@ -1544,7 +1547,7 @@ class Discount:
                 break             
                 
             if event == '\t':
-                self.__ui.item_discount_amount_f = self.__ui.item_discount_amount
+                self.__ui.item_discount_value_f = self.__ui.item_discount_value
  
             if event in ('_DISCOUNT_OK_', 'F12:123', '\r'):
                 if self.__ui.item_discount_option == 'Amount':
@@ -1749,8 +1752,9 @@ class Payment:
         self.__paid_amount = 0
 
         self.__cash_denomination_list = []
-        self.__cash_denomination_dict = dict()
         self.__return_denomination_dict = []
+        self.__cash_denomination_dict = dict()
+        self.__return_denomination_dict = dict()
         
 
         self.__kb = Controller()
@@ -2041,9 +2045,10 @@ class Payment:
             db_cash_transaction_row.owner = self.__user_id
             self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
 
-            print('REC2:', self.__cash_denomination_dict)
+            if not self.__cash_denomination_dict:
+                self.__cash_denomination_dict['None'] = int(float(self.__ui.cash_amount))
+
             for denomination, count in self.__cash_denomination_dict.items():
-                print('REC2:', denomination, 'count:', count)
                 if int(count) > 0:
                     db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
                     db_cash_transaction_denomination_row.name = str(cash_transaction_number) + denomination
@@ -2076,8 +2081,10 @@ class Payment:
             db_cash_transaction_row.owner = self.__user_id
             self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
 
+            if not self.__return_denomination_dict:
+                self.__return_denomination_dict['None'] = int(float(self.__ui.cash_return))
+
             for denomination, count in self.__return_denomination_dict.items():
-                print('RET:', denomination, 'count:', count)
                 if int(count) > 0:
                     db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
                     db_cash_transaction_denomination_row.name = str(cash_transaction_number) + denomination

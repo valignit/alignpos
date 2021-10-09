@@ -156,6 +156,10 @@ class EstimateCanvas:
                 sg.Input(key='_LINE_ITEMS_', **ap_style.summary_input, pad = ((5,5),(10,5)))          
             ],
             [
+                sg.Text('Item Discount:', **ap_style.summary_text),
+                sg.Input(key='_TOTAL_ITEM_DISCOUNT_AMOUNT_', **ap_style.summary_input),
+            ],
+            [
                 sg.Text('Total Amount:', **ap_style.summary_text),
                 sg.Input(key='_TOTAL_AMOUNT_', **ap_style.summary_input),
             ],

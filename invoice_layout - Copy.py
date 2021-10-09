@@ -154,10 +154,6 @@ class InvoiceCanvas:
                 sg.Input(key='_LINE_ITEMS_', **ap_style.summary_input, pad = ((5,5),(10,5)))          
             ],
             [
-                sg.Text('Item Discount:', **ap_style.summary_text),
-                sg.Input(key='_TOTAL_ITEM_DISCOUNT_AMOUNT_', **ap_style.summary_input),
-            ],
-            [
                 sg.Text('Total Amount:', **ap_style.summary_text),
                 sg.Input(key='_TOTAL_AMOUNT_', **ap_style.summary_input),
             ],
@@ -323,7 +319,6 @@ class InvoiceCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((4,0),(2,9)),
-                    visible=(eval("menu_opt=='operation'"))
                 )     
             ],
             [
@@ -333,11 +328,10 @@ class InvoiceCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((4,0),(20,10)),
-                    visible=(eval("menu_opt=='operation'"))
                 )     
             ],            
             [
-                sg.HorizontalSeparator(color = 'white', key = '_RHS1_', pad = ((0,0),(bottom_pane_top,10))),
+                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(bottom_pane_top,10))),
             ],
             [
                 sg.Frame('',
@@ -686,12 +680,9 @@ class PaymentCanvas:
             ],
         ]
 
-        ui_adjustment_tab_layout = [
+        ui_exchange_tab_layout = [
             [
                 sg.Text('', font=("Helvetica", 5)),
-            ],
-            [
-                sg.Text('Exchange', font=("Helvetica 12 bold")),
             ],
             [
                 sg.Text('Voucher:', size=(10,1),  font=("Helvetica", 11)),     
@@ -712,9 +703,35 @@ class PaymentCanvas:
                     justification = 'right'
                 )
             ],
-            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(15,15)))],            
+        ]
+
+        ui_discount_tab_layout = [
             [
-                sg.Text('Loyalty', font=("Helvetica 12 bold")),
+                sg.Text('', font=("Helvetica", 5)),
+            ],
+            [
+                sg.Text('Discount:', size=(10,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_DISCOUNT_AMOUNT_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(15,1),
+                    enable_events=True,                                
+                    justification = 'right'
+                )
+            ],
+            [
+                sg.Text('PIN:', size=(10,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_DISCOUNT_PIN_',
+                    background_color='white',
+                    font=("Helvetica", 11),size=(5,1),
+                    enable_events=True,                                
+                    justification = 'left'
+                )
+            ],
+        ]
+
+        ui_redeem_tab_layout = [
+            [
+                sg.Text('', font=("Helvetica", 5)),
             ],
             [
                 sg.Text('Available Points:', size=(15,1),  font=("Helvetica", 11)),     
@@ -746,33 +763,15 @@ class PaymentCanvas:
                     justification = 'right'
                 )        
             ],
-            [sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(15,15)))],            
             [
-                sg.Text('Discount', font=("Helvetica 12 bold")),
-            ],
-            [
-                sg.Text('Discount:', size=(10,1),  font=("Helvetica", 11)),     
-                sg.Input(key='_DISCOUNT_AMOUNT_',
+                sg.Text('PIN:', size=(15,1),  font=("Helvetica", 11)),     
+                sg.Input(key='_REDEEM_PIN_',
                     background_color='white',
-                    font=("Helvetica", 11),size=(15,1),
+                    font=("Helvetica", 11),size=(5,1),
                     enable_events=True,                                
-                    justification = 'right'
+                    justification = 'left'
                 )
-            ],            
-        ]
-
-        ui_authorize_tab_layout = [
-            [
-                sg.Text('', font=("Helvetica", 5)),
             ],
-            [
-                sg.Text('User Id:', size=(15,1), font=("Helvetica", 11), pad=((5,5),(5,10))),
-                sg.Input(key='_SUPERVISOR_USER_ID_', size=(15,1), font=("Helvetica", 11), pad=((5,5),(5,10)))          
-            ], 
-            [
-                sg.Text('Password:', size=(15,1), font=("Helvetica", 11), pad=((5,5),(5,0))),
-                sg.Input(key='_SUPERVISOR_PASSWD_', size=(15,1), font=("Helvetica", 11), password_char='*', pad=((5,5),(5,0)))          
-            ],             
         ]
     
         self.__layout = [
@@ -808,10 +807,11 @@ class PaymentCanvas:
                 sg.TabGroup(
                     [
                         [
-                            sg.Tab('Receive', ui_receive_tab_layout, key='_RECEIVE_TAB_'),
-                            sg.Tab('Adjustment', ui_adjustment_tab_layout, key='_ADJUSTMENT_TAB_'),
-                            sg.Tab('Customer', ui_customer_tab_layout, key='_CUSTOMER_TAB_'),
-                            sg.Tab('Authorize', ui_authorize_tab_layout, key='_AUTHORIZE_TAB_'),
+                            sg.Tab('Receive-F1', ui_receive_tab_layout, key='_RECEIVE_TAB_'),
+                            sg.Tab('Exchange-F2', ui_exchange_tab_layout, key='_EXCHANGE_TAB_'),
+                            sg.Tab('Redeem-F3', ui_redeem_tab_layout, key='_REDEEM_TAB_'),
+                            sg.Tab('Discount-F4', ui_discount_tab_layout, key='_DISCOUNT_TAB_'),
+                            sg.Tab('Customer-F5', ui_customer_tab_layout, key='_CUSTOMER_TAB_'),
                         ]
                     ],
                     key='-group2-', 
