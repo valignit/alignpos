@@ -84,7 +84,7 @@ class KeypadCanvas:
         midRow = 'ASDFGHJKL'
         bottomRow = 'ZXCVBNM'
         
-        self.__layout = [
+        ui_keypad_layout = [
             [
                 sg.Input(key='_PAD_INPUT_', size=(44,1), **ElementStyle.search_input, pad=((0,14),(0,0))),
                 sg.Button(key='_PAD_OK_', button_text='Ok', **ElementStyle.search_button),
@@ -97,15 +97,15 @@ class KeypadCanvas:
                 sg.Button('⌫', key='back', **ElementStyle.pad_button),
             ],
             [
-                sg.Text(' ' * 4)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
+                sg.Text(' ' * 4, background_color = 'grey90')] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
                                topRow] + [sg.Stretch()
             ],
             [
-                sg.Text(' ' * 11)] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
+                sg.Text(' ' * 11, background_color = 'grey90')] + [sg.Button(c, key=c, **ElementStyle.pad_button) for c in
                                 midRow] + [sg.Stretch()
             ],
             [
-                sg.Text(' ' * 18)
+                sg.Text(' ' * 18, background_color = 'grey90')
             ] + 
             [
                 sg.Button(c, key=c, **ElementStyle.pad_button) for c in
@@ -117,6 +117,17 @@ class KeypadCanvas:
             ] + 
             [sg.Stretch()]
         ]
+        
+        self.__layout = [
+            [
+                sg.Column(
+                    ui_keypad_layout,
+                    key='_KEYPAD_PANE_',
+                    background_color='grey90'
+                )   
+            ]      
+        ]
+        
 
     def get_layout(self):
         return self.__layout

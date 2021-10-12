@@ -23,6 +23,9 @@ class Invoice():
         config = Config()
         
         self.__menu_opt = menu_opt
+        self.__terminal_id = terminal_id
+        self.__branch_id = branch_id
+
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
         
@@ -68,8 +71,8 @@ class Invoice():
                         self.__canvas.layout,
                         font='Helvetica 11', 
                         finalize=True, 
-                        location=(0,0), 
-                        size=(w,h-60),
+                        location=(-8,0), 
+                        size=(w,h-50),
                         keep_on_top=False, 
                         resizable=False,
                         return_keyboard_events=True, 
@@ -560,7 +563,7 @@ class Invoice():
     ######
     # Wrapper function for Invoice List
     def invoice_list(self):
-        invoice_list = InvoiceList(self.__menu_opt)
+        invoice_list = InvoiceList(self.__menu_opt, self.__terminal_id, self.__branch_id)
         return invoice_list.invoice_number
 
 
@@ -592,8 +595,9 @@ class Invoice():
         input_param['customer_number'] = self.__ui.customer_number
         input_param['mobile_number'] = self.__ui.mobile_number
         input_param['customer_name'] = self.__ui.customer_name
-        input_param['customer_address'] = self.__ui.customer_address        
+        input_param['customer_address'] = self.__ui.customer_address       
         input_param['net_amount'] = self.__ui.net_amount
+        input_param['total_item_discount_amount'] = self.__ui.total_item_discount_amount        
         
         payment = Payment(input_param)
         if not payment.output_param:
@@ -743,14 +747,13 @@ class Invoice():
         self.initialize_summary_pane()        
     
     def goto_this_row(self, invoice_number):
-        print('goto:', invoice_number)
         if invoice_number:
             if self.__menu_opt == 'operation':
-                filter = "name = '{}'"
+                filter = "name = '{}' and terminal_id = {}"
             else:
-                filter = "invoice_number = '{}'"
+                filter = "invoice_number = '{}' and terminal_id = {}"
             
-            db_invoice_row = self.__db_invoice_table.first(filter.format(invoice_number))
+            db_invoice_row = self.__db_invoice_table.first(filter.format(invoice_number, self.__terminal_id))
             if db_invoice_row:
                 self.clear_ui()    
                 self.show_ui(db_invoice_row)
@@ -760,11 +763,11 @@ class Invoice():
 
     def goto_first_row(self):
         if self.__menu_opt == 'operation':
-            filter = "invoice_number is null"
+            filter = "invoice_number is null and terminal_id = {}"
         else:
-            filter = "invoice_number is not null"
+            filter = "invoice_number is not null and terminal_id = {}"
         
-        db_invoice_row = self.__db_invoice_table.first(filter)
+        db_invoice_row = self.__db_invoice_table.first(filter.format(self.__terminal_id))
         if db_invoice_row:
             self.clear_ui()    
             self.show_ui(db_invoice_row)
@@ -775,14 +778,14 @@ class Invoice():
         if self.__menu_opt == 'operation':            
             if self.__ui.draft_invoice_number:
                 name = self.__ui.draft_invoice_number
-                filter = "name < '{}' and invoice_number is null"
-                db_invoice_row = self.__db_invoice_table.last(filter.format(name))            
+                filter = "name < '{}' and invoice_number is null and terminal_id = {}"
+                db_invoice_row = self.__db_invoice_table.last(filter.format(name, self.__terminal_id))            
         else:
             if self.__ui.tax_invoice_number:
                 invoice_number = self.__ui.tax_invoice_number
-                filter = "invoice_number < '{}' and invoice_number is not null"
+                filter = "invoice_number < '{}' and invoice_number is not null and terminal_id = {}"
                 order = 'invoice_number'         
-                db_invoice_row = self.__db_invoice_table.last(filter.format(invoice_number), order)
+                db_invoice_row = self.__db_invoice_table.last(filter.format(invoice_number, self.__terminal_id), order)
         if db_invoice_row:
                 self.clear_ui()    
                 self.show_ui(db_invoice_row)
@@ -794,14 +797,14 @@ class Invoice():
         if self.__menu_opt == 'operation':            
             if self.__ui.draft_invoice_number:
                 name = self.__ui.draft_invoice_number
-                filter = "name > '{}' and invoice_number is null"
-                db_invoice_row = self.__db_invoice_table.first(filter.format(name))            
+                filter = "name > '{}' and invoice_number is null and terminal_id = {}"
+                db_invoice_row = self.__db_invoice_table.first(filter.format(name, self.__terminal_id))            
         else:
             if self.__ui.tax_invoice_number:
                 invoice_number = self.__ui.tax_invoice_number
-                filter = "invoice_number > '{}' and invoice_number is not null"
+                filter = "invoice_number > '{}' and invoice_number is not null and terminal_id = {}"
                 order = 'invoice_number'
-                db_invoice_row = self.__db_invoice_table.first(filter.format(invoice_number), order)
+                db_invoice_row = self.__db_invoice_table.first(filter.format(invoice_number, self.__terminal_id), order)
                 
         if db_invoice_row:
                 self.clear_ui()    
@@ -812,11 +815,11 @@ class Invoice():
 
     def goto_last_row(self):
         if self.__menu_opt == 'operation':            
-            filter = "invoice_number is null"
+            filter = "invoice_number is null and terminal_id = {}"
         else:
-            filter = "invoice_number is not null"
+            filter = "invoice_number is not null and terminal_id = {}"
                
-        db_invoice_row = self.__db_invoice_table.last(filter)
+        db_invoice_row = self.__db_invoice_table.last(filter.format(self.__terminal_id))
         if db_invoice_row:
             self.clear_ui()
             self.show_ui(db_invoice_row)
@@ -1575,16 +1578,17 @@ class Discount:
 
 
 class InvoiceList:
-    def __init__(self, menu_opt):    
-        self.__menu_opt = menu_opt
-        #print('menu_opt:', self.__menu_opt)
+    def __init__(self, type, terminal_id, branch_id):    
+        self.__menu_opt = type
+        self.__terminal_id = terminal_id
+        self.__branch_id = branch_id
 
         self.__invoice_number = ''
 
         self.__db_conn = DbConn()
 
         db_invoice_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice)
-        filter=''
+        filter='terminal_id = {}'.format(self.__terminal_id)
         db_invoice_cursor = db_invoice_table.list(filter)
 
         if (len(db_invoice_cursor) == 0):
@@ -1747,6 +1751,7 @@ class Payment:
         self.__customer_name = input_param['customer_name']
         self.__customer_address = input_param['customer_address']        
         self.__net_amount = input_param['net_amount'] 
+        self.__total_item_discount_amount = input_param['total_item_discount_amount'] 
         
         self.__discount_amount = 0
         self.__paid_amount = 0
@@ -1772,7 +1777,7 @@ class Payment:
         self.__window = sg.Window("Payment", 
                         self.__canvas.layout, 
                         location=(400,40), 
-                        size=(500,520), 
+                        size=(500,570), 
                         modal=True, 
                         finalize=True,
                         keep_on_top = True,
@@ -1807,6 +1812,34 @@ class Payment:
                 self.__ui.cash_amount = 0
                 self.__ui.cash_return = 0
                 self.set_payment_elements()
+
+            if event == '_CASH_AMOUNT_KEYPAD_':        
+                result = self.keypad(self.__ui.cash_amount)
+                self.__ui.cash_amount = result
+                #self.__ui.cash_return = 0
+                #self.set_payment_elements()
+                self.__ui.focus_cash_amount()
+                continue
+
+            if event == '_OTHER_PAYMENT_AMOUNT_KEYPAD_':        
+                result = self.keypad(self.__ui.other_payment_amount)
+                self.__ui.other_payment_amount = result
+                #self.__ui.cash_return = 0           
+                #self.set_payment_elements()
+                self.__ui.focus_other_payment_amount()                
+                continue
+
+            if event == '_OTHER_PAYMENT_REFERENCE_KEYPAD_':        
+                result = self.keypad(self.__ui.other_payment_reference)
+                self.__ui.other_payment_reference = result
+                self.__ui.focus_other_payment_reference()
+                continue
+
+            if event == '_MOBILE_NUMBER_KEYPAD_':        
+                result = self.keypad(self.__ui.mobile_number)
+                self.__ui.mobile_number = result
+                self.__ui.focus_mobile_number()
+                continue
 
             if event == '_CASH_DENOMINATION_':
                 if float(self.__ui.cash_amount) > 0:
@@ -1864,15 +1897,18 @@ class Payment:
                         Message('INFO', 'Enter Card Reference')
                         self.__ui.focus_other_payment_reference()                    
                     else:
-                        if float(self.__ui.cash_return) > 0:
-                            msg = 'Please return back ' + self.__ui.cash_return + ' cash to customer'
-                            Message('INFO', msg)
-                        self.generate_invoice_number()
-                        self.set_output_parameters()
-                        self.update_database()
-                        msg = 'Invoice ' + str(self.__tax_invoice_number) + ' generated'
-                        Message('INFO', msg)
-                        break
+                        if self.validate_supervisor():
+                            self.__approved_by = self.__ui.supervisor_user_id
+                            if float(self.__ui.cash_return) > 0:
+                                msg = 'Please return back ' + self.__ui.cash_return + ' cash to customer'
+                                Message('INFO', msg)
+                            self.generate_invoice_number()
+                            self.set_output_parameters()
+                            self.update_database()
+                            msg = 'Invoice ' + str(self.__tax_invoice_number) + ' generated'
+                            Message('INFO', msg)                            
+                            break
+                        sg.popup('Invalid Authorization', keep_on_top = True, icon='images/INFO.png')                    
                 else:
                     Message('INFO', 'Settle Balance amount')
                     self.__ui.focus_cash_amount()
@@ -1885,6 +1921,21 @@ class Payment:
         denomination = Denomination(amount, mode)
         return denomination.denomination_count_dict
 
+    ######
+    # Wrapper function for Keypad
+    def keypad(self, current_value):
+        keypad = Keypad(current_value)
+        return(keypad.input_value)
+
+    def validate_supervisor(self):
+        db_query = DbQuery(self.__db_conn, 'select name, DECODE(passwd, "secret") as passwd, role, enabled from tabUser where name = "{}"'.format(self.__ui.supervisor_user_id))
+        if  db_query.result:
+            for db_row in db_query.result:
+                if self.__ui.supervisor_passwd == db_row[1].decode("utf-8"):
+                    if db_row[3] == 1:
+                        if db_row[2] == 'Alignpos Manager':
+                            return True   
+        return False
 
     def initialize_payment_elements(self):
         self.__ui.mobile_number = self.__mobile_number        
@@ -2016,7 +2067,8 @@ class Payment:
         db_invoice_row.other_payment_reference = self.__ui.other_payment_reference
         db_invoice_row.cash_return = self.__ui.cash_return
         db_invoice_row.paid_amount = self.__ui.total_received_amount
-
+        db_invoice_row.approved_by = self.__approved_by
+        
         db_exchange_row = self.__db_exchange_table.get_row(self.__ui.exchange_voucher.rpartition('|')[0])
         if db_exchange_row:
             db_exchange_row.invoice_number = self.__tax_invoice_number

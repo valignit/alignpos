@@ -78,13 +78,13 @@ class Keypad():
                         return_keyboard_events = False, 
                         modal=True, 
                         icon='images/favicon.ico',
-                        finalize=True
+                        finalize=True,
+                        background_color = 'grey90'
                     )
         self.__ui = KeypadUi(self.__window)
         self.__ui.pad_input = current_value
         self.__ui.focus_pad_input()
         
-
         self.handler()
         
     def handler(self):

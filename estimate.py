@@ -22,6 +22,9 @@ class Estimate():
         config = Config()
         
         self.__menu_opt = menu_opt
+        self.__terminal_id = terminal_id
+        self.__branch_id = branch_id
+        
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
         
@@ -67,8 +70,8 @@ class Estimate():
                         self.__canvas.layout,
                         font='Helvetica 11', 
                         finalize=True, 
-                        location=(0,0), 
-                        size=(w,h-20),
+                        location=(-8,0), 
+                        size=(w,h-50),
                         keep_on_top=False, 
                         resizable=False,
                         return_keyboard_events=True, 
@@ -117,8 +120,7 @@ class Estimate():
                 self.__window.Element(element).update(image_filename = path + 'ITEM-0000.png')              
             self.__window.Element(element).set_tooltip(item_code + '\n' + self.__fav_item_names_list[ct] + '\n' + 'ALT-' + str( ct + 1))
             ct += 1
-        
-      
+              
         self.goto_last_row()
         
         self.handler()
@@ -553,7 +555,7 @@ class Estimate():
     ######
     # Wrapper function for Estimate List
     def estimate_list(self):
-        estimate_list = EstimateList(self.__menu_opt)
+        estimate_list = EstimateList(self.__menu_opt, self.__terminal_id, self.__branch_id)
         return estimate_list.estimate_number
 
 
@@ -719,14 +721,13 @@ class Estimate():
         self.initialize_summary_pane()
     
     def goto_this_row(self, estimate_number):
-        print('goto:', estimate_number)
         if estimate_number:
             if self.__menu_opt == 'operation':
-                filter = "name = '{}'"
+                filter = "name = '{}' and terminal_id = {}"
             else:
-                filter = "estimate_number = '{}'"
+                filter = "estimate_number = '{}' and terminal_id = {}"
             
-            db_estimate_row = self.__db_estimate_table.first(filter.format(estimate_number))
+            db_estimate_row = self.__db_estimate_table.first(filter.format(estimate_number, self.__terminal_id))
             if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
@@ -736,11 +737,11 @@ class Estimate():
 
     def goto_first_row(self):
         if self.__menu_opt == 'operation':
-            filter = "estimate_number is null"
+            filter = "estimate_number is null and terminal_id = {}"
         else:
-            filter = "estimate_number is not null"
+            filter = "estimate_number is not null and terminal_id = {}"
         
-        db_estimate_row = self.__db_estimate_table.first(filter)
+        db_estimate_row = self.__db_estimate_table.first(filter.format(self.__terminal_id))
         if db_estimate_row:
             self.clear_ui()    
             self.show_ui(db_estimate_row)
@@ -751,14 +752,14 @@ class Estimate():
         if self.__menu_opt == 'operation':            
             if self.__ui.draft_number:
                 name = self.__ui.draft_number
-                filter = "name < '{}' and estimate_number is null"
-                db_estimate_row = self.__db_estimate_table.last(filter.format(name))            
+                filter = "name < '{}' and estimate_number is null and terminal_id = {}"
+                db_estimate_row = self.__db_estimate_table.last(filter.format(name, self.__terminal_id))            
         else:
             if self.__ui.final_number:
                 estimate_number = self.__ui.final_number
-                filter = "name < '{}' and estimate_number is not null"
+                filter = "name < '{}' and estimate_number is not null and terminal_id = {}"
                 order = 'estimate_number'
-                db_estimate_row = self.__db_estimate_table.last(filter.format(estimate_number), order)
+                db_estimate_row = self.__db_estimate_table.last(filter.format(estimate_number, self.__terminal_id), order)
         if db_estimate_row:
                 self.clear_ui()    
                 self.show_ui(db_estimate_row)
@@ -770,14 +771,14 @@ class Estimate():
         if self.__menu_opt == 'operation':            
             if self.__ui.draft_number:
                 name = self.__ui.draft_number
-                filter = "name > '{}' and estimate_number is null"
-                db_estimate_row = self.__db_estimate_table.first(filter.format(name))            
+                filter = "name > '{}' and estimate_number is null and terminal_id = {}"
+                db_estimate_row = self.__db_estimate_table.first(filter.format(name, self.__terminal_id))            
         else:
             if self.__ui.final_number:
                 estimate_number = self.__ui.final_number
-                filter = "name > '{}' and estimate_number is not null"
+                filter = "name > '{}' and estimate_number is not null and terminal_id = {}"
                 order = 'estimate_number'
-                db_estimate_row = self.__db_estimate_table.first(filter.format(estimate_number), order)
+                db_estimate_row = self.__db_estimate_table.first(filter.format(estimate_number, self.__terminal_id), order)
                 
         if db_estimate_row:
                 self.clear_ui()    
@@ -788,11 +789,11 @@ class Estimate():
 
     def goto_last_row(self):
         if self.__menu_opt == 'operation':            
-            filter = "estimate_number is null"
+            filter = "estimate_number is null and terminal_id = {}"
         else:
-            filter = "estimate_number is not null"
+            filter = "estimate_number is not null and terminal_id = {}"
                
-        db_estimate_row = self.__db_estimate_table.last(filter)
+        db_estimate_row = self.__db_estimate_table.last(filter.format(self.__terminal_id))
         if db_estimate_row:
             self.clear_ui()
             self.show_ui(db_estimate_row)
@@ -1494,9 +1495,10 @@ class Discount:
 
 
 class EstimateList:
-    def __init__(self, type):    
+    def __init__(self, type, terminal_id, branch_id):    
         self.__menu_opt = type
-        print('type:', self.__menu_opt)
+        self.__terminal_id = terminal_id
+        self.__branch_id = branch_id
 
         self.__draft_number = ''
 
@@ -1504,7 +1506,7 @@ class EstimateList:
 
         db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate)
 
-        filter=''
+        filter='terminal_id = {}'.format(self.__terminal_id)
         db_estimate_cursor = db_estimate_table.list(filter)
 
         if (len(db_estimate_cursor) == 0):

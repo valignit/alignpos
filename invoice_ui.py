@@ -1043,6 +1043,8 @@ class PaymentUi:
 		self.__customer_name_header = ""
 		self.__balance_amount = float(0.00)
 		self.__total_received_amount = float(0.00)
+		self.__supervisor_user_id = ''
+		self.__supervisor_passwd = ''
         
 		#set initial elements
 		self.__popup.Element("_MOBILE_NUMBER_").update(value = self.__mobile_number)
@@ -1089,7 +1091,13 @@ class PaymentUi:
 		self.__popup["_BALANCE_AMOUNT_"].Widget.config(takefocus=0) 
 		self.__popup["_TOTAL_RECEIVED_AMOUNT_"].Widget.config(takefocus=0) 
 		self.__popup["_PAYMENT_OK_"].Widget.config(takefocus=0) 
-		self.__popup["_PAYMENT_ESC_"].Widget.config(takefocus=0) 
+		self.__popup["_PAYMENT_ESC_"].Widget.config(takefocus=0)
+		self.__popup["_CASH_AMOUNT_KEYPAD_"].Widget.config(takefocus=0)
+		self.__popup["_OTHER_PAYMENT_AMOUNT_KEYPAD_"].Widget.config(takefocus=0)
+		self.__popup["_OTHER_PAYMENT_REFERENCE_KEYPAD_"].Widget.config(takefocus=0)
+		self.__popup["_CASH_DENOMINATION_"].Widget.config(takefocus=0)
+		self.__popup["_RETURN_DENOMINATION_"].Widget.config(takefocus=0)
+		self.__popup["_MOBILE_NUMBER_KEYPAD_"].Widget.config(takefocus=0)
 
 	#setters
 	def set_mobile_number(self, mobile_number):
@@ -1187,6 +1195,15 @@ class PaymentUi:
 	def set_total_received_amount(self, total_received_amount):
 		self.__total_received_amount = total_received_amount
 		self.__popup.Element("_TOTAL_RECEIVED_AMOUNT_").update(value = "{:.2f}".format(float(self.__total_received_amount)))
+
+	def set_supervisor_user_id(self, supervisor_user_id):
+		self.__supervisor_user_id = supervisor_user_id
+		self.__popup.Element('_SUPERVISOR_USER_ID_').update(value = self.__supervisor_user_id)
+        
+	def set_supervisor_passwd(self, supervisor_passwd):
+		self.__supervisor_passwd = supervisor_passwd
+		self.__popup.Element('_SUPERVISOR_PASSWD_').update(value = self.__supervisor_passwd)
+        
 
 	#getters
 	def get_mobile_number(self):
@@ -1289,6 +1306,14 @@ class PaymentUi:
 		self.__total_received_amount = self.__popup.Element("_TOTAL_RECEIVED_AMOUNT_").get()
 		return self.__total_received_amount
 
+	def get_supervisor_user_id(self):
+		self.__supervisor_user_id = self.__popup.Element('_SUPERVISOR_USER_ID_').get()        
+		return self.__supervisor_user_id
+        
+	def get_supervisor_passwd(self):
+		self.__supervisor_passwd = self.__popup.Element('_SUPERVISOR_PASSWD_').get()        
+		return self.__supervisor_passwd
+        
 	#utilities
 	def focus_mobile_number(self):
 		self.__popup.Element('_MOBILE_NUMBER_').SetFocus() 
@@ -1297,6 +1322,10 @@ class PaymentUi:
 	def focus_cash_amount(self):
 		self.__popup.Element('_CASH_AMOUNT_').SetFocus()
 		self.__popup.Element('_CASH_AMOUNT_').update(select=True)        
+    
+	def focus_other_payment_amount(self):
+		self.__popup.Element('_OTHER_PAYMENT_AMOUNT_').SetFocus()
+		self.__popup.Element('_OTHER_PAYMENT_AMOUNT_').update(select=True)        
     
 	def focus_other_payment_reference(self):
 		self.__popup.Element('_OTHER_PAYMENT_REFERENCE_').SetFocus()
@@ -1328,3 +1357,5 @@ class PaymentUi:
 	customer_name_header = property(get_customer_name_header, set_customer_name_header)
 	balance_amount = property(get_balance_amount, set_balance_amount)
 	total_received_amount = property(get_total_received_amount, set_total_received_amount)
+	supervisor_user_id = property(get_supervisor_user_id, set_supervisor_user_id)     
+	supervisor_passwd = property(get_supervisor_passwd, set_supervisor_passwd)     

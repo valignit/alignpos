@@ -312,7 +312,7 @@ class DrawerTrnUi:
         self.__popup["_KEYPAD_"].Widget.config(takefocus=0)
         self.__popup["_CASH_DENOMINATION_"].Widget.config(takefocus=0)
        
-        self.__popup['_DRAWER_TRN_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
+        #self.__popup['_DRAWER_TRN_'].Widget.configure(borderwidth=1, relief=sg.DEFAULT_FRAME_RELIEF)
         
     def set_transaction_type(self, transaction_type):
         self.__transaction_type = transaction_type
@@ -322,6 +322,8 @@ class DrawerTrnUi:
         return self.__transaction_type
         
     def set_transaction_amount(self, transaction_amount):
+        if transaction_amount == '':
+            transaction_amount = 0
         self.__transaction_amount = transaction_amount
         self.__popup.Element('_TRANSACTION_AMOUNT_').update(value = "{:.2f}".format(float(self.__transaction_amount)))
        
@@ -362,5 +364,43 @@ class DrawerTrnUi:
     transaction_amount = property(get_transaction_amount, set_transaction_amount) 
     supervisor_user_id = property(get_supervisor_user_id, set_supervisor_user_id)     
     supervisor_passwd = property(get_supervisor_passwd, set_supervisor_passwd)     
+
+
+class DrawerExchangeUi:
+    def __init__(self, popup):
+        self.__popup = popup
+        self.__item_name = ''
+
+        self.__popup["_DRAWER_EXCHANGE_OK_"].Widget.config(takefocus=0) 
+        self.__popup["_DRAWER_EXCHANGE_ESC_"].Widget.config(takefocus=0)
+        self.__popup["_KEYPAD_"].Widget.config(takefocus=0)
+        self.__popup["_FROM_DENOMINATION_"].Widget.config(takefocus=0)
+        self.__popup["_TO_DENOMINATION_"].Widget.config(takefocus=0)
+       
+        
+    def set_exchange_amount(self, exchange_amount):
+        if exchange_amount == '':
+            exchange_amount = 0
+        self.__exchange_amount = exchange_amount
+        self.__popup.Element('_EXCHANGE_AMOUNT_').update(value = "{:.2f}".format(float(self.__exchange_amount)))
+       
+    def get_exchange_amount(self):
+        self.__exchange_amount = self.__popup.Element('_EXCHANGE_AMOUNT_').get()        
+        return self.__exchange_amount
+
+    def focus_exchange_amount(self):
+        self.__popup.Element('_EXCHANGE_AMOUNT_').SetFocus() 
+        self.__popup.Element('_EXCHANGE_AMOUNT_').update(select=True)        
+
+    def append_char(self, key, char):
+        if self.__popup[key].Widget.select_present():
+            self.__exchange_amount = ''
+            self.__popup.Element(key).update(value = self.__exchange_amount)
+        
+        self.__exchange_amount = self.__popup.Element('_EXCHANGE_AMOUNT_').get()        
+        self.__exchange_amount = str(self.__exchange_amount) + char
+        self.__popup.Element(key).update(value = self.__exchange_amount)
+
+    exchange_amount = property(get_exchange_amount, set_exchange_amount) 
 
 

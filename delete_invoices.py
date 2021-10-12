@@ -100,7 +100,7 @@ db_pos_sql_stmt = (
 try:
     db_pos_cur.execute(db_pos_sql_stmt)
     db_pos_conn.commit()
-    print_log("Old Item records Deleted")
+    print_log("Invoice Item records Deleted")
 except mariadb.Error as db_err:
     print_log(f"POS database error 102: {db_err}")
     db_pos_conn.rollback()
@@ -115,7 +115,37 @@ db_pos_sql_stmt = (
 try:
     db_pos_cur.execute(db_pos_sql_stmt)
     db_pos_conn.commit()
-    print_log("Old Item records Deleted")
+    print_log("Invoice records Deleted")
+except mariadb.Error as db_err:
+    print_log(f"POS database error 103: {db_err}")
+    db_pos_conn.rollback()
+    sys.exit(1)
+
+######
+# Delete Invoice records
+db_pos_sql_stmt = (
+    "DELETE FROM tabCash_Transaction_Denomination"
+)
+
+try:
+    db_pos_cur.execute(db_pos_sql_stmt)
+    db_pos_conn.commit()
+    print_log("Cash Transaction Denomination records Deleted")
+except mariadb.Error as db_err:
+    print_log(f"POS database error 103: {db_err}")
+    db_pos_conn.rollback()
+    sys.exit(1)
+
+######
+# Delete Invoice records
+db_pos_sql_stmt = (
+    "DELETE FROM tabCash_Transaction"
+)
+
+try:
+    db_pos_cur.execute(db_pos_sql_stmt)
+    db_pos_conn.commit()
+    print_log("Cash Transaction records Deleted")
 except mariadb.Error as db_err:
     print_log(f"POS database error 103: {db_err}")
     db_pos_conn.rollback()

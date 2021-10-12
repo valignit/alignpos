@@ -553,7 +553,8 @@ class PaymentCanvas:
                     font=("Helvetica", 11),size=(15,1),
                     enable_events=True,                                
                     justification = 'left'
-                )
+                ),
+                sg.Button(key='_MOBILE_NUMBER_KEYPAD_', button_text='⌨', **ap_style.pad_button_small),                 
             ],
             [
                 sg.Text('Name:', size=(12,1),  font=("Helvetica", 11)),     
@@ -644,7 +645,8 @@ class PaymentCanvas:
                     enable_events=True,                                
                     justification = 'right'
                 ),
-                sg.Button('$', key='_CASH_DENOMINATION_', **ap_style.pad_button_small)                
+                sg.Button(key='_CASH_AMOUNT_KEYPAD_', button_text='⌨', **ap_style.pad_button_small), 
+                sg.Button('$', key='_CASH_DENOMINATION_', **ap_style.pad_button_small, pad = ((5,10),(0,0)))                
             ],
             [
                 sg.Combo(['Debit Card', 'Credit Card', 'Phone Pe', 'Google Pay'], key='_OTHER_PAYMENT_MODE_', default_value = 'Credit Card', size=(17,1), font=("Helvetica", 11), pad=((10,3),(0,0))),                
@@ -653,15 +655,18 @@ class PaymentCanvas:
                     font=("Helvetica", 11),size=(15,1),
                     enable_events=True,                                
                     justification = 'right'
-                ), 
-                sg.Text('Ref:', font=("Helvetica", 11)),                         
+                ),
+                sg.Button(key='_OTHER_PAYMENT_AMOUNT_KEYPAD_', button_text='⌨', **ap_style.pad_button_small), 
+            ],
+            [
+                sg.Text('Reference:', size=(17,1),  font=("Helvetica", 11)),     
                 sg.Input(key='_OTHER_PAYMENT_REFERENCE_',
                     background_color='white',
                     font=("Helvetica", 11),size=(15,1),
                     enable_events=True,                                
                     justification = 'left',
-                    pad=((0,20),(0,0))
                 ),        
+                sg.Button(key='_OTHER_PAYMENT_REFERENCE_KEYPAD_', button_text='⌨', **ap_style.pad_button_small), 
             ],
             [
                 sg.Text('Total Received :', size=(15,1), font=("Helvetica 12 bold"), text_color='Blue', pad = ((6,0),(5,5))),             
@@ -808,7 +813,7 @@ class PaymentCanvas:
                 sg.TabGroup(
                     [
                         [
-                            sg.Tab('Receive', ui_receive_tab_layout, key='_RECEIVE_TAB_'),
+                            sg.Tab('Receive', ui_receive_tab_layout, key='_RECEIVE_TAB_', border_width=1),
                             sg.Tab('Adjustment', ui_adjustment_tab_layout, key='_ADJUSTMENT_TAB_'),
                             sg.Tab('Customer', ui_customer_tab_layout, key='_CUSTOMER_TAB_'),
                             sg.Tab('Authorize', ui_authorize_tab_layout, key='_AUTHORIZE_TAB_'),

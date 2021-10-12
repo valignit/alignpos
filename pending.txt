@@ -6,3 +6,10 @@
 6. Daily Sales
 
 1. Should not allow Empty Invoice to be submitted - Dont allow F4/Submit itself
+
+2. Insist authorization only if one of the following are not empty:
+self.__ui.discount_amount
+self.__ui.exchange_adjustment
+self.__ui.redeem_adjustment
+self.__total_item_discount_amount
+
