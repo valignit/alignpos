@@ -1928,6 +1928,9 @@ class Payment:
         return(keypad.input_value)
 
     def validate_supervisor(self):
+        authorize_amount = float(self.__ui.exchange_adjustment) + float(self.__ui.redeem_adjustment) + float(self.__ui.discount_amount) + float(self.__total_item_discount_amount)        
+        if authorize_amount == 0:
+            return True
         db_query = DbQuery(self.__db_conn, 'select name, DECODE(passwd, "secret") as passwd, role, enabled from tabUser where name = "{}"'.format(self.__ui.supervisor_user_id))
         if  db_query.result:
             for db_row in db_query.result:
@@ -2025,7 +2028,12 @@ class Payment:
     def generate_invoice_number(self):
         db_query = DbQuery(self.__db_conn, 'SELECT nextval("TAX_INVOICE_NUMBER")')
         for db_row in db_query.result:
-            self.__tax_invoice_number = db_row[0]
+            invoice_number = db_row[0]
+        # Branch id embedded in Invoice number
+        
+        branch_id_str = '-'+ self.__branch_id + '-'
+        self.__tax_invoice_number = invoice_number.replace('-', branch_id_str)
+        
 
     def set_output_parameters(self):
         self.__output_param['tax_invoice_number'] = self.__tax_invoice_number
@@ -2074,7 +2082,7 @@ class Payment:
             db_exchange_row.invoice_number = self.__tax_invoice_number
 
         if float(self.__ui.cash_amount) > 0:
-            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_NUMBER")')
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_ENTRY")')
             for db_row in db_query.result:
                 cash_transaction_number = db_row[0]
 
@@ -2110,7 +2118,7 @@ class Payment:
                     self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
 
         if float(self.__ui.cash_return) > 0:
-            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_NUMBER")')
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_ENTRY")')
             for db_row in db_query.result:
                 cash_transaction_number = db_row[0]
 

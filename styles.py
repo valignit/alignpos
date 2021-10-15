@@ -61,12 +61,6 @@ class ElementStyle:
                         'use_ttk_buttons': True
                     }
 
-    summary_text:  dict = {           
-                        'font':("Helvetica 11"),
-                        'size':(10,1)  ,
-                        'background_color': 'White'
-                    }
-                    
     menu_text:  dict = {           
                         'font':('Calibri 16'), 
                         'size':(10,1),
@@ -85,6 +79,12 @@ class ElementStyle:
                         'background_color': 'White'
                     }
                     
+    summary_text_short:  dict = {           
+                        'font':("Helvetica 11"),
+                        'size':(8,1)  ,
+                        'background_color': 'White'
+                    }
+                    
     summary_text_bold:  dict = {           
                         'font':("Helvetica 13 bold"),
                         'text_color': "navyblue",
@@ -100,6 +100,16 @@ class ElementStyle:
                         'default_text':'0.00' , 
                         'font':("Helvetica", 10),
                         'size':(11,1)                        
+                    }
+
+    summary_input_short:  dict = {           
+                        'readonly':True, 
+                        'justification':'right', 
+                        'disabled_readonly_text_color':'grey32', 
+                        'disabled_readonly_background_color':'grey89', 
+                        'default_text':'0.00' , 
+                        'font':("Helvetica", 10),
+                        'size':(8,1)                        
                     }
 
     summary_input_bold:  dict = {           

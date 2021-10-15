@@ -43,7 +43,7 @@ class CashCanvas:
                     size=(15,1),
                 ),
                 sg.Text('Trn. Context:', size=(12,1),  font=("Helvetica", 11), background_color=background_color),     
-                sg.Combo(['', 'Invoice', 'Drawer'], key='_TRANSACTION_CONTEXT_SEARCH_',default_value = '',                
+                sg.Combo(['', 'Invoice', 'Drawer', 'Change'], key='_TRANSACTION_CONTEXT_SEARCH_',default_value = '',                
                     font=("Helvetica", 11),
                     size=(15,1),
                 ),
@@ -76,7 +76,7 @@ class CashCanvas:
             [
                 sg.Button('Receipt\nF1', **ElementStyle.action_button, key='_CASH_LIST_RECEIPT_'),                
                 sg.Button('Payment\nF2', **ElementStyle.action_button, key='_CASH_LIST_PAYMENT_'),                
-                sg.Button('Exchange\nF3', **ElementStyle.action_button, key='_CASH_LIST_EXCHANGE_'),                
+                sg.Button('Change\nF3', **ElementStyle.action_button, key='_CASH_LIST_CHANGE_'),                
                 sg.Button('Denom\nF4', **ElementStyle.action_button, key='_CASH_LIST_DENOMINATION_', pad=((40,0),(0,0))),                
                 sg.Button('Exit\nEsc', **ElementStyle.action_button, key='_CASH_LIST_ESC_', pad=((375,0),(0,0))), 
             ]             
@@ -107,11 +107,11 @@ class CashCanvas:
 
         ui_total_pane_layout = [
             [
-                sg.Text('Received:', **ElementStyle.summary_text, pad = ((5,15),(10,5))),
-                sg.Input(key='_RECEIVED_AMOUNT_', **ElementStyle.summary_input, pad = ((5,5),(10,5)))          
+                sg.Text('Received:', **ElementStyle.summary_text, pad = ((5,15),(15,5))),
+                sg.Input(key='_RECEIVED_AMOUNT_', **ElementStyle.summary_input, pad = ((5,5),(15,5))),         
             ],
             [
-                sg.Text('Paid:', **ElementStyle.summary_text, pad = ((5,15),(10,5))),
+                sg.Text('Paid:', **ElementStyle.summary_text, pad = ((5,15),(5,5))),
                 sg.Input(key='_PAID_AMOUNT_', **ElementStyle.summary_input),
             ],
             [
@@ -209,7 +209,7 @@ class CashCanvas:
                 )     
             ],
             [
-                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(3,3))),
+                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(20,3))),
             ],
            [
                 sg.Frame('',
@@ -302,19 +302,19 @@ class DrawerTrnCanvas:
     layout = property(get_layout)         
 
 
-class DrawerExchangeCanvas:
+class DrawerChangeCanvas:
     def __init__(self):
     
         drawer_exchange_layout = [
             [
-                sg.Text('Cash Exchange', size=(25,2),  font=("Helvetica Bold", 14))
+                sg.Text('Cash Change', size=(25,2),  font=("Helvetica Bold", 14))
             ],
             [
                 sg.Text('REC      PAY', font=("Helvetica 9 bold"), pad=((328,0),(0,0))),             
             ],
             [
                 sg.Text('Amount:', size=(15,1), font=("Helvetica", 11), pad=((5,5),(10,10))),             
-                sg.Input(key='_EXCHANGE_AMOUNT_',
+                sg.Input(key='_CHANGE_AMOUNT_',
                     readonly=False, 
                     focus=True, 
                     background_color='white',
@@ -331,14 +331,14 @@ class DrawerExchangeCanvas:
                 sg.HorizontalSeparator(color = 'grey99', pad = ((0,0),(20,10)))
             ],                        
             [
-                sg.Button('Ok-F12', **ElementStyle.search_button_short, key='_DRAWER_EXCHANGE_OK_', pad = ((10,10),(0,15))), 
-                sg.Button('Exit-Esc', **ElementStyle.search_button_short, key='_DRAWER_EXCHANGE_ESC_', pad = ((0,0),(0,15))), 
+                sg.Button('Ok-F12', **ElementStyle.search_button_short, key='_DRAWER_CHANGE_OK_', pad = ((10,10),(0,15))), 
+                sg.Button('Exit-Esc', **ElementStyle.search_button_short, key='_DRAWER_CHANGE_ESC_', pad = ((0,0),(0,15))), 
             ]           
         ]
         
         self.__layout = [
             [
-                sg.Column(drawer_exchange_layout, key='_DRAWER_EXCHANGE_', vertical_alignment = 'top'),
+                sg.Column(drawer_exchange_layout, key='_DRAWER_CHANGE_', vertical_alignment = 'top'),
             ]
         ]
 

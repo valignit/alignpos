@@ -7,8 +7,8 @@ from pynput.keyboard import Key, Controller
 from config import Config
 from utilities import Message, Keypad
 from db_orm import DbConn, DbTable, DbQuery
-from cash_layout import CashCanvas, DrawerTrnCanvas, DrawerExchangeCanvas
-from cash_ui import CashUi, DrawerTrnUi, DrawerExchangeUi
+from cash_layout import CashCanvas, DrawerTrnCanvas, DrawerChangeCanvas
+from cash_ui import CashUi, DrawerTrnUi, DrawerChangeUi
 from common import ItemList, CustomerList, Denomination
 
 
@@ -32,13 +32,7 @@ class Cash:
         self.__db_cash_transaction_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction)
         filter='terminal_id = {}'.format(self.__terminal_id)
         db_cash_transaction_cursor = self.__db_cash_transaction_table.list(filter)
-
-        '''
-        if (len(db_cash_transaction_cursor) == 0):
-            sg.popup('Transaction(s) not found', keep_on_top = True, icon='images/INFO.png')                    
-            return
-        '''
-        
+      
         self.__db_cash_transaction_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction_Denomination)
 
         db_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabDenomination)
@@ -86,17 +80,19 @@ class Cash:
                 
         self.__ui.cashs_list = []
 
-        self.__base_query = 'select tabCash_Transaction.name, \
-        tabCash_Transaction.transaction_type, \
-        tabCash_Transaction.transaction_context, \
-        tabCash_Transaction.transaction_reference, \
-        tabCash_Transaction.transaction_date, \
-        tabCash_Transaction.receipt_amount, \
-        tabCash_Transaction.payment_amount \
-        from tabCash_Transaction \
-        where tabCash_Transaction.branch_id = "' + self.__branch_id + '" and tabCash_Transaction.terminal_id = "' + self.__terminal_id + '"'
+        self.__base_query = 'select \
+        ct.name, \
+        ct.transaction_type, \
+        ct.transaction_context, \
+        ct.transaction_reference, \
+        ct.transaction_date, \
+        ct.receipt_amount, \
+        ct.payment_amount \
+        from tabCash_Transaction ct \
+        where ct.branch_id = "' + self.__branch_id + '" and ct.terminal_id = "' + self.__terminal_id + '"'
 
-        self.__order_query = ' order by tabCash_Transaction.name  DESC '
+        self.__order_query = ' order by ct.name  DESC '
+        self.__this_query = ''
        
         db_query = DbQuery(self.__db_conn, self.__base_query + self.__order_query)        
         if  db_query.result:
@@ -122,7 +118,7 @@ class Cash:
         self.__transaction_denomonation_dict = dict()
         self.__approved_by = ''
 
-        self.__exchange_amount = 0.00
+        self.__change_amount = 0.00
         self.__from_denomonation_dict = dict()
         self.__to_denomonation_dict = dict()
         
@@ -142,18 +138,18 @@ class Cash:
                 break
 
             if event in ('_CASH_LIST_SEARCH_', 'F11', 'F11:122'):
-                this_query = ''
+                self.__this_query = ''
                 if self.__ui.transaction_type_search:
                     if not self.__ui.transaction_type_search == '':
-                        this_query += ' and tabCash_Transaction.transaction_type = "' + self.__ui.transaction_type_search + '"'
+                        self.__this_query += ' and ct.transaction_type = "' + self.__ui.transaction_type_search + '"'
 
                 if self.__ui.transaction_context_search:
                     if not self.__ui.transaction_context_search == '':
-                        this_query += ' and tabCash_Transaction.transaction_context = "' + self.__ui.transaction_context_search + '"'
+                        self.__this_query += ' and ct.transaction_context = "' + self.__ui.transaction_context_search + '"'
 
                 self.__ui.cashs_list = []
                         
-                db_query = DbQuery(self.__db_conn, self.__base_query + this_query + self.__order_query)
+                db_query = DbQuery(self.__db_conn, self.__base_query + self.__this_query + self.__order_query)
                 if  db_query.result:
                     
                     for db_row in db_query.result:
@@ -165,6 +161,8 @@ class Cash:
                         self.__ui.receipt_amount = db_row[5]
                         self.__ui.payment_amount = db_row[6]
                         self.__ui.add_cash_line()
+                    self.refresh_summary_pane()
+                    self.refresh_total_pane()
                     
             if event in ('_CASH_LIST_DENOMINATION_', '\r', 'F3', 'F3:114'):
                 cash_idx = values['_CASH_LIST_'][0]
@@ -198,10 +196,9 @@ class Cash:
                 self.refresh_total_pane()
                 self.__ui.focus_cash_list()
 
-            if event in ('_CASH_LIST_EXCHANGE_', '\r', 'F3', 'F3:114'):
-                self.__exchange_amount, self.__from_denomination_dict, self.__to_denomination_dict = self.exchange()
-                print('H1', self.__exchange_amount)
-                self.update_exchange()
+            if event in ('_CASH_LIST_CHANGE_', '\r', 'F3', 'F3:114'):
+                self.__change_amount, self.__from_denomination_dict, self.__to_denomination_dict = self.change()
+                self.update_change()
                 self.refresh_detail_pane()
                 self.refresh_summary_pane()
                 self.refresh_total_pane()
@@ -247,24 +244,13 @@ class Cash:
 
     ######
     # Wrapper function for Exchange
-    def exchange(self):
-        exchange = DrawerExchange()
-        return exchange.exchange_amount, exchange.from_denomination_dict, exchange.to_denomination_dict
+    def change(self):
+        change = DrawerChange()
+        return change.change_amount, change.from_denomination_dict, change.to_denomination_dict
 
     def refresh_detail_pane(self):
-        self.__base_query = 'select tabCash_Transaction.name, \
-        tabCash_Transaction.transaction_type, \
-        tabCash_Transaction.transaction_context, \
-        tabCash_Transaction.transaction_reference, \
-        tabCash_Transaction.transaction_date, \
-        tabCash_Transaction.receipt_amount, \
-        tabCash_Transaction.payment_amount \
-        from tabCash_Transaction \
-        where tabCash_Transaction.branch_id = "' + self.__branch_id + '" and tabCash_Transaction.terminal_id = "' + self.__terminal_id + '"'
-
-        self.__order_query = ' order by tabCash_Transaction.name  DESC '
-
-        db_query = DbQuery(self.__db_conn, self.__base_query + self.__order_query)        
+        
+        db_query = DbQuery(self.__db_conn, self.__base_query + self.__this_query + self.__order_query)        
         if  db_query.result:
             self.__ui.cashs_list.clear()
             for db_row in db_query.result:
@@ -282,13 +268,12 @@ class Cash:
         for denomination in self.__denomination_list:
 
             self.__ui.denomination_name = denomination
+            summary_query = 'select IFNULL(sum(count),0) receipt from \
+            tabCash_Transaction_Denomination ctd, \
+            tabCash_Transaction ct \
+            where ctd.denomination = "' + denomination + '" and ctd.parent = ct.name and ct.transaction_type = "Receipt" and terminal_id = "' + self.__terminal_id + '"' 
 
-            self.__base_query = 'select IFNULL(sum(count),0) receipt from \
-            tabCash_Transaction_Denomination a, \
-            tabCash_Transaction b \
-            where a.denomination = "' + denomination + '" and a.parent = b.name and b.transaction_type = "Receipt" and terminal_id = "' + self.__terminal_id + '"' 
-
-            db_query = DbQuery(self.__db_conn, self.__base_query)        
+            db_query = DbQuery(self.__db_conn, summary_query + self.__this_query)        
             if  db_query.result:
                 for db_row in db_query.result:
                     if db_row[0] == None:
@@ -296,12 +281,12 @@ class Cash:
                     else:
                         receipt_count = int(db_row[0])
                         
-            self.__base_query = 'select IFNULL(sum(count),0) payment from \
-            tabCash_Transaction_Denomination a, \
-            tabCash_Transaction b \
-            where a.denomination = "' + denomination + '" and a.parent = b.name and b.transaction_type = "Payment" and terminal_id = "' + self.__terminal_id + '"' 
+            summary_query = 'select IFNULL(sum(count),0) payment from \
+            tabCash_Transaction_Denomination ctd, \
+            tabCash_Transaction ct \
+            where ctd.denomination = "' + denomination + '" and ctd.parent = ct.name and ct.transaction_type = "Payment" and terminal_id = "' + self.__terminal_id + '"' 
 
-            db_query = DbQuery(self.__db_conn, self.__base_query)        
+            db_query = DbQuery(self.__db_conn, summary_query + self.__this_query)        
             if  db_query.result:
                 for db_row in db_query.result:
                     if db_row[0] == None:
@@ -309,29 +294,16 @@ class Cash:
                     else:
                         payment_count = int(db_row[0])
 
-            self.__base_query = 'select IFNULL(sum(count),0) payment from \
-            tabCash_Transaction_Denomination a, \
-            tabCash_Transaction b \
-            where a.denomination = "' + denomination + '" and a.parent = b.name and b.transaction_type = "Exchange" and terminal_id = "' + self.__terminal_id + '"' 
-
-            db_query = DbQuery(self.__db_conn, self.__base_query)        
-            if  db_query.result:
-                for db_row in db_query.result:
-                    if db_row[0] == None:
-                        exchange_count = 0
-                    else:
-                        exchange_count = int(db_row[0])
-
-            self.__ui.denomination_count = receipt_count - payment_count + exchange_count
+            self.__ui.denomination_count = receipt_count - payment_count
             self.__ui.denomination_amount = int(self.__ui.denomination_count) * float(self.__denomination_value_list[idx])                    
 
             idx += 1
 
     def refresh_total_pane(self):
-        self.__base_query = 'select IFNULL(sum(receipt_amount),0) received_amount from \
-        tabCash_Transaction a where terminal_id = "' + self.__terminal_id + '" and transaction_type <> "Exchange"'
+        total_query = 'select IFNULL(sum(receipt_amount),0) received_amount from \
+        tabCash_Transaction ct where ct.terminal_id = "' + self.__terminal_id + '"'
 
-        db_query = DbQuery(self.__db_conn, self.__base_query)        
+        db_query = DbQuery(self.__db_conn, total_query + self.__this_query)        
         if  db_query.result:
             for db_row in db_query.result:
                 if db_row[0] == None:
@@ -341,10 +313,10 @@ class Cash:
 
         self.__ui.received_amount = received_amount
         
-        self.__base_query = 'select IFNULL(sum(payment_amount),0) paid_amount from \
-        tabCash_Transaction a where terminal_id = "' + self.__terminal_id + '" and transaction_type <> "Exchange"'
+        total_query = 'select IFNULL(sum(payment_amount),0) paid_amount from \
+        tabCash_Transaction ct where ct.terminal_id = "' + self.__terminal_id + '"'
 
-        db_query = DbQuery(self.__db_conn, self.__base_query)        
+        db_query = DbQuery(self.__db_conn, total_query + self.__this_query)        
         if  db_query.result:
             for db_row in db_query.result:
                 if db_row[0] == None:
@@ -358,7 +330,11 @@ class Cash:
 
     def update_transaction(self):
         if float(self.__transaction_amount) > 0:
-            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_NUMBER")')
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("DRAWER_TRANSACTION_REFERENCE")')
+            for db_row in db_query.result:
+                transaction_reference = db_row[0]
+
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_ENTRY")')
             for db_row in db_query.result:
                 cash_transaction_number = db_row[0]
 
@@ -367,7 +343,7 @@ class Cash:
             db_cash_transaction_row.name = cash_transaction_number
             db_cash_transaction_row.transaction_type = self.__transaction_type     
             db_cash_transaction_row.transaction_context = 'Drawer'
-            db_cash_transaction_row.transaction_reference = cash_transaction_number
+            db_cash_transaction_row.transaction_reference = transaction_reference
             db_cash_transaction_row.transaction_date = self.__ui.current_date
             if self.__transaction_type == 'Receipt':
                 db_cash_transaction_row.receipt_amount = self.__transaction_amount
@@ -402,21 +378,25 @@ class Cash:
 
             self.__db_session.commit()
 
-    def update_exchange(self):
-        if float(self.__exchange_amount) > 0:
-            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_NUMBER")')
+    def update_change(self):
+        if float(self.__change_amount) > 0:
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CHANGE_TRANSACTION_REFERENCE")')
             for db_row in db_query.result:
-                cash_exchange_number = db_row[0]
+                transaction_reference = db_row[0]
+
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_ENTRY")')
+            for db_row in db_query.result:
+                cash_transaction_number = db_row[0]
 
             db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
 
-            db_cash_transaction_row.name = cash_exchange_number
-            db_cash_transaction_row.transaction_type = 'Exchange'     
-            db_cash_transaction_row.transaction_context = 'Drawer'
-            db_cash_transaction_row.transaction_reference = cash_exchange_number
+            db_cash_transaction_row.name = cash_transaction_number
+            db_cash_transaction_row.transaction_type = 'Receipt'
+            db_cash_transaction_row.transaction_context = 'Change'
+            db_cash_transaction_row.transaction_reference = transaction_reference
             db_cash_transaction_row.transaction_date = self.__ui.current_date
-            db_cash_transaction_row.receipt_amount = self.__exchange_amount
-            db_cash_transaction_row.payment_amount = self.__exchange_amount
+            db_cash_transaction_row.receipt_amount = self.__change_amount
+            db_cash_transaction_row.payment_amount = 0
             
             db_cash_transaction_row.party_type = 'User'
             db_cash_transaction_row.customer = self.__ui.user_id
@@ -431,13 +411,13 @@ class Cash:
             self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
 
             if not self.__from_denomination_dict:
-                self.__from_denomination_dict['None'] = int(float(self.__exchange_amount))
+                self.__from_denomination_dict['None'] = int(float(self.__change_amount))
 
             for denomination, count in self.__from_denomination_dict.items():
                 if int(count) > 0:
                     db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
-                    db_cash_transaction_denomination_row.name = str(cash_exchange_number) + denomination
-                    db_cash_transaction_denomination_row.parent = str(cash_exchange_number)
+                    db_cash_transaction_denomination_row.name = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.parent = str(cash_transaction_number)
                     db_cash_transaction_denomination_row.denomination = denomination
                     if denomination == 'None':
                         db_cash_transaction_denomination_row.count = float(count)
@@ -445,19 +425,46 @@ class Cash:
                         db_cash_transaction_denomination_row.count = int(count)
                     self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
 
+
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_ENTRY")')
+            for db_row in db_query.result:
+                cash_transaction_number = db_row[0]
+
+            db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
+
+            db_cash_transaction_row.name = cash_transaction_number
+            db_cash_transaction_row.transaction_type = 'Payment'
+            db_cash_transaction_row.transaction_context = 'Change'
+            db_cash_transaction_row.transaction_reference = transaction_reference
+            db_cash_transaction_row.transaction_date = self.__ui.current_date
+            db_cash_transaction_row.payment_amount = self.__change_amount
+            db_cash_transaction_row.receipt_amount = 0
+            
+            db_cash_transaction_row.party_type = 'User'
+            db_cash_transaction_row.customer = self.__ui.user_id
+            db_cash_transaction_row.branch_id = self.__branch_id
+            db_cash_transaction_row.terminal_id = self.__terminal_id
+            now = datetime.now()
+            dt_string = now.strftime("%Y-%m-%d %H:%M:%S.000001")
+            db_cash_transaction_row.creation = dt_string
+            db_cash_transaction_row.owner = self.__ui.user_id
+            db_cash_transaction_row.approved_by = self.__ui.user_id
+            
+            self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
+
             if not self.__to_denomination_dict:
-                self.__to_denomination_dict['None'] = int(float(self.__exchange_amount)) 
+                self.__to_denomination_dict['None'] = int(float(self.__change_amount)) 
 
             for denomination, count in self.__to_denomination_dict.items():
                 if int(count) > 0:
                     db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
-                    db_cash_transaction_denomination_row.name = str(cash_exchange_number) + denomination
-                    db_cash_transaction_denomination_row.parent = str(cash_exchange_number)
+                    db_cash_transaction_denomination_row.name = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.parent = str(cash_transaction_number)
                     db_cash_transaction_denomination_row.denomination = denomination
                     if denomination == 'None':
-                        db_cash_transaction_denomination_row.count = float(count) * -1
+                        db_cash_transaction_denomination_row.count = float(count)
                     else:
-                        db_cash_transaction_denomination_row.count = int(count) * -1
+                        db_cash_transaction_denomination_row.count = int(count)
                     self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
 
             self.__db_session.commit()
@@ -590,7 +597,7 @@ class DrawerTrn:
     approved_by = property(get_approved_by)
 
 
-class DrawerExchange:
+class DrawerChange:
 
     def __init__(self):
         self.__kb = Controller()
@@ -601,9 +608,9 @@ class DrawerExchange:
         self.__db_cash_transaction_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction)
         self.__db_cash_transaction_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction_Denomination)
  
-        self.__canvas = DrawerExchangeCanvas()
+        self.__canvas = DrawerChangeCanvas()
         
-        self.__window = sg.Window('Cash Exchange',
+        self.__window = sg.Window('Cash Change',
                         self.__canvas.layout, 
                         location=(300,250), 
                         size=(450,220), 
@@ -614,7 +621,7 @@ class DrawerExchange:
                         return_keyboard_events=True,
                     )
 
-        self.__ui = DrawerExchangeUi(self.__window)
+        self.__ui = DrawerChangeUi(self.__window)
 
         self.__from_denomination_dict = dict()
         self.__to_denomination_dict = dict()
@@ -626,64 +633,64 @@ class DrawerExchange:
         focus = None
         while True:
             event, values = self.__window.read()
-            #print('drawer_exchange_popup=', event, values)
+            #print('drawer_change_popup=', event, values)
             
             if self.__window.FindElementWithFocus():
                 focus = self.__window.FindElementWithFocus().Key
-            #print('drawer_exchange=', event, 'prev=', prev_event, 'focus:', focus)
+            #print('drawer_change=', event, 'prev=', prev_event, 'focus:', focus)
                             
             if event == '_KEYPAD_':
-                result = self.keypad(self.__ui.exchange_amount)
-                self.__ui.exchange_amount = result
-                self.__ui.exchange_amount = self.__ui.exchange_amount
-                self.__ui.focus_exchange_amount()
+                result = self.keypad(self.__ui.change_amount)
+                self.__ui.change_amount = result
+                self.__ui.change_amount = self.__ui.change_amount
+                self.__ui.focus_change_amount()
 
             if event == '_FROM_DENOMINATION_':
-                if not self.__ui.exchange_amount.replace('.','').isdigit():
-                    self.__ui.exchange_amount = 0.00
-                    self.__ui.focus_exchange_amount()
+                if not self.__ui.change_amount.replace('.','').isdigit():
+                    self.__ui.change_amount = 0.00
+                    self.__ui.focus_change_amount()
                     continue
                     
-                if float(self.__ui.exchange_amount) > 0:
+                if float(self.__ui.change_amount) > 0:
                     default_amount_dict = dict()
-                    default_amount_dict['None'] = self.__ui.exchange_amount
+                    default_amount_dict['None'] = self.__ui.change_amount
                     self.__from_denomination_dict = self.denomination(default_amount_dict, 'edit')
-                    self.__ui.exchange_amount = self.__ui.exchange_amount
-                    self.__ui.focus_exchange_amount()
+                    self.__ui.change_amount = self.__ui.change_amount
+                    self.__ui.focus_change_amount()
 
             if event == '_TO_DENOMINATION_':
-                if not self.__ui.exchange_amount.replace('.','').isdigit():
-                    self.__ui.exchange_amount = 0.00
-                    self.__ui.focus_exchange_amount()
+                if not self.__ui.change_amount.replace('.','').isdigit():
+                    self.__ui.change_amount = 0.00
+                    self.__ui.focus_change_amount()
                     continue
                     
-                if float(self.__ui.exchange_amount) > 0:
+                if float(self.__ui.change_amount) > 0:
                     default_amount_dict = dict()
-                    default_amount_dict['None'] = self.__ui.exchange_amount
+                    default_amount_dict['None'] = self.__ui.change_amount
                     self.__to_denomination_dict = self.denomination(default_amount_dict, 'edit')
-                    self.__ui.exchange_amount = self.__ui.exchange_amount
-                    self.__ui.focus_exchange_amount()
+                    self.__ui.change_amount = self.__ui.change_amount
+                    self.__ui.focus_change_amount()
 
             if event == '\t':
                 if prev_event == '_EXCHANGE_AMOUNT_':
-                    self.__ui.exchange_amount = self.__ui.exchange_amount
-                    self.__ui.focus_exchange_amount()
+                    self.__ui.change_amount = self.__ui.change_amount
+                    self.__ui.focus_change_amount()
 
-            if event in ('Exit', '_DRAWER_EXCHANGE_ESC_', 'Escape:27', sg.WIN_CLOSED):
+            if event in ('Exit', '_DRAWER_CHANGE_ESC_', 'Escape:27', sg.WIN_CLOSED):
                 break             
             
-            if event in ('_DRAWER_EXCHANGE_OK_', 'F12:123', '\r'):
+            if event in ('_DRAWER_CHANGE_OK_', 'F12:123', '\r'):
                 if not self.__from_denomination_dict:
-                    self.__from_denomination_dict['None'] = int(float(self.__ui.exchange_amount))
+                    self.__from_denomination_dict['None'] = int(float(self.__ui.change_amount))
                     
                 if not self.__to_denomination_dict:
-                    self.__to_denomination_dict['None'] = int(float(self.__ui.exchange_amount))
+                    self.__to_denomination_dict['None'] = int(float(self.__ui.change_amount))
 
-                if self.__ui.exchange_amount == '':
+                if self.__ui.change_amount == '':
                     sg.popup('Amount cannot be zero', keep_on_top = True, icon='images/INFO.png')                    
                     continue                
 
-                if float(self.__ui.exchange_amount) == 0:
+                if float(self.__ui.change_amount) == 0:
                     sg.popup('Amount cannot be zero', keep_on_top = True, icon='images/INFO.png')                    
                     continue
                     
@@ -691,7 +698,7 @@ class DrawerExchange:
                     sg.popup('Receipt and Payment cannot have same denominations', keep_on_top = True, icon='images/INFO.png')                    
                     continue
                     
-                self.__exchange_amount = self.__ui.exchange_amount
+                self.__change_amount = self.__ui.change_amount
                 break                
 
             prev_event = event
@@ -710,11 +717,11 @@ class DrawerExchange:
         denomination = Denomination(amount, mode)
         return denomination.denomination_count_dict    
        
-    def set_exchange_amount(self, exchange_amount):
-        self.__exchange_amount = exchange_amount
+    def set_change_amount(self, change_amount):
+        self.__change_amount = change_amount
         
-    def get_exchange_amount(self):
-        return self.__exchange_amount
+    def get_change_amount(self):
+        return self.__change_amount
 
     def get_from_denomination_dict(self):
         return self.__from_denomination_dict
@@ -722,7 +729,7 @@ class DrawerExchange:
     def get_to_denomination_dict(self):
         return self.__to_denomination_dict
 
-    exchange_amount = property(get_exchange_amount, set_exchange_amount)
+    change_amount = property(get_change_amount, set_change_amount)
     from_denomination_dict = property(get_from_denomination_dict)
     to_denomination_dict = property(get_to_denomination_dict)
 

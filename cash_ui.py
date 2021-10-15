@@ -366,41 +366,41 @@ class DrawerTrnUi:
     supervisor_passwd = property(get_supervisor_passwd, set_supervisor_passwd)     
 
 
-class DrawerExchangeUi:
+class DrawerChangeUi:
     def __init__(self, popup):
         self.__popup = popup
         self.__item_name = ''
 
-        self.__popup["_DRAWER_EXCHANGE_OK_"].Widget.config(takefocus=0) 
-        self.__popup["_DRAWER_EXCHANGE_ESC_"].Widget.config(takefocus=0)
+        self.__popup["_DRAWER_CHANGE_OK_"].Widget.config(takefocus=0) 
+        self.__popup["_DRAWER_CHANGE_ESC_"].Widget.config(takefocus=0)
         self.__popup["_KEYPAD_"].Widget.config(takefocus=0)
         self.__popup["_FROM_DENOMINATION_"].Widget.config(takefocus=0)
         self.__popup["_TO_DENOMINATION_"].Widget.config(takefocus=0)
        
         
-    def set_exchange_amount(self, exchange_amount):
-        if exchange_amount == '':
-            exchange_amount = 0
-        self.__exchange_amount = exchange_amount
-        self.__popup.Element('_EXCHANGE_AMOUNT_').update(value = "{:.2f}".format(float(self.__exchange_amount)))
+    def set_change_amount(self, change_amount):
+        if change_amount == '':
+            change_amount = 0
+        self.__change_amount = change_amount
+        self.__popup.Element('_CHANGE_AMOUNT_').update(value = "{:.2f}".format(float(self.__change_amount)))
        
-    def get_exchange_amount(self):
-        self.__exchange_amount = self.__popup.Element('_EXCHANGE_AMOUNT_').get()        
-        return self.__exchange_amount
+    def get_change_amount(self):
+        self.__change_amount = self.__popup.Element('_CHANGE_AMOUNT_').get()        
+        return self.__change_amount
 
-    def focus_exchange_amount(self):
-        self.__popup.Element('_EXCHANGE_AMOUNT_').SetFocus() 
-        self.__popup.Element('_EXCHANGE_AMOUNT_').update(select=True)        
+    def focus_change_amount(self):
+        self.__popup.Element('_CHANGE_AMOUNT_').SetFocus() 
+        self.__popup.Element('_CHANGE_AMOUNT_').update(select=True)        
 
     def append_char(self, key, char):
         if self.__popup[key].Widget.select_present():
             self.__exchange_amount = ''
-            self.__popup.Element(key).update(value = self.__exchange_amount)
+            self.__popup.Element(key).update(value = self.__change_amount)
         
-        self.__exchange_amount = self.__popup.Element('_EXCHANGE_AMOUNT_').get()        
-        self.__exchange_amount = str(self.__exchange_amount) + char
-        self.__popup.Element(key).update(value = self.__exchange_amount)
+        self.__change_amount = self.__popup.Element('_CHANGE_AMOUNT_').get()        
+        self.__change_amount = str(self.__change_amount) + char
+        self.__popup.Element(key).update(value = self.__change_amount)
 
-    exchange_amount = property(get_exchange_amount, set_exchange_amount) 
+    change_amount = property(get_change_amount, set_change_amount) 
 
 
