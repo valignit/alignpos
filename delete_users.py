@@ -22,6 +22,8 @@ with open('./app_config.json') as file_config:
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
 file_log = open(file_name, "w")
 
+branch_id = config["branch_id"]
+
 ##############################
 # Print and Log
 ##############################
@@ -108,9 +110,9 @@ except mariadb.Error as db_err:
     sys.exit(1)
 
 last_sync_date_time = '2000-01-01 00:00:00'
-ws_erp_payload = {"date": last_sync_date_time }
 
 ws_erp_method = '/api/method/put_user_sync_date_time'
+ws_erp_payload = {"date": last_sync_date_time, "branch": branch_id}
 try:
     ws_erp_resp = ws_erp_sess.put(ws_erp_host + ws_erp_method, json=ws_erp_payload)
     ws_erp_resp.raise_for_status()   

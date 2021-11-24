@@ -38,6 +38,8 @@ with open('./app_config.json') as file_config:
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
 file_log = open(file_name, "w")
 
+branch_id = config["branch_id"]
+
 print_log('alignPOS - Download Items - Version 1.1')
 print_log('---------------------------------------')
 
@@ -97,9 +99,10 @@ db_pos_cur = db_pos_conn.cursor()
 
 ######
 # Fetch Created list of Items from ERP
+ws_erp_payload = {"branch": branch_id}
 ws_erp_method = 'api/method/get_created_items?limit_page_length=None'
 try:
-    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
+    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method, json=ws_erp_payload)
     ws_erp_resp.raise_for_status()   
     ws_erp_resp_text = ws_erp_resp.text
     ws_erp_resp_json = json.loads(ws_erp_resp_text)
@@ -135,7 +138,7 @@ for ws_item_row in ws_erp_resp_json["items"]:
     item_group = ws_item_row["item_group"]
     item_stock = ws_item_row["shop_stock"]
     item_standard_selling_price = ws_item_row["standard_rate"]
-    item_maximum_retail_price = ws_item_row["maximum_retail_price"]
+    item_maximum_retail_price = ws_item_row["standard_rate"]
     item_tax_template = ''
     item_created = ws_item_row["creation"]
 
@@ -214,9 +217,10 @@ print_log(f"Total Items Created: {item_create_count}")
 
 ######
 # Fetch Updated list of Items from ERP
+ws_erp_payload = {"branch": branch_id}
 ws_erp_method = 'api/method/get_updated_items?limit_page_length=None'
 try:
-    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
+    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method, json=ws_erp_payload)
     ws_erp_resp.raise_for_status()   
     ws_erp_resp_text = ws_erp_resp.text
     ws_erp_resp_json = json.loads(ws_erp_resp_text)
@@ -248,7 +252,7 @@ for ws_item_row in ws_erp_resp_json["items"]:
     item_group = ws_item_row["item_group"]
     item_stock = ws_item_row["shop_stock"]
     item_standard_selling_price = ws_item_row["standard_rate"]
-    item_maximum_retail_price = ws_item_row["maximum_retail_price"]
+    item_maximum_retail_price = ws_item_row["standard_rate"]
     item_tax_template = ''
     item_modified = ws_item_row["modified"]
 
@@ -394,8 +398,9 @@ for ws_item_row in ws_erp_resp_json["data"]:
 
 ######
 # Update Last sync date time
+
 if (item_count > 0):
-    ws_erp_payload = {"date": last_sync}
+    ws_erp_payload = {"date": last_sync, "branch": branch_id}
     
     #print('payload:', ws_erp_payload)
 

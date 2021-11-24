@@ -6,6 +6,8 @@ from pynput.keyboard import Key, Controller
 from config import Config
 from utilities import Message, Keypad
 from db_orm import DbConn, DbTable, DbQuery
+from db_nosql import KvDatabase
+
 from common_layout import SigninCanvas, ItemListCanvas, CustomerListCanvas, DenominationCanvas
 from common_ui import SigninUi, ItemListUi, CustomerListUi, DenominationUi
 
@@ -20,7 +22,10 @@ class Signin():
         self.__terminal_id = config.terminal_id
         self.__branch_id = config.branch_id
         self.__language = config.language
-        
+
+        self.__kv_settings = KvDatabase('kv_settings')
+        self.__current_date = self.__kv_settings.get('current_date')
+       
         self.__canvas = SigninCanvas()
 
         self.__window = sg.Window(self.__canvas.title, 
@@ -127,10 +132,14 @@ class Signin():
     def get_sign_in_branch_id(self):
         return self.__ui.signin_branch_id
 
+    def get_current_date(self):
+        return self.__current_date
+ 
     ok = property(get_ok)         
     user_id = property(get_sign_in_user_id)         
     terminal_id = property(get_sign_in_terminal_id)         
     branch_id = property(get_sign_in_branch_id)         
+    current_date = property(get_current_date)         
 
     
 class ItemList:

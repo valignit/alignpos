@@ -17,13 +17,14 @@ from common import ItemList, CustomerList
 
 class Estimate():
 
-    def __init__(self, menu_opt, user_id, terminal_id, branch_id):
+    def __init__(self, menu_opt, user_id, terminal_id, branch_id, current_date):
     
         config = Config()
         
         self.__menu_opt = menu_opt
         self.__terminal_id = terminal_id
         self.__branch_id = branch_id
+        self.__current_date = current_date
         
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
@@ -94,6 +95,7 @@ class Estimate():
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
         self.__ui.branch_id = branch_id    
+        self.__ui.current_date = current_date    
         
         # Creating Item Groups list to populate search combo
         item_groups_list = ['None']
@@ -687,7 +689,7 @@ class Estimate():
         self.__ui.user_id = ''
         self.__ui.terminal_id = ''
         self.__ui.branch_id = ''
-        self.__ui.current_date = '2021/06/13'
+        self.__ui.current_date = ''
 
     def initialize_summary_pane(self):
         self.__ui.line_items = 0

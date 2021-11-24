@@ -38,6 +38,8 @@ with open('./app_config.json') as file_config:
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
 file_log = open(file_name, "w")
 
+branch_id = config["branch_id"]
+
 print_log('alignPOS - Download Users - Version 1.1')
 print_log('-------------------------------------------')
 
@@ -98,8 +100,9 @@ db_pos_cur = db_pos_conn.cursor()
 ######
 # Fetch Created list of Users from ERP
 ws_erp_method = 'api/method/get_created_users'
+ws_erp_payload = {"branch": branch_id}
 try:
-    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
+    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method, json=ws_erp_payload)
     ws_erp_resp.raise_for_status()   
     ws_erp_resp_text = ws_erp_resp.text
     ws_erp_resp_json = json.loads(ws_erp_resp_text)
@@ -157,8 +160,10 @@ print_log(f"Total Users Created: {user_create_count}")
 ######
 # Fetch Updated list of Users from ERP
 ws_erp_method = 'api/method/get_updated_users'
+ws_erp_payload = {"branch": branch_id}
+
 try:
-    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
+    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method, json=ws_erp_payload)
     ws_erp_resp.raise_for_status()   
     ws_erp_resp_text = ws_erp_resp.text
     ws_erp_resp_json = json.loads(ws_erp_resp_text)
@@ -223,11 +228,11 @@ print_log(f"Total Users Updated: {user_update_count}")
 ######
 # Update Last sync date time
 if (user_count > 0):
-    ws_erp_payload = {"date": last_sync}
     
     #print('payload:', ws_erp_payload)
 
     ws_erp_method = '/api/method/put_user_sync_date_time'
+    ws_erp_payload = {"date": last_sync, "branch": branch_id}
     try:
         ws_erp_resp = ws_erp_sess.put(ws_erp_host + ws_erp_method, json=ws_erp_payload)
         ws_erp_resp.raise_for_status()   

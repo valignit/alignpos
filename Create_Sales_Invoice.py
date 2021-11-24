@@ -131,4 +131,3 @@ if float(doc.exchange_amount) > 0:
     doc_payment_entry.insert()
     doc_payment_entry.submit()
     
-#frappe.db.set_value('Alignpos Parameters', 'Alignpos Parameters', 'invoice_sync_date_time', doc.creation)

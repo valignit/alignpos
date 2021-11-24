@@ -38,6 +38,7 @@ with open('./app_config.json') as file_config:
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
 file_log = open(file_name, "w")
 
+branch_id = config["branch_id"]
 
 print_log('alignPOS - Download Exchange Adjustments - Version 1.1')
 print_log('------------------------------------------------------')
@@ -99,8 +100,10 @@ db_pos_cur = db_pos_conn.cursor()
 ######
 # Fetch Created list of Exchange Adjustments from ERP
 ws_erp_method = 'api/method/get_exchange_adjustments?limit_page_length=None'
+ws_erp_payload = {"branch": branch_id}
+
 try:
-    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method)
+    ws_erp_resp = ws_erp_sess.get(ws_erp_host + ws_erp_method, json=ws_erp_payload)
     ws_erp_resp.raise_for_status()   
     ws_erp_resp_text = ws_erp_resp.text
     ws_erp_resp_json = json.loads(ws_erp_resp_text)
@@ -158,7 +161,7 @@ print_log(f"Total Exchange Adjustments Transferred: {exchange_adjustment_create_
 ######
 # Update Last sync date time
 if (exchange_adjustment_count > 0):
-    ws_erp_payload = {"date": last_sync}
+    ws_erp_payload = {"date": last_sync, "branch": branch_id}
     
     #print('payload:', ws_erp_payload)
 

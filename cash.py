@@ -13,12 +13,13 @@ from common import ItemList, CustomerList, Denomination
 
 
 class Cash:
-    def __init__(self, menu_opt, user_id, terminal_id, branch_id):    
+    def __init__(self, menu_opt, user_id, terminal_id, branch_id, current_date):    
 
         config = Config()
 
         self.__terminal_id = terminal_id
         self.__branch_id = branch_id
+        self.__current_date = current_date
 
         w, h = sg.Window.get_screen_size()
         #w = w - 55
@@ -77,6 +78,7 @@ class Cash:
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
         self.__ui.branch_id = branch_id   
+        self.__ui.current_date = current_date   
                 
         self.__ui.cashs_list = []
 
@@ -216,7 +218,7 @@ class Cash:
         self.__ui.user_id = ''
         self.__ui.terminal_id = ''
         self.__ui.branch_id = ''
-        self.__ui.current_date = '2021/06/13'
+        self.__ui.current_date = ''
 
     def initialize_ui(self):
         self.initialize_footer_pane()

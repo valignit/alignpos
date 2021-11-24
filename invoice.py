@@ -18,13 +18,14 @@ from common import ItemList, CustomerList, Denomination
 
 class Invoice():
 
-    def __init__(self, menu_opt, user_id, terminal_id, branch_id):
+    def __init__(self, menu_opt, user_id, terminal_id, branch_id, current_date):
     
         config = Config()
         
         self.__menu_opt = menu_opt
         self.__terminal_id = terminal_id
         self.__branch_id = branch_id
+        self.__current_date = current_date
 
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
@@ -95,6 +96,7 @@ class Invoice():
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
         self.__ui.branch_id = branch_id    
+        self.__ui.current_date = current_date    
         
         # Creating Item Groups list to populate search combo
         item_groups_list = ['None']
@@ -712,7 +714,7 @@ class Invoice():
         self.__ui.user_id = ''
         self.__ui.terminal_id = ''
         self.__ui.branch_id = ''
-        self.__ui.current_date = '2021/06/13'
+        self.__ui.current_date = ''
 
     def initialize_summary_pane(self):
         self.__ui.line_items = 0
@@ -2103,6 +2105,7 @@ class Payment:
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S.000001")
             db_cash_transaction_row.creation = dt_string
             db_cash_transaction_row.owner = self.__user_id
+            print("###1")
             self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
 
             if not self.__cash_denomination_dict:
@@ -2139,6 +2142,8 @@ class Payment:
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S.000001")
             db_cash_transaction_row.creation = dt_string
             db_cash_transaction_row.owner = self.__user_id
+            print("###2")
+            
             self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
 
             if not self.__return_denomination_dict:
