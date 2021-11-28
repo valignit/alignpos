@@ -25,6 +25,7 @@ class Signin():
 
         self.__kv_settings = KvDatabase('kv_settings')
         self.__current_date = self.__kv_settings.get('current_date')
+        self.__current_status = self.__kv_settings.get('current_status')
        
         self.__canvas = SigninCanvas()
 
@@ -97,7 +98,8 @@ class Signin():
         if  db_query.result:
             for db_row in db_query.result:
                 if self.__ui.signin_passwd == db_row[1].decode("utf-8"):
-                    if db_row[3] == 1:                    
+                    if db_row[3] == 1:
+                        self.__ui.signin_role = db_row[2]
                         return True
                     else:
                         message = 'مستخدم غير نشط' if self.__language == 'ar' else 'Inactive User'
@@ -134,12 +136,20 @@ class Signin():
 
     def get_current_date(self):
         return self.__current_date
+
+    def get_current_status(self):
+        return self.__current_status
+ 
+    def get_sign_in_role(self):
+        return self.__ui.signin_role
  
     ok = property(get_ok)         
     user_id = property(get_sign_in_user_id)         
     terminal_id = property(get_sign_in_terminal_id)         
     branch_id = property(get_sign_in_branch_id)         
     current_date = property(get_current_date)         
+    current_status = property(get_current_status)         
+    role = property(get_sign_in_role)         
 
     
 class ItemList:

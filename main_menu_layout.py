@@ -17,7 +17,6 @@ class MainMenuCanvas:
         menu_def = [
                 ['&File', ['E&xit']],      
                 ['&Operations', ['&Estimate', 'I&nvoice', '&Cash', '---', 'Day Close', 'Day Open']],      
-                ['&Interface', ['Download C&ustomer', 'Download I&tem', 'Download Exc&hange', 'Download Settings', '---', 'Upload In&voice']], 
                 ['&Views', ['E&stimate history', 'I&nvoice history']],      
                 ['&Reports', ['&Daily Sales', 'Cash &Position']],      
                 ['&Help', '&About'], 

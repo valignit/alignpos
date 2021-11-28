@@ -98,7 +98,7 @@ except requests.exceptions.RequestException as ws_err:
 
 ######
 # Cleanup Alignpos Settings from ERP
-kv.deldb()
+#kv.deldb()
    
 ######
 # Fetch Alignpos Settings from ERP

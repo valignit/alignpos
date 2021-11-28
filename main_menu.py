@@ -14,15 +14,17 @@ sg.theme('DefaultNoMoreNagging')
 
 class MainMenu():   
     
-    def __init__(self, user_id, terminal_id, branch_id, current_date):
+    def __init__(self, user_id, terminal_id, branch_id, role):
         self.__user_id = user_id
         self.__terminal_id = terminal_id
         self.__branch_id = branch_id
-        self.__current_date = current_date
+        self.__role = role
 
         self.__kv_settings = KvDatabase('kv_settings')
         self.__kv_strings = KvDatabase('kv_strings')
 
+        self.__current_date = self.__kv_settings.get('current_date')   
+        self.__current_status = self.__kv_settings.get('current_status')   
         self.__welcome_text = self.__kv_settings.get('welcome_text')   
                 
         w, h = sg.Window.get_screen_size()
@@ -71,19 +73,19 @@ class MainMenu():
                 break
                 
             if event in ('E', 'e', 'Estimate', '_ESTIMATE_'):
-                self.estimate_window(self.__user_id, self.__terminal_id, self.__branch_id, self.__current_date)
+                self.estimate_window(self.__user_id, self.__terminal_id, self.__branch_id)
 
             if event in ('I', 'i', 'Invoice', '_INVOICE_'):
-                self.invoice_window(self.__user_id, self.__terminal_id, self.__branch_id, self.__current_date)
+                self.invoice_window(self.__user_id, self.__terminal_id, self.__branch_id)
 
             if event in ('N', 'n', 'Invoice History', '_INVOICE_HISTORY_'):
-                self.invoice_history_window(self.__user_id, self.__terminal_id, self.__branch_id, self.__current_date)
+                self.invoice_history_window(self.__user_id, self.__terminal_id, self.__branch_id)
 
             if event in ('S', 's', 'Estimate History', '_ESTIMATE_HISTORY_'):
-                self.estimate_history_window(self.__user_id, self.__terminal_id, self.__branch_id, self.__current_date)
+                self.estimate_history_window(self.__user_id, self.__terminal_id, self.__branch_id)
                 
             if event in ('C', 'c', 'Cash', '_CASH_'):
-                self.cash_window(self.__user_id, self.__terminal_id, self.__branch_id, self.__current_date)
+                self.cash_window(self.__user_id, self.__terminal_id, self.__branch_id)
                 
             if event == 'Exit':
                 break
@@ -92,28 +94,28 @@ class MainMenu():
 
     ######
     # Wrapper function for Estimate window
-    def estimate_window(self, user_id, terminal_id, branch_id, current_date):
-        estimate = Estimate('operation', user_id, terminal_id, branch_id, current_date)
+    def estimate_window(self, user_id, terminal_id, branch_id):
+        estimate = Estimate('operation', user_id, terminal_id, branch_id)
 
     ######
     # Wrapper function for Order window
-    def estimate_history_window(self, user_id, terminal_id, branch_id, current_date):
-        estimate = Estimate('history', user_id, terminal_id, branch_id, current_date)
+    def estimate_history_window(self, user_id, terminal_id, branch_id):
+        estimate = Estimate('history', user_id, terminal_id, branch_id)
 
     ######
     # Wrapper function for Billing window
-    def invoice_window(self, user_id, terminal_id, branch_id, current_date):
-        draft_invoice = Invoice('operation', user_id, terminal_id, branch_id, current_date)
+    def invoice_window(self, user_id, terminal_id, branch_id):
+        draft_invoice = Invoice('operation', user_id, terminal_id, branch_id)
           
     ######
     # Wrapper function for Invoice window
-    def invoice_history_window(self, user_id, terminal_id, branch_id, current_date):
-        tax_invoice = Invoice('history', user_id, terminal_id, branch_id, current_date)
+    def invoice_history_window(self, user_id, terminal_id, branch_id):
+        tax_invoice = Invoice('history', user_id, terminal_id, branch_id)
           
     ######
     # Wrapper function for Cash window
-    def cash_window(self, user_id, terminal_id, branch_id, current_date):
-        cash = Cash('operation', user_id, terminal_id, branch_id, current_date)
+    def cash_window(self, user_id, terminal_id, branch_id):
+        cash = Cash('operation', user_id, terminal_id, branch_id)
         
 
     def initialize_ui_detail_pane(self):

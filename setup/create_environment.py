@@ -20,6 +20,7 @@ kv.set('tax_included', '')
 kv.set('walk_in_customer', '')
 kv.set('welcome_text', '')
 kv.set('current_date', str(today))
+kv.set('current_status', 'open')
 
 for key in kv.getall():
     print('Loaded', key, ':', kv.get(key))

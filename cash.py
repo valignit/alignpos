@@ -7,25 +7,33 @@ from pynput.keyboard import Key, Controller
 from config import Config
 from utilities import Message, Keypad
 from db_orm import DbConn, DbTable, DbQuery
+from db_nosql import KvDatabase
 from cash_layout import CashCanvas, DrawerTrnCanvas, DrawerChangeCanvas
 from cash_ui import CashUi, DrawerTrnUi, DrawerChangeUi
 from common import ItemList, CustomerList, Denomination
 
 
 class Cash:
-    def __init__(self, menu_opt, user_id, terminal_id, branch_id, current_date):    
+    def __init__(self, menu_opt, user_id, terminal_id, branch_id):    
 
         config = Config()
 
         self.__terminal_id = terminal_id
         self.__branch_id = branch_id
-        self.__current_date = current_date
 
         w, h = sg.Window.get_screen_size()
-        #w = w - 55
-        #h = h - 60
+
+        self.__kv_settings = KvDatabase('kv_settings')
+        self.__kv_strings = KvDatabase('kv_strings')
+
+        self.__current_date = self.__kv_settings.get('current_date')
+        self.__current_status = self.__kv_settings.get('current_status')
         
         self.__name = ''
+
+        kb = Controller()
+        self.__kb = kb
+        
 
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
@@ -51,9 +59,6 @@ class Cash:
             self.__denomination_list.append(db_denomination_row.name)
             self.__denomination_value_list.append(db_denomination_row.cash_value)       
             
-        kb = Controller()
-        self.__kb = kb
-        
         self.__canvas = CashCanvas(self.__denomination_list)
 
         title = 'Cash'
@@ -78,7 +83,7 @@ class Cash:
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
         self.__ui.branch_id = branch_id   
-        self.__ui.current_date = current_date   
+        self.__ui.current_date = self.__current_date   
                 
         self.__ui.cashs_list = []
 

@@ -18,14 +18,13 @@ from common import ItemList, CustomerList, Denomination
 
 class Invoice():
 
-    def __init__(self, menu_opt, user_id, terminal_id, branch_id, current_date):
+    def __init__(self, menu_opt, user_id, terminal_id, branch_id):
     
         config = Config()
         
         self.__menu_opt = menu_opt
         self.__terminal_id = terminal_id
         self.__branch_id = branch_id
-        self.__current_date = current_date
 
         self.__reference_number = None
         w, h = sg.Window.get_screen_size()
@@ -33,7 +32,9 @@ class Invoice():
         self.__kv_settings = KvDatabase('kv_settings')
         self.__kv_strings = KvDatabase('kv_strings')
 
-        self.tax_included = self.__kv_settings.get('tax_included')
+        self.__tax_included = self.__kv_settings.get('tax_included')
+        self.__current_date = self.__kv_settings.get('current_date')
+        self.__current_status = self.__kv_settings.get('current_status')
         
         kb = Controller()
         self.__kb = kb
@@ -96,7 +97,7 @@ class Invoice():
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
         self.__ui.branch_id = branch_id    
-        self.__ui.current_date = current_date    
+        self.__ui.current_date = self.__current_date    
         
         # Creating Item Groups list to populate search combo
         item_groups_list = ['None']
@@ -904,7 +905,7 @@ class Invoice():
         self.__ui.tax_rate = float(self.__ui.cgst_tax_rate) + float(self.__ui.sgst_tax_rate)
         self.__ui.item_discount_amount = float(0.00)
         
-        if self.tax_included == 0:
+        if self.__tax_included == 0:
             self.__ui.standard_selling_price = db_item_row.standard_selling_price
             self.__ui.applied_selling_price = float(db_item_row.standard_selling_price) - float(self.__ui.item_discount_amount)
             self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price)

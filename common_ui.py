@@ -9,6 +9,7 @@ class SigninUi:
         self.__window = window
         self.__signin_user_id = ''
         self.__signin_passwd = ''
+        self.__signin_role = ''
         self.__window['_SIGNIN_TERMINAL_ID_'].Widget.config(takefocus=0)
        
 
@@ -44,6 +45,12 @@ class SigninUi:
         self.__signin_passwd = self.__window.Element('_SIGNIN_PASSWD_').get()        
         return self.__signin_passwd
         
+    def set_signin_role(self, signin_role):
+        self.__signin_role = signin_role
+        
+    def get_signin_role(self):
+        return self.__signin_role
+        
     def focus_signin_user_id(self):
         self.__window.Element('_SIGNIN_USER_ID_').SetFocus()
         self.__window.Element('_SIGNIN_USER_ID_').update(select=True)        
@@ -57,6 +64,7 @@ class SigninUi:
     signin_branch_id = property(get_signin_branch_id, set_signin_branch_id)     
     signin_user_id = property(get_signin_user_id, set_signin_user_id)     
     signin_passwd = property(get_signin_passwd, set_signin_passwd)     
+    signin_role = property(get_signin_role, set_signin_role)     
 
 
 class ItemListUi:
