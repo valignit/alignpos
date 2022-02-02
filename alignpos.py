@@ -1,4 +1,6 @@
 import sys
+sys.path.append('c:\alignpos')
+
 from main_menu import MainMenu
 from common import Signin
 

@@ -63,7 +63,7 @@ class ElementStyle:
 
     menu_text:  dict = {           
                         'font':('Calibri 16'), 
-                        'size':(10,1),
+                        'size':(12,1),
                     }
                     
     menu_button:  dict = {

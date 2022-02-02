@@ -5,7 +5,7 @@
 int main( void ) {
 
   int result ;
-  result=system("python c:\\alignpos\\alignpos.py");
+  result=system("python c:\\alignpos\\alignpos.pyw");
   printf("%d",result);
   return 0;
 }

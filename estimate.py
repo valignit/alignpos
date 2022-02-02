@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+from datetime import datetime
 from pynput.keyboard import Key, Controller
 import pdfkit
 import os
@@ -97,7 +98,8 @@ class Estimate():
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
         self.__ui.branch_id = branch_id    
-        self.__ui.current_date = self.__current_date    
+        #self.__ui.current_date = self.__current_date    
+        self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
         
         # Creating Item Groups list to populate search combo
         item_groups_list = ['None']

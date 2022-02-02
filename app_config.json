@@ -1,7 +1,7 @@
 {
 	"ws_host" : "http://104.236.110.12/",
 	"ws_user" : "administrator",
-	"ws_passwd" : "VAlignIt@2021ad",
+	"ws_passwd" : "VAlignIt@2021",
 	
 	"db_host" : "localhost",
 	"db_port" : 3306,

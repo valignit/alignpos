@@ -16,9 +16,10 @@ class MainMenuCanvas:
 
         menu_def = [
                 ['&File', ['E&xit']],      
-                ['&Operations', ['&Estimate', 'I&nvoice', '&Cash', '---', 'Day Close', 'Day Open']],      
-                ['&Views', ['E&stimate history', 'I&nvoice history']],      
-                ['&Reports', ['&Daily Sales', 'Cash &Position']],      
+                ['&Operations', ['&Estimate', '&Invoice', '&Cash']],      
+                ['&Administration', ['Day &Begin', 'Day E&nd']],      
+                ['&Views', ['E&stimate history', 'In&voice history']],      
+                ['&Reports', ['Daily Sa&les']],      
                 ['&Help', '&About'], 
         ]
                  
@@ -39,16 +40,19 @@ class MainMenuCanvas:
                             sg.Button(key='_ESTIMATE_', button_text='E̲stimate',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_INVOICE_', button_text='In̲voice',**ap_style.menu_button),
+                            sg.Button(key='_INVOICE_', button_text='I̲nvoice',**ap_style.menu_button),
                         ],
                         [
                             sg.Button(key='_CASH_', button_text='C̲ash',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_DAY_CLOSE_OPTION_', button_text='D̲ay Close',**ap_style.menu_button),
+                            sg.Text('Administration',**ap_style.menu_text),
                         ],
                         [
-                            sg.Button(key='_DAY_OPEN_OPTION_', button_text='D̲ay Open',**ap_style.menu_button),
+                            sg.Button(key='_DAY_BEGIN_', button_text='Day B̲egin',**ap_style.menu_button),
+                        ],
+                        [
+                            sg.Button(key='_DAY_END_', button_text='Day En̲d',**ap_style.menu_button),
                         ],
                     ],
                     vertical_alignment = 'top', 
@@ -61,13 +65,13 @@ class MainMenuCanvas:
                             sg.Text('Reports',**ap_style.menu_text),
                         ],
                         [
-                            sg.Button(key='_ESTIMATE_HISTORY_', button_text='Estimate History',**ap_style.menu_button),
+                            sg.Button(key='_ESTIMATE_HISTORY_', button_text='Es̲timate History',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_INVOICE_HISTORY_', button_text='Invoice History',**ap_style.menu_button),
+                            sg.Button(key='_INVOICE_HISTORY_', button_text='Inv̲oice History',**ap_style.menu_button),
                         ],
                         [
-                            sg.Button(key='_DAILY_SALES_', button_text='Daily S̲ales',**ap_style.menu_button),
+                            sg.Button(key='_DAILY_SALES_', button_text='Daily Sal̲es',**ap_style.menu_button),
                         ],
                     ],
                     vertical_alignment = 'top', 

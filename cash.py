@@ -83,7 +83,8 @@ class Cash:
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
         self.__ui.branch_id = branch_id   
-        self.__ui.current_date = self.__current_date   
+        #self.__ui.current_date = self.__current_date   
+        self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
                 
         self.__ui.cashs_list = []
 
@@ -609,7 +610,8 @@ class DrawerChange:
     def __init__(self):
         self.__kb = Controller()
         
-        self.__exchange_amount = 0.00
+        #self.__exchange_amount = 0.00
+        self.__change_amount = 0.00
  
         self.__db_conn = DbConn()
         self.__db_cash_transaction_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction)
@@ -684,7 +686,7 @@ class DrawerChange:
                     self.__ui.focus_change_amount()
 
             if event in ('Exit', '_DRAWER_CHANGE_ESC_', 'Escape:27', sg.WIN_CLOSED):
-                break             
+                break         
             
             if event in ('_DRAWER_CHANGE_OK_', 'F12:123', '\r'):
                 if not self.__from_denomination_dict:

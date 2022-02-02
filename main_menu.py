@@ -8,6 +8,7 @@ from main_menu_ui import MainMenuUi
 from estimate import Estimate
 from invoice import Invoice
 from cash import Cash
+from day_end import DayEnd
 
 sg.theme('DefaultNoMoreNagging')
 
@@ -73,19 +74,40 @@ class MainMenu():
                 break
                 
             if event in ('E', 'e', 'Estimate', '_ESTIMATE_'):
-                self.estimate_window(self.__user_id, self.__terminal_id, self.__branch_id)
+                if self.__current_status == 'open':
+                    self.estimate_window(self.__user_id, self.__terminal_id, self.__branch_id)
+                else:
+                    sg.popup('Day Closed', keep_on_top = True, icon='images/INFO.png')
 
             if event in ('I', 'i', 'Invoice', '_INVOICE_'):
-                self.invoice_window(self.__user_id, self.__terminal_id, self.__branch_id)
+                if self.__current_status == 'open':
+                    self.invoice_window(self.__user_id, self.__terminal_id, self.__branch_id)
+                else:
+                    sg.popup('Day Closed', keep_on_top = True, icon='images/INFO.png')
 
-            if event in ('N', 'n', 'Invoice History', '_INVOICE_HISTORY_'):
+            if event in ('C', 'c', 'Cash', '_CASH_'):
+                if self.__current_status == 'open':
+                    self.cash_window(self.__user_id, self.__terminal_id, self.__branch_id)
+                else:
+                    sg.popup('Day Closed', keep_on_top = True, icon='images/INFO.png')
+                
+            if event in ('B', 'b', 'Day Begin', '_DAY_BEGIN_'):
+                if self.__current_status == 'closed':
+                    sg.popup('Not implemented', keep_on_top = True, icon='images/INFO.png')
+                else:
+                    sg.popup('Day already opened', keep_on_top = True, icon='images/INFO.png')
+
+            if event in ('N', 'n', 'Day End', '_DAY_END_'):
+                if self.__current_status == 'open':
+                    self.day_end_window(self.__user_id, self.__terminal_id, self.__branch_id)
+                else:
+                    sg.popup('Day already closed', keep_on_top = True, icon='images/INFO.png')
+                
+            if event in ('V', 'v', 'Invoice History', '_INVOICE_HISTORY_'):
                 self.invoice_history_window(self.__user_id, self.__terminal_id, self.__branch_id)
 
             if event in ('S', 's', 'Estimate History', '_ESTIMATE_HISTORY_'):
                 self.estimate_history_window(self.__user_id, self.__terminal_id, self.__branch_id)
-                
-            if event in ('C', 'c', 'Cash', '_CASH_'):
-                self.cash_window(self.__user_id, self.__terminal_id, self.__branch_id)
                 
             if event == 'Exit':
                 break
@@ -116,6 +138,11 @@ class MainMenu():
     # Wrapper function for Cash window
     def cash_window(self, user_id, terminal_id, branch_id):
         cash = Cash('operation', user_id, terminal_id, branch_id)
+        
+    ######
+    # Wrapper function for Day End window
+    def day_end_window(self, user_id, terminal_id, branch_id):
+        day_end = DayEnd(user_id, terminal_id, branch_id)
         
 
     def initialize_ui_detail_pane(self):
