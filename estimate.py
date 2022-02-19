@@ -116,6 +116,8 @@ class Estimate():
 
         ct = 0
         
+        # Setting images in Favorite item buttons
+        # If there is no image for an item, a default image will be displayed
         for item_code in self.__fav_item_codes_list:
             path = config.application_path + '/images/'
             file = path + item_code + '.png'
@@ -124,6 +126,7 @@ class Estimate():
                 self.__window.Element(element).update(image_filename = file)                
             else:
                 self.__window.Element(element).update(image_filename = path + 'ITEM-0000.png')              
+            self.__window.Element(element).update(image_filename = 'http://104.236.110.12//files/ITEM-1002.png')                
             self.__window.Element(element).set_tooltip(item_code + '\n' + self.__fav_item_names_list[ct] + '\n' + 'ALT-' + str( ct + 1))
             ct += 1
               
@@ -462,18 +465,20 @@ class Estimate():
             
             if (event == 'Addon') or (event == 'Alt_L:18' and prev_event in ('a', 'A')):
                 filter = "upper(item_code) like upper('ITEM-9%')"
-                item_code = self.item_list(filter)                
-                self.process_item_name(item_code)
-                self.initialize_search_pane()
-                self.__ui.focus_items_list_last()
+                item_code = self.item_list(filter)
+                if item_code:
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()
+                    self.__ui.focus_items_list_last()
                 continue
             
             if (event == 'Bundle') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
                 filter = "bundle = 1"
-                item_code = self.item_list(filter)                
-                self.process_item_name(item_code)
-                self.initialize_search_pane()
-                self.__ui.focus_items_list_last()
+                item_code = self.item_list(filter)
+                if item_code:
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()
+                    self.__ui.focus_items_list_last()
                 continue
                        
             if event == 'v:86' and focus == '_BARCODE_':
@@ -1112,6 +1117,7 @@ class Estimate():
         db_estimate_row.estimate_amount = self.__ui.estimate_amount
         db_estimate_row.cgst_tax_amount = self.__ui.total_cgst_amount
         db_estimate_row.sgst_tax_amount = self.__ui.total_sgst_amount
+        db_estimate_row.branch_id = self.__ui.branch_id  
         db_estimate_row.terminal_id = self.__ui.terminal_id  
 
         self.__db_estimate_table.create_row(db_estimate_row)

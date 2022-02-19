@@ -67,10 +67,34 @@ class DayEnd():
                 break             
                 
             if event in ('_DAY_END_OK_', 'F12:123', '\r'):
+            
                 break
 
         self.__window.close()
 
+    def validate_cash_balance(self):
+        total_query = 'select IFNULL(sum(receipt_amount),0) received_amount from \
+        tabCash_Transaction ct where ct.terminal_id = "' + self.__terminal_id + '"'
 
+        db_query = DbQuery(self.__db_conn, total_query + self.__this_query)        
+        if  db_query.result:
+            for db_row in db_query.result:
+                if db_row[0] == None:
+                    received_amount = 0
+                else:
+                    received_amount = float(db_row[0])
+       
+        total_query = 'select IFNULL(sum(payment_amount),0) paid_amount from \
+        tabCash_Transaction ct where ct.terminal_id = "' + self.__terminal_id + '"'
+
+        db_query = DbQuery(self.__db_conn, total_query + self.__this_query)        
+        if  db_query.result:
+            for db_row in db_query.result:
+                if db_row[0] == None:
+                    paid_amount = 0
+                else:
+                    paid_amount = float(db_row[0])
+        
+        self.__ui.balance_amount = float(received_amount) - float(paid_amount)
 
 

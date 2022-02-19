@@ -141,7 +141,7 @@ for ws_user_row in ws_erp_resp_json["users"]:
         last_sync = user_created
     
     db_pos_sql_stmt = (
-       "INSERT INTO tabUser (name, full_name, passwd, role, enabled, creation, owner)"
+       "INSERT INTO tabUser (user_name, full_name, passwd, role, enabled, creation, owner)"
        "VALUES (%s, %s, ENCODE('welcome', 'secret'), %s, %d, now(), %s)"
     )
     db_pos_sql_data = (user_name, user_full_name, user_role, user_enabled, ws_erp_user)
@@ -189,7 +189,6 @@ for ws_user_row in ws_erp_resp_json["users"]:
     print_log("Updating Item: " + ws_user_row["username"])
     user_count+=1
     user_update_count+=1
-    user_name = ws_user_row["username"]
     user_full_name = ws_user_row["full_name"]
     user_role = ws_user_row["role"]
     user_enabled = ws_user_row["enabled"]
@@ -202,15 +201,14 @@ for ws_user_row in ws_erp_resp_json["users"]:
         last_sync = user_modified
     
     db_pos_sql_stmt = (
-       "UPDATE tabUser  SET name = %s, \
-                            full_name = %s, \
+       "UPDATE tabUser  SET full_name = %s, \
                             role = %s, \
                             enabled = %d, \
                             modified = now(), \
                             modified_by = %s \
                         WHERE name = %s" \
     )
-    db_pos_sql_data = ( user_name, user_full_name, user_role, user_enabled, \
+    db_pos_sql_data = ( user_full_name, user_role, user_enabled, \
                         ws_erp_user, user_name \
     )
 

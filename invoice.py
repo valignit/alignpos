@@ -466,18 +466,20 @@ class Invoice():
             
             if (event == 'Addon') or (event == 'Alt_L:18' and prev_event in ('a', 'A')):
                 filter = "upper(item_code) like upper('ITEM-9%')"
-                item_code = self.item_list(filter)                
-                self.process_item_name(item_code)
-                self.initialize_search_pane()
-                self.__ui.focus_items_list_last()
+                item_code = self.item_list(filter)
+                if item_code:
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()
+                    self.__ui.focus_items_list_last()
                 continue
             
             if (event == 'Bundle') or (event == 'Alt_L:18' and prev_event in ('b', 'B')):
                 filter = "bundle = 1"
                 item_code = self.item_list(filter)                
-                self.process_item_name(item_code)
-                self.initialize_search_pane()
-                self.__ui.focus_items_list_last()
+                if item_code:
+                    self.process_item_name(item_code)
+                    self.initialize_search_pane()
+                    self.__ui.focus_items_list_last()
                 continue
                        
             if event == 'v:86' and focus == '_BARCODE_':

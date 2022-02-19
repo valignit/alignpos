@@ -1,27 +1,88 @@
+DROP DATABASE IF EXISTS alignpos;
 CREATE DATABASE alignpos;
-
 USE alignpos;
 
+
+CREATE TABLE `tabBranch` (
+	`branch_id` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`branch_name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`current_date` DATETIME(6) NULL DEFAULT NULL,
+	`day_open` int(1) DEFAULT 0,
+	`settings` JSON CHECK (JSON_VALID(settings)),
+	`name` VARCHAR(140) GENERATED ALWAYS AS (`branch_id`) VIRTUAL,
+	`creation` DATETIME(6) NULL DEFAULT NULL,
+	`modified` DATETIME(6) NULL DEFAULT NULL,
+	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`branch_id`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+CREATE TABLE `tabTerminal` (
+	`terminal_id` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`enabled` int(1) DEFAULT 0,
+	`current_user` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`name` VARCHAR(140) GENERATED ALWAYS AS (`terminal_id`) VIRTUAL,
+	`creation` DATETIME(6) NULL DEFAULT NULL,
+	`modified` DATETIME(6) NULL DEFAULT NULL,
+	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`terminal_id`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+CREATE TABLE `tabFavorite_Item` (
+	`item_code` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`name` VARCHAR(140) GENERATED ALWAYS AS (`item_code`) VIRTUAL,
+	`creation` DATETIME(6) NULL DEFAULT NULL,
+	`modified` DATETIME(6) NULL DEFAULT NULL,
+	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`item_code`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+CREATE TABLE `tabFast_Item` (
+	`item_code` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`name` VARCHAR(140) GENERATED ALWAYS AS (`item_code`) VIRTUAL,
+	`creation` DATETIME(6) NULL DEFAULT NULL,
+	`modified` DATETIME(6) NULL DEFAULT NULL,
+	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`item_code`) USING BTREE
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
 CREATE TABLE `tabCustomer` (
-	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`customer_id` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`customer_name` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`customer_type` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`customer_group` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`address` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`mobile_number` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`loyalty_points` INT(6) NULL DEFAULT NULL,
+	`name` VARCHAR(140) GENERATED ALWAYS AS (`customer_id`) VIRTUAL,
 	`creation` DATETIME(6) NULL DEFAULT NULL,
 	`modified` DATETIME(6) NULL DEFAULT NULL,
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	PRIMARY KEY (`name`) USING BTREE
+	PRIMARY KEY (`customer_id`) USING BTREE,
+	UNIQUE INDEX `Index customer_id` (`customer_id`) USING BTREE,
+	UNIQUE INDEX `Index mobile_number` (`mobile_number`) USING BTREE
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
 CREATE TABLE `tabItem` (
-	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`item_code` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`item_name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`item_group` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
@@ -33,11 +94,12 @@ CREATE TABLE `tabItem` (
 	`cgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`bundle` INT(1) NULL DEFAULT NULL,
+	`name` VARCHAR(140) GENERATED ALWAYS AS (`item_code`) VIRTUAL,
 	`creation` DATETIME(6) NULL DEFAULT NULL,
 	`modified` DATETIME(6) NULL DEFAULT NULL,
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	PRIMARY KEY (`name`) USING BTREE,
+	PRIMARY KEY (`item_code`) USING BTREE
 	UNIQUE INDEX `Index item_code` (`item_code`) USING BTREE,
 	UNIQUE INDEX `Index barcode` (`barcode`) USING BTREE
 )
@@ -124,14 +186,15 @@ ENGINE=InnoDB
 
 CREATE TABLE `tabEstimate` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`order_number` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`estimate_number` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`posting_date` DATETIME(6) NULL DEFAULT NULL,
 	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`cgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`total_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`discount_amount` DECIMAL(18,6) NULL DEFAULT NULL,
-	`invoice_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`estimate_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`creation` DATETIME(6) NULL DEFAULT NULL,

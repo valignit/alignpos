@@ -137,7 +137,7 @@ class MainMenuCanvas:
                     ui_footer_pane_layout, 
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((5,0),(285,0)),
+                    pad = ((5,0),(230,0)),
                 )     
             ],
         ]

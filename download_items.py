@@ -125,16 +125,14 @@ except requests.exceptions.RequestException as ws_err:
 
 item_create_count = 0
 item_uom = ''
-item_barcode = ''
 item_tax_template = ''
 
 for ws_item_row in ws_erp_resp_json["items"]:
-    print_log("Creating Item: " + ws_item_row["name"])
     item_count+=1
     item_create_count+=1
-    item_name = ws_item_row["name"]
     item_code = ws_item_row["item_code"]
-    item_item_name = ws_item_row["item_name"]
+    item_barcode = item_code
+    item_name = ws_item_row["item_name"]
     item_group = ws_item_row["item_group"]
     item_stock = ws_item_row["shop_stock"]
     item_standard_selling_price = ws_item_row["standard_rate"]
@@ -153,6 +151,7 @@ for ws_item_row in ws_erp_resp_json["items"]:
         item_barcode = barcode["name"]
         #print_log(item_barcode)
         break
+    print_log("Creating Item: " + ws_item_row["item_code"] + " " + item_barcode)
 
     # Pick first Tax template of the Item     
     for tax in ws_item_row["taxes"]:
@@ -199,10 +198,10 @@ for ws_item_row in ws_erp_resp_json["items"]:
         last_sync = item_created
     
     db_pos_sql_stmt = (
-       "INSERT INTO tabItem (name, item_code, item_name, item_group, barcode, uom, stock, standard_selling_price, maximum_retail_price, cgst_tax_rate, sgst_tax_rate, creation, owner)"
-       "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s)"
+       "INSERT INTO tabItem (item_code, item_name, item_group, barcode, uom, stock, standard_selling_price, maximum_retail_price, cgst_tax_rate, sgst_tax_rate, creation, owner)"
+       "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s)"
     )
-    db_pos_sql_data = (item_name, item_code, item_item_name, item_group, item_barcode, item_uom, item_stock, item_standard_selling_price, item_maximum_retail_price, cgst_tax_rate, sgst_tax_rate, ws_erp_user)
+    db_pos_sql_data = (item_code, item_name, item_group, item_barcode, item_uom, item_stock, item_standard_selling_price, item_maximum_retail_price, cgst_tax_rate, sgst_tax_rate, ws_erp_user)
 
     try:
         db_pos_cur.execute(db_pos_sql_stmt, db_pos_sql_data)
@@ -246,9 +245,9 @@ for ws_item_row in ws_erp_resp_json["items"]:
     print_log("Updating Item: " + ws_item_row["name"])
     item_count+=1
     item_update_count+=1
-    item_name = ws_item_row["name"]
     item_code = ws_item_row["item_code"]
-    item_item_name = ws_item_row["item_name"]
+    item_barcode = item_code
+    item_name = ws_item_row["item_name"]
     item_group = ws_item_row["item_group"]
     item_stock = ws_item_row["shop_stock"]
     item_standard_selling_price = ws_item_row["standard_rate"]
@@ -326,7 +325,7 @@ for ws_item_row in ws_erp_resp_json["items"]:
                             modified_by = %s \
                         WHERE item_code = %s" \
     )
-    db_pos_sql_data = ( item_item_name, item_group, item_barcode, \
+    db_pos_sql_data = ( item_name, item_group, item_barcode, \
                         item_uom, item_stock, item_standard_selling_price, item_maximum_retail_price, \
                         cgst_tax_rate, sgst_tax_rate, ws_erp_user, item_code \
     )

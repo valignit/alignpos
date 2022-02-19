@@ -137,16 +137,12 @@ except requests.exceptions.RequestException as ws_err:
     sys.exit(1)
 
 ######
-# Fetch Alignpos Settings from ERP
+# Fetch Alignpos Branch Settings from ERP
 ws_settings_row = ws_erp_resp_json["branch"]
-current_date = ws_settings_row["current_date"]
-current_status = ws_settings_row["current_status"]
+
 favorite_items = ws_settings_row["favorites"]
 fast_moving_items = ws_settings_row["fast_moving"]
 terminals = ws_settings_row["terminals"]
-
-kv.set('current_date', current_date)
-kv.set('current_status', current_status)
 
 if favorite_items:
     ct = 0

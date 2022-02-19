@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+from datetime import datetime
 import json
 from subprocess import run
 
@@ -37,7 +38,7 @@ class MainMenu():
                         font='Helvetica 11', 
                         finalize=True, 
                         location=(0,0), 
-                        size=(w,h), 
+                        size=(w,h-50), 
                         keep_on_top=False, 
                         resizable=False,
                         return_keyboard_events=True, 
@@ -152,7 +153,8 @@ class MainMenu():
         self.__ui.user_id = self.__user_id
         self.__ui.terminal_id = self.__terminal_id
         self.__ui.branch_id = self.__branch_id
-        self.__ui.current_date = self.__current_date
+        #self.__ui.current_date = self.__current_date
+        self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
 
     def initialize_ui_summary_pane(self):
         self.__ui.welcome_text = self.__welcome_text

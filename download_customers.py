@@ -12,7 +12,7 @@ import json
 import requests
 import mariadb
 import sys
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 
 last_sync = '2000-01-01 00:01:01.000001'
@@ -22,10 +22,10 @@ customer_count = 0
 # Print and Log
 ##############################
 def print_log(msg):
-    print(msg)
+    file_log = open(file_name, "a")
     msg = str(now) + ': ' + msg + '\n'
     file_log.write(msg)
-
+    file_log.close()
 
 ##############################
 # Main
@@ -36,12 +36,10 @@ with open('./app_config.json') as file_config:
   config = json.load(file_config)
   
 file_name = config["log_folder_path"] + str(__file__)[:-3] + "-" + now.strftime("%Y%m%d%H%M") + ".log"
-file_log = open(file_name, "w")
 
 branch_id = config["branch_id"]
 
-print_log('alignPOS - Download Customers - Version 1.1')
-print_log('-------------------------------------------')
+print_log('Download Customers - Version 1.1')
 
 ######
 # Connect to ERPNext web service
@@ -126,10 +124,10 @@ except requests.exceptions.RequestException as ws_err:
 
 customer_create_count = 0
 for ws_customer_row in ws_erp_resp_json["customers"]:
-    print_log("Creating Item: " + ws_customer_row["name"])
+    print_log("Creating Customer: " + ws_customer_row["name"])
     customer_count+=1
     customer_create_count+=1
-    customer_name = ws_customer_row["name"]
+    customer_id = ws_customer_row["name"]
     customer_customer_name = ws_customer_row["customer_name"]
     customer_type = ws_customer_row["customer_type"]
     customer_group = ws_customer_row["customer_group"]
@@ -145,10 +143,10 @@ for ws_customer_row in ws_erp_resp_json["customers"]:
         last_sync = customer_created
     
     db_pos_sql_stmt = (
-       "INSERT INTO tabCustomer (name, customer_name, customer_type, customer_group, address, mobile_number, loyalty_points, creation, owner)"
+       "INSERT INTO tabCustomer (customer_id, customer_name, customer_type, customer_group, address, mobile_number, loyalty_points, creation, owner)"
        "VALUES (%s, %s, %s, %s, %s, %s, %s, now(), %s)"
     )
-    db_pos_sql_data = (customer_name, customer_customer_name, customer_type, customer_group, customer_address, customer_mobile_number, customer_loyalty_points, ws_erp_user)
+    db_pos_sql_data = (customer_id, customer_customer_name, customer_type, customer_group, customer_address, customer_mobile_number, customer_loyalty_points, ws_erp_user)
 
     try:
         db_pos_cur.execute(db_pos_sql_stmt, db_pos_sql_data)
@@ -270,5 +268,4 @@ db_pos_conn.close()
 
 ######    
 # Closing Log file 
-print_log("Download Customers process completed")
-file_log.close()
+print_log("Process completed")
