@@ -1,8 +1,8 @@
 ##################################################
 # Application: alignPOS
 # Installation: AFSM
-# CLI Program: download_settings
-# Description: Get the Alignpos Settings from ERPNext
+# CLI Program: delete_settings
+# Description: Initialize the parameter settings 
 # Version: 1.0
 # 1.0.0 - 09-07-2021: New program
 ##################################################

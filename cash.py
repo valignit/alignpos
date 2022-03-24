@@ -182,7 +182,7 @@ class Cash:
                 filter = "parent='{}'"
                 db_cash_transaction_denomination_cursor = self.__db_cash_transaction_denomination_table.list(filter.format(self.__name))
                 for db_cash_transaction_denomination_row in db_cash_transaction_denomination_cursor:
-                    default_amount_dict[db_cash_transaction_denomination_row.denomination] = db_cash_transaction_denomination_row.count
+                    default_amount_dict[db_cash_transaction_denomination_row.denomination_name] = db_cash_transaction_denomination_row.count
                 
                 self.denomination(default_amount_dict, 'view')
                         
@@ -279,7 +279,7 @@ class Cash:
             summary_query = 'select IFNULL(sum(count),0) receipt from \
             tabCash_Transaction_Denomination ctd, \
             tabCash_Transaction ct \
-            where ctd.denomination = "' + denomination + '" and ctd.parent = ct.name and ct.transaction_type = "Receipt" and terminal_id = "' + self.__terminal_id + '"' 
+            where ctd.denomination_name = "' + denomination + '" and ctd.parent = ct.name and ct.transaction_type = "Receipt" and terminal_id = "' + self.__terminal_id + '"' 
 
             db_query = DbQuery(self.__db_conn, summary_query + self.__this_query)        
             if  db_query.result:
@@ -292,7 +292,7 @@ class Cash:
             summary_query = 'select IFNULL(sum(count),0) payment from \
             tabCash_Transaction_Denomination ctd, \
             tabCash_Transaction ct \
-            where ctd.denomination = "' + denomination + '" and ctd.parent = ct.name and ct.transaction_type = "Payment" and terminal_id = "' + self.__terminal_id + '"' 
+            where ctd.denomination_name = "' + denomination + '" and ctd.parent = ct.name and ct.transaction_type = "Payment" and terminal_id = "' + self.__terminal_id + '"' 
 
             db_query = DbQuery(self.__db_conn, summary_query + self.__this_query)        
             if  db_query.result:
@@ -338,21 +338,21 @@ class Cash:
 
     def update_transaction(self):
         if float(self.__transaction_amount) > 0:
-            db_query = DbQuery(self.__db_conn, 'SELECT nextval("DRAWER_TRANSACTION_REFERENCE")')
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("DRAWER_TRANSACTION_NUMBER")')
             for db_row in db_query.result:
                 transaction_reference = db_row[0]
 
-            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_ENTRY")')
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_NUMBER")')
             for db_row in db_query.result:
                 cash_transaction_number = db_row[0]
 
             db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
 
-            db_cash_transaction_row.name = cash_transaction_number
+            db_cash_transaction_row.cash_transaction_number = cash_transaction_number
             db_cash_transaction_row.transaction_type = self.__transaction_type     
             db_cash_transaction_row.transaction_context = 'Drawer'
             db_cash_transaction_row.transaction_reference = transaction_reference
-            db_cash_transaction_row.transaction_date = self.__ui.current_date
+            db_cash_transaction_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
             if self.__transaction_type == 'Receipt':
                 db_cash_transaction_row.receipt_amount = self.__transaction_amount
                 db_cash_transaction_row.payment_amount = 0
@@ -378,9 +378,9 @@ class Cash:
             for denomination, count in self.__transaction_denomination_dict.items():
                 if int(count) > 0:
                     db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
-                    db_cash_transaction_denomination_row.name = str(cash_transaction_number) + denomination
-                    db_cash_transaction_denomination_row.parent = str(cash_transaction_number)
-                    db_cash_transaction_denomination_row.denomination = denomination
+                    db_cash_transaction_denomination_row.cash_transaction_denomination_id = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.cash_transaction_number = str(cash_transaction_number)
+                    db_cash_transaction_denomination_row.denomination_name = denomination
                     db_cash_transaction_denomination_row.count = count
                     self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
 
@@ -388,21 +388,21 @@ class Cash:
 
     def update_change(self):
         if float(self.__change_amount) > 0:
-            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CHANGE_TRANSACTION_REFERENCE")')
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CHANGE_TRANSACTION_NUMBER")')
             for db_row in db_query.result:
                 transaction_reference = db_row[0]
 
-            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_ENTRY")')
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_NUMBER")')
             for db_row in db_query.result:
                 cash_transaction_number = db_row[0]
 
             db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
 
-            db_cash_transaction_row.name = cash_transaction_number
+            db_cash_transaction_row.cash_transaction_number = cash_transaction_number
             db_cash_transaction_row.transaction_type = 'Receipt'
             db_cash_transaction_row.transaction_context = 'Change'
             db_cash_transaction_row.transaction_reference = transaction_reference
-            db_cash_transaction_row.transaction_date = self.__ui.current_date
+            db_cash_transaction_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
             db_cash_transaction_row.receipt_amount = self.__change_amount
             db_cash_transaction_row.payment_amount = 0
             
@@ -424,9 +424,9 @@ class Cash:
             for denomination, count in self.__from_denomination_dict.items():
                 if int(count) > 0:
                     db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
-                    db_cash_transaction_denomination_row.name = str(cash_transaction_number) + denomination
-                    db_cash_transaction_denomination_row.parent = str(cash_transaction_number)
-                    db_cash_transaction_denomination_row.denomination = denomination
+                    db_cash_transaction_denomination_row.cash_transaction_denomination_id = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.cash_transaction_number = str(cash_transaction_number)
+                    db_cash_transaction_denomination_row.denomination_name = denomination
                     if denomination == 'None':
                         db_cash_transaction_denomination_row.count = float(count)
                     else:
@@ -434,17 +434,17 @@ class Cash:
                     self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
 
 
-            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_ENTRY")')
+            db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_NUMBER")')
             for db_row in db_query.result:
                 cash_transaction_number = db_row[0]
 
             db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
 
-            db_cash_transaction_row.name = cash_transaction_number
+            db_cash_transaction_row.cash_transaction_number = cash_transaction_number
             db_cash_transaction_row.transaction_type = 'Payment'
             db_cash_transaction_row.transaction_context = 'Change'
             db_cash_transaction_row.transaction_reference = transaction_reference
-            db_cash_transaction_row.transaction_date = self.__ui.current_date
+            db_cash_transaction_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
             db_cash_transaction_row.payment_amount = self.__change_amount
             db_cash_transaction_row.receipt_amount = 0
             
@@ -466,9 +466,9 @@ class Cash:
             for denomination, count in self.__to_denomination_dict.items():
                 if int(count) > 0:
                     db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
-                    db_cash_transaction_denomination_row.name = str(cash_transaction_number) + denomination
-                    db_cash_transaction_denomination_row.parent = str(cash_transaction_number)
-                    db_cash_transaction_denomination_row.denomination = denomination
+                    db_cash_transaction_denomination_row.cash_transaction_denomination_id = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.cash_transaction_number = str(cash_transaction_number)
+                    db_cash_transaction_denomination_row.denomination_name = denomination
                     if denomination == 'None':
                         db_cash_transaction_denomination_row.count = float(count)
                     else:

@@ -126,7 +126,6 @@ class Estimate():
                 self.__window.Element(element).update(image_filename = file)                
             else:
                 self.__window.Element(element).update(image_filename = path + 'ITEM-0000.png')              
-            self.__window.Element(element).update(image_filename = 'http://104.236.110.12//files/ITEM-1002.png')                
             self.__window.Element(element).set_tooltip(item_code + '\n' + self.__fav_item_names_list[ct] + '\n' + 'ALT-' + str( ct + 1))
             ct += 1
               

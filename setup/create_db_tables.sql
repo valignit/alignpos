@@ -22,6 +22,7 @@ ENGINE=InnoDB
 
 CREATE TABLE `tabTerminal` (
 	`terminal_id` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`enabled` int(1) DEFAULT 0,
 	`current_user` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`name` VARCHAR(140) GENERATED ALWAYS AS (`terminal_id`) VIRTUAL,
@@ -30,6 +31,7 @@ CREATE TABLE `tabTerminal` (
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	PRIMARY KEY (`terminal_id`) USING BTREE
+	CONSTRAINT `FK_tabTerminal_tabBranch` FOREIGN KEY (`branch_id`) REFERENCES `alignpos`.`tabTerminal` (`branch_id`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
@@ -108,10 +110,10 @@ ENGINE=InnoDB
 ;
 
 CREATE TABLE `tabInvoice` (
-	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`invoice_number` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`draft_invoice_number` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`final_invoice_number` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`posting_date` DATETIME(6) NULL DEFAULT NULL,
-	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`customer_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`cgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`total_amount` DECIMAL(18,6) NULL DEFAULT NULL,
@@ -131,22 +133,27 @@ CREATE TABLE `tabInvoice` (
 	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`name` VARCHAR(140) DEFAULT NULL AS (`draft_invoice_number`) virtual COLLATE 'utf8_general_ci',
 	`creation` DATETIME(6) NULL DEFAULT NULL,
 	`modified` DATETIME(6) NULL DEFAULT NULL,
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	PRIMARY KEY (`name`) USING BTREE,
-	INDEX `FK_tabInvoice_tabCustomer` (`customer`) USING BTREE,
-	CONSTRAINT `FK_tabInvoice_tabCustomer` FOREIGN KEY (`customer`) REFERENCES `alignpos`.`tabCustomer` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
+	PRIMARY KEY (`draft_invoice_number`) USING BTREE,
+	INDEX `FK_tabInvoice_tabCustomer` (`customer_id`) USING BTREE,
+	INDEX `FK_tabInvoice_tabBranch` (`branch_id`) USING BTREE,
+	INDEX `FK_tabInvoice_tabTerminal` (`terminal_id`) USING BTREE,
+	CONSTRAINT `FK_tabInvoice_tabBranch` FOREIGN KEY (`branch_id`) REFERENCES `alignpos`.`tabBranch` (`branch_id`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT `FK_tabInvoice_tabCustomer` FOREIGN KEY (`customer_id`) REFERENCES `alignpos`.`tabCustomer` (`customer_id`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT `FK_tabInvoice_tabTerminal` FOREIGN KEY (`terminal_id`) REFERENCES `alignpos`.`tabTerminal` (`terminal_id`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
 CREATE TABLE `tabInvoice_Item` (
-	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`parent` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`item` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`invoice_item_id` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`draft_invoice_number` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`item_code` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`qty` DECIMAL(18,6) NULL DEFAULT NULL,
 	`standard_selling_price` DECIMAL(18,6) NULL DEFAULT NULL,
 	`applied_selling_price` DECIMAL(18,6) NULL DEFAULT NULL,
@@ -157,15 +164,18 @@ CREATE TABLE `tabInvoice_Item` (
 	`cgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`sgst_tax_rate` DECIMAL(18,6) NULL DEFAULT NULL,
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	PRIMARY KEY (`name`) USING BTREE,
-	INDEX `FK_tabInvoice_Item_tabItem` (`item`) USING BTREE,
-	INDEX `FK_tabInvoice_Item_tabInvoice` (`parent`) USING BTREE,
-	CONSTRAINT `FK_tabInvoice_Item_tabInvoice` FOREIGN KEY (`parent`) REFERENCES `alignpos`.`tabInvoice` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT,
-	CONSTRAINT `FK_tabInvoice_Item_tabItem` FOREIGN KEY (`item`) REFERENCES `alignpos`.`tabItem` (`name`) ON UPDATE RESTRICT ON DELETE RESTRICT
+	`name` VARCHAR(140) DEFAULT NULL AS (`invoice_item_id`) virtual COLLATE 'utf8_general_ci',
+	`parent` VARCHAR(140) DEFAULT NULL AS (`draft_invoice_number`) virtual COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`invoice_item_id`) USING BTREE,
+	INDEX `FK_tabInvoice_Item_tabInvoice` (`draft_invoice_number`) USING BTREE,
+	INDEX `FK_tabInvoice_Item_tabItem` (`item_code`) USING BTREE,
+	CONSTRAINT `FK_tabInvoice_Item_tabInvoice` FOREIGN KEY (`draft_invoice_number`) REFERENCES `alignpos`.`tabInvoice` (`draft_invoice_number`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT `FK_tabInvoice_Item_tabItem` FOREIGN KEY (`item_code`) REFERENCES `alignpos`.`tabItem` (`item_code`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
+
 
 CREATE TABLE `tabExchange` (
 	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
@@ -235,32 +245,11 @@ ENGINE=InnoDB
 
 
 CREATE TABLE `tabDenomination` (
-	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`denomination_name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`cash_value` DECIMAL(18,6) NULL DEFAULT NULL,
-	`sort_order` int(1) NULL DEFAULT NULL,
-	PRIMARY KEY (`name`) USING BTREE
-) ENGINE=InnoDB
-;
-
-
-CREATE TABLE `tabCash` (
-	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
-	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`balance_amount` DECIMAL(18,6) NULL DEFAULT NULL,
-	PRIMARY KEY (`name`) USING BTREE
-)
-COLLATE='utf8_general_ci'
-ENGINE=InnoDB
-;
-
-
-CREATE TABLE `tabCash_Denomination` (
-	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
-	`parent` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`denomination` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`balance_amount` DECIMAL(18,6) NULL DEFAULT NULL,
-	PRIMARY KEY (`name`) USING BTREE
+	`sort_order` INT(1) NULL DEFAULT NULL,
+	`name` VARCHAR(140) DEFAULT NULL AS (`denomination_name`) virtual COLLATE 'utf8_general_ci',
+	PRIMARY KEY (`denomination_name`) USING BTREE
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
@@ -268,7 +257,7 @@ ENGINE=InnoDB
 
 
 CREATE TABLE `tabCash_Transaction` (
-	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`cash_transaction_number` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
 	`transaction_type` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`transaction_context` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`transaction_reference` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
@@ -277,16 +266,22 @@ CREATE TABLE `tabCash_Transaction` (
 	`receipt_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`payment_amount` DECIMAL(18,6) NULL DEFAULT NULL,
 	`party_type` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`customer` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	`user` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`customer_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`name` VARCHAR(140) AS (`cash_transaction_number`),
 	`creation` DATETIME(6) NULL DEFAULT NULL,
 	`modified` DATETIME(6) NULL DEFAULT NULL,
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	PRIMARY KEY (`name`) USING BTREE
+	PRIMARY KEY (`cash_transaction_number`) USING BTREE,
+	INDEX `FK_tabCash_Transaction_tabCustomer` (`customer_id`) USING BTREE,
+	INDEX `FK_tabCash_Transaction_tabBranch` (`branch_id`) USING BTREE,
+	INDEX `FK_tabCash_Transaction_tabTerminal` (`terminal_id`) USING BTREE,
+	CONSTRAINT `FK_tabCash_Transaction_tabBranch` FOREIGN KEY (`branch_id`) REFERENCES `alignpos`.`tabBranch` (`branch_id`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT `FK_tabCash_Transaction_tabCustomer` FOREIGN KEY (`customer_id`) REFERENCES `alignpos`.`tabCustomer` (`customer_id`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT `FK_tabCash_Transaction_tabTerminal` FOREIGN KEY (`terminal_id`) REFERENCES `alignpos`.`tabTerminal` (`terminal_id`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
@@ -294,16 +289,22 @@ ENGINE=InnoDB
 
 
 CREATE TABLE `tabCash_Transaction_Denomination` (
-	`name` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
-	`parent` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`denomination` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
-	`count` INT(1) NULL DEFAULT 0,
-	PRIMARY KEY (`name`) USING BTREE,
-	INDEX `FK_tabDrawer_cash_denomination_tabDrawer_cash` (`parent`) USING BTREE
+	`cash_transaction_denomination_id` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`cash_transaction_number` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`denomination_name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`count` INT(1) NULL DEFAULT '0',
+	`name` VARCHAR(140) AS (`cash_transaction_denomination_id`),
+	`parent` VARCHAR(140) AS (`cash_transaction_number`),
+	PRIMARY KEY (`cash_transaction_denomination_id`) USING BTREE,
+	INDEX `FK_tabCash_Transaction_Denomination_tabCash_Transaction` (`cash_transaction_number`) USING BTREE,
+	INDEX `FK_tabCash_Transaction_Denomination_tabDenomination` (`denomination_name`) USING BTREE,
+	CONSTRAINT `FK_tabCash_Transaction_Denomination_tabCash_Transaction` FOREIGN KEY (`cash_transaction_number`) REFERENCES `alignpos`.`tabCash_Transaction` (`cash_transaction_number`) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT `FK_tabCash_Transaction_Denomination_tabDenomination` FOREIGN KEY (`denomination_name`) REFERENCES `alignpos`.`tabDenomination` (`denomination_name`) ON UPDATE RESTRICT ON DELETE RESTRICT
 )
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
+
 
 
 CREATE TABLE `tabSequence` (
@@ -323,16 +324,17 @@ ENGINE=InnoDB
 
 
 CREATE TABLE `tabUser` (
-	`name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`user_name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`full_name` varchar(255) DEFAULT NULL,
 	`passwd` blob,
 	`role` varchar(255) DEFAULT NULL,
 	`enabled` int(1) DEFAULT 1,
+	`name` VARCHAR(140) GENERATED ALWAYS AS (`user_name`) VIRTUAL,
 	`creation` DATETIME(6) NULL DEFAULT NULL,
 	`modified` DATETIME(6) NULL DEFAULT NULL,
 	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
-	PRIMARY KEY (`name`) USING BTREE
+	PRIMARY KEY (`user_name`) USING BTREE
 ) ENGINE=InnoDB
 ;
 

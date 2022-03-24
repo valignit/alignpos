@@ -1,0 +1,127 @@
+Global Parameters (doctype: Alignpos Parameter)
+-Tax included
+-Walkin customer
+-Welcome message
+
+Branch Parameters (doctype: Branch)
+-Price List
+-Terminals
+-Favorite items
+-Fast items
+
+================================================
+tabBranch
+Single row with Current Branch Id
+Created during setup
+Current Date updated during Day begin
+Day_open Status updated during Day begin and Day end
+Global Parameters and Branch Parameters updated during download_settings
+-Branch Id
+-Current Date
+-Day_open Status
+-Global Parameters
+-Branch Parameters
+
+tabTerminal (Branch Terminals)
+Rows deleted and created during download_settings
+-Terminal Id
+-Enabled Status
+
+tabFavorite_Item (Branch Favorite items)
+Rows deleted and created during download_settings
+-Item Code
+
+tabFast_Item (Branch Fast Moving items)
+Rows deleted and created during download_settings
+-Item Code
+
+================================================
+Branch Node Preparation
+-----------------------
+Install Python
+Install Python packages
+Install MariaDB
+Execute create_db_tables.sql
+Execute create_db_functions.sql
+
+Terminal Node Preparation
+-------------------------
+Install Python
+Install Python packages
+
+branch_setup (branch_id)
+------------------------
+Execute download_settings
+Execute download_customers
+Execute download_items
+Execute download_exchange_adjustments
+Execute download_users
+Update KV Current date as current date
+Update KV Day_open status as 1
+
+During Login
+------------
+Pick KV Current date and Day_open status
+If status = open, allow all forms except day begin
+If status = closed, allow only day begin
+Pass date and status to menu
+Allow only if terminal_status is enabled
+
+delete_settings
+---------------
+Delete KV parameters except Current Date and Day_open Status
+Delete Branch, Branch Terminal Table all rows
+Delete Favorite_Item Table all rows
+Delete Fast_Item Table all rows
+
+download_settings
+-----------------
+From Parameters:
+-Tax included
+-Walkin customer
+-Welcome message
+From Branch:
+-Price List
+-Terminals
+-Favorite items
+-Fast items
+Insert Branch Table
+Insert Terminal Table
+Insert Favorite_Item Table
+Insert Fast_Item Table
+
+During Day End
+--------------
+Ensure nil cash balance in all terminals
+Ensure all invoices submitted
+Execute delete_settings
+Execute delete_estimates
+Execute delete_invoices
+Execute delete_exchange_adjustments
+Execute delete_customers
+Execute delete_items
+Execute delete_users
+Update KV Day_open status as '0'
+Upload ERP branch status
+
+During Day Begin
+----------------
+Execute download_settings
+Execute download_customers
+Execute download_items
+Execute download_exchange_adjustments
+Execute download_users
+Update KV Current date as next date
+Update KV Day_open status as '1'
+Upload ERP branch date, status
+
+====================================================
+
+Role:
+-Alignpos Manager
+-Alignpos Cashier
+-Alignpos Seller
+
+Terminal Type:
+-sales_allowed	- Manager, Seller
+-cash_allowed	- Manager, Cashier

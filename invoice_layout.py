@@ -54,7 +54,7 @@ class InvoiceCanvas:
             [
                 sg.Text(title, **ap_style.page_title, pad=((0,0),(0,3)), background_color=background_color),
                 sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_DRAFT_INVOICE_NUMBER_', background_color=background_color,visible=(eval("menu_opt=='operation'"))),
-                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_TAX_INVOICE_NUMBER_', background_color=background_color,visible=(eval("menu_opt=='history'"))),
+                sg.Text('', **ap_style.page_title, pad=((0,0),(0,3)), key='_FINAL_INVOICE_NUMBER_', background_color=background_color,visible=(eval("menu_opt=='history'"))),
                 sg.Text('', **ap_style.page_title, pad=((0,67),(0,3)), key='_MOBILE_NUMBER_', background_color=background_color),
                 sg.Button(key='_FIND_', button_text='FIND\nF10',**ap_style.action_button, pad = ((0,7),(0,0))),
                 sg.Button(key='_BEGIN_', button_text='BEGN\nHome',**ap_style.nav_button, pad = ((3,5),(0,0))),

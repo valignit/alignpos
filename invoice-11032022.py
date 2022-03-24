@@ -48,8 +48,8 @@ class Invoice():
         self.__db_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabItem)
         self.__db_invoice_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice)
         self.__db_invoice_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice_Item)
-        self.__db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice)
-        self.__db_estimate_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabInvoice_Item)
+        self.__db_estimate_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate)
+        self.__db_estimate_item_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabEstimate_Item)
         
         # Creating Items list to populate dynamic favorite buttons - done before Layout instance is created
         self.__fav_item_codes_list = []
@@ -506,8 +506,7 @@ class Invoice():
                     self.__ui.barcode = self.__ui.barcode.upper()
                     if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12) or \
                        (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8) or \
-                       (self.__ui.barcode[0] == 'D' and len(self.__ui.barcode) > 9):
-                        print('here0')
+                       (self.__ui.barcode[0] == 'E' and len(self.__ui.barcode) > 8):
                         self.process_barcode()
                         self.initialize_search_pane()
                 continue
@@ -545,8 +544,7 @@ class Invoice():
                 self.__ui.barcode = self.__ui.barcode.upper()
                 if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12) or \
                    (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8) or \
-                   (self.__ui.barcode[0] == 'D' and len(self.__ui.barcode) > 9):
-                    print('here1')
+                   (self.__ui.barcode[0] == 'E' and len(self.__ui.barcode) > 8):
                     self.process_barcode()
                     self.initialize_search_pane()
                 continue
@@ -953,9 +951,9 @@ class Invoice():
         self.__ui.add_item_line()
    
     def move_db_estimate_item_to_ui_detail_pane(self, db_estimate_item_row):
-        self.__ui.item_code = db_estimate_item_row.item_code
+        self.__ui.item_code = db_estimate_item_row.item
         
-        db_item_row = self.__db_item_table.get_row(db_estimate_item_row.item_code)
+        db_item_row = self.__db_item_table.get_row(db_estimate_item_row.item)
         if db_item_row:
             self.__ui.item_barcode = db_item_row.barcode
             self.__ui.item_name = db_item_row.item_name
@@ -1106,9 +1104,8 @@ class Invoice():
             db_item_row = self.__db_item_table.first(filter.format(self.__ui.barcode))
             if db_item_row:
                 self.move_db_item_to_ui_detail_pane(db_item_row)
-        elif (self.__ui.barcode[0] == 'D' and len(self.__ui.barcode) > 9):
-            print ('here2')
-            filter = "parent='{}'"
+        elif (self.__ui.barcode[0] == 'E' and len(self.__ui.barcode) > 8):
+            filter = "parent='{}'"   
             db_estimate_item_cursor = self.__db_estimate_item_table.list(filter.format(self.__ui.barcode))
             for db_estimate_item_row in db_estimate_item_cursor:
                 self.move_db_estimate_item_to_ui_detail_pane(db_estimate_item_row)

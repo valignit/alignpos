@@ -125,7 +125,7 @@ except requests.exceptions.RequestException as ws_err:
 
 user_create_count = 0
 for ws_user_row in ws_erp_resp_json["users"]:
-    print_log("Creating Item: " + ws_user_row["username"])
+    print_log("Creating User: " + ws_user_row["username"])
     user_count+=1
     user_create_count+=1
     user_name = ws_user_row["username"]
@@ -186,9 +186,10 @@ except requests.exceptions.RequestException as ws_err:
 
 user_update_count = 0
 for ws_user_row in ws_erp_resp_json["users"]:
-    print_log("Updating Item: " + ws_user_row["username"])
+    print_log("Updating User: " + ws_user_row["username"])
     user_count+=1
     user_update_count+=1
+    user_name = ws_user_row["username"]
     user_full_name = ws_user_row["full_name"]
     user_role = ws_user_row["role"]
     user_enabled = ws_user_row["enabled"]

@@ -10,7 +10,7 @@ class InvoiceUi:
         ###
         # Initialize Header Pane
         self.__draft_invoice_number = str('')
-        self.__tax_invoice_number = str('')
+        self.__final_invoice_number = str('')
         self.__mobile_number = str('')
         self.__customer_number = str('')
         self.__customer_name = str('')
@@ -72,7 +72,7 @@ class InvoiceUi:
         ###
         # Unfocus Header Pane        
         self.__window['_DRAFT_INVOICE_NUMBER_'].Widget.config(takefocus=0)
-        self.__window['_TAX_INVOICE_NUMBER_'].Widget.config(takefocus=0)
+        self.__window['_FINAL_INVOICE_NUMBER_'].Widget.config(takefocus=0)
         self.__window['_FIND_'].Widget.config(takefocus=0)
         self.__window['_BEGIN_'].Widget.config(takefocus=0)
         self.__window['_PREVIOUS_'].Widget.config(takefocus=0)
@@ -138,13 +138,13 @@ class InvoiceUi:
         self.__draft_invoice_number = self.__window.Element('_DRAFT_INVOICE_NUMBER_').get()        
         return self.__draft_invoice_number
         
-    def set_tax_invoice_number(self, tax_invoice_number):
-        self.__tax_invoice_number = tax_invoice_number
-        self.__window.Element('_TAX_INVOICE_NUMBER_').update(value = self.__tax_invoice_number)
+    def set_final_invoice_number(self, final_invoice_number):
+        self.__final_invoice_number = final_invoice_number
+        self.__window.Element('_FINAL_INVOICE_NUMBER_').update(value = self.__final_invoice_number)
         
-    def get_tax_invoice_number(self):
-        self.__tax_invoice_number = self.__window.Element('_TAX_INVOICE_NUMBER_').get()        
-        return self.__tax_invoice_number
+    def get_final_invoice_number(self):
+        self.__final_invoice_number = self.__window.Element('_FINAL_INVOICE_NUMBER_').get()        
+        return self.__final_invoice_number
         
     def set_mobile_number(self, mobile_number):
         self.__mobile_number = mobile_number
@@ -638,7 +638,7 @@ class InvoiceUi:
     ###
     # Properties for Header Pane
     draft_invoice_number = property(get_draft_invoice_number, set_draft_invoice_number) 
-    tax_invoice_number = property(get_tax_invoice_number, set_tax_invoice_number) 
+    final_invoice_number = property(get_final_invoice_number, set_final_invoice_number) 
     mobile_number = property(get_mobile_number, set_mobile_number) 
     customer_number = property(get_customer_number, set_customer_number) 
     customer_name = property(get_customer_name, set_customer_name) 
