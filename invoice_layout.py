@@ -73,7 +73,7 @@ class InvoiceCanvas:
                 sg.Input(key='_SEARCH_NAME_', size=(35,1), **ap_style.search_input),
                 sg.Button(key='_KEYPAD2_', button_text='⌨', **ap_style.pad_button_small, pad = ((0,0),(0,0))), 
                 sg.Text('Item Group:', **ap_style.search_text, background_color=background_color),
-                sg.Combo([''], key='_SEARCH_ITEM_GROUP_',default_value = 'None'),                
+                sg.Combo([''], key='_SEARCH_ITEM_GROUP_',default_value = 'None', size = 20),                
             ]
         ]
 

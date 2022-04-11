@@ -66,20 +66,6 @@ class DbTable():
         self.__row = None
         self.__count = 0
 
-        '''
-        switcher = {
-            'tabCustomer': conn.base.classes.tabCustomer,
-            'tabItem': conn.base.classes.tabItem,
-            'tabEstimate': conn.base.classes.tabEstimate,
-            'tabEstimate_Item': conn.base.classes.tabEstimate_Item,
-            'tabInvoice': conn.base.classes.tabInvoice,
-            'tabInvoice_Item': conn.base.classes.tabInvoice_Item,
-            'tabExchange': conn.base.classes.tabExchange,
-            'tabSequence': conn.base.classes.tabSequence,
-            'tabUser': conn.base.classes.tabUser,
-        }
-        self.__table = switcher.get(table_name)
-        '''
         self.__table = table
         
     def new_row(self):

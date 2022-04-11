@@ -1,0 +1,16 @@
+1. Table audit
+3. 5 to 6 Fast Moving Items
+4. Alignpos logo should be transparent
+5. Alignpos logo to be shifted to footer
+6. Favorite Item setting and Image management - New functionality locally
+7. Terminal type: Sales, Cash, Sales and Cash 
+8. Text file password encryption
+9. Create appconfig.json during setup
+10. http/https protocol for web services in appconfig.json
+11. Keep kv settings only for alignpos parameters
+12. Welcome text to be replaced by Branh level promotion message 
+13. Hardcode walkin customer as 0000000000 mobile number
+14. Tax included option to be part of Branch parameter
+15. Abolish Alignpos parameters
+
+

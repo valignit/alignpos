@@ -42,7 +42,7 @@ print_log('-------------------------------------')
 
 ######
 # Connect to ERPNext web service
-ws_erp_host = config["ws_host"]
+ws_erp_host = config["ws_protocol"] + '://' + config["ws_host"]
 ws_erp_sess = requests.Session()
 ws_erp_user = config["ws_user"]
 ws_erp_passwd = config["ws_passwd"]

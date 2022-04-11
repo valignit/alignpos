@@ -38,11 +38,11 @@ class Cash:
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
 
-        self.__db_cash_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash)
+        self.__db_cash_transaction_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction)
         filter='terminal_id = {}'.format(self.__terminal_id)
-        db_cash_cursor = self.__db_cash_table.list(filter)
+        db_cash_transaction_cursor = self.__db_cash_transaction_table.list(filter)
       
-        self.__db_cash_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Denomination)
+        self.__db_cash_transaction_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction_Denomination)
 
         db_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabDenomination)
         filter=''
@@ -96,7 +96,7 @@ class Cash:
         ct.transaction_date, \
         ct.receipt_amount, \
         ct.payment_amount \
-        from tabCash ct \
+        from tabCash_Transaction ct \
         where ct.branch_id = "' + self.__branch_id + '" and ct.terminal_id = "' + self.__terminal_id + '"'
 
         self.__order_query = ' order by ct.name  DESC '
@@ -180,9 +180,9 @@ class Cash:
                 default_amount_dict = dict()
     
                 filter = "parent='{}'"
-                db_cash_denomination_cursor = self.__db_cash_denomination_table.list(filter.format(self.__name))
-                for db_cash_denomination_row in db_cash_denomination_cursor:
-                    default_amount_dict[db_cash_denomination_row.denomination_name] = db_cash_denomination_row.count
+                db_cash_transaction_denomination_cursor = self.__db_cash_transaction_denomination_table.list(filter.format(self.__name))
+                for db_cash_transaction_denomination_row in db_cash_transaction_denomination_cursor:
+                    default_amount_dict[db_cash_transaction_denomination_row.denomination_name] = db_cash_transaction_denomination_row.count
                 
                 self.denomination(default_amount_dict, 'view')
                         
@@ -277,8 +277,8 @@ class Cash:
 
             self.__ui.denomination_name = denomination
             summary_query = 'select IFNULL(sum(count),0) receipt from \
-            tabCash_Denomination ctd, \
-            tabCash ct \
+            tabCash_Transaction_Denomination ctd, \
+            tabCash_Transaction ct \
             where ctd.denomination_name = "' + denomination + '" and ctd.parent = ct.name and ct.transaction_type = "Receipt" and terminal_id = "' + self.__terminal_id + '"' 
 
             db_query = DbQuery(self.__db_conn, summary_query + self.__this_query)        
@@ -290,8 +290,8 @@ class Cash:
                         receipt_count = int(db_row[0])
                         
             summary_query = 'select IFNULL(sum(count),0) payment from \
-            tabCash_Denomination ctd, \
-            tabCash ct \
+            tabCash_Transaction_Denomination ctd, \
+            tabCash_Transaction ct \
             where ctd.denomination_name = "' + denomination + '" and ctd.parent = ct.name and ct.transaction_type = "Payment" and terminal_id = "' + self.__terminal_id + '"' 
 
             db_query = DbQuery(self.__db_conn, summary_query + self.__this_query)        
@@ -309,7 +309,7 @@ class Cash:
 
     def refresh_total_pane(self):
         total_query = 'select IFNULL(sum(receipt_amount),0) received_amount from \
-        tabCash ct where ct.terminal_id = "' + self.__terminal_id + '"'
+        tabCash_Transaction ct where ct.terminal_id = "' + self.__terminal_id + '"'
 
         db_query = DbQuery(self.__db_conn, total_query + self.__this_query)        
         if  db_query.result:
@@ -322,7 +322,7 @@ class Cash:
         self.__ui.received_amount = received_amount
         
         total_query = 'select IFNULL(sum(payment_amount),0) paid_amount from \
-        tabCash ct where ct.terminal_id = "' + self.__terminal_id + '"'
+        tabCash_Transaction ct where ct.terminal_id = "' + self.__terminal_id + '"'
 
         db_query = DbQuery(self.__db_conn, total_query + self.__this_query)        
         if  db_query.result:
@@ -346,43 +346,43 @@ class Cash:
             for db_row in db_query.result:
                 cash_transaction_number = db_row[0]
 
-            db_cash_row = self.__db_cash_table.new_row()
+            db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
 
-            db_cash_row.cash_transaction_number = cash_transaction_number
-            db_cash_row.transaction_type = self.__transaction_type     
-            db_cash_row.transaction_context = 'Drawer'
-            db_cash_row.transaction_reference = transaction_reference
-            db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+            db_cash_transaction_row.cash_transaction_number = cash_transaction_number
+            db_cash_transaction_row.transaction_type = self.__transaction_type     
+            db_cash_transaction_row.transaction_context = 'Drawer'
+            db_cash_transaction_row.transaction_reference = transaction_reference
+            db_cash_transaction_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
             if self.__transaction_type == 'Receipt':
-                db_cash_row.receipt_amount = self.__transaction_amount
-                db_cash_row.payment_amount = 0
+                db_cash_transaction_row.receipt_amount = self.__transaction_amount
+                db_cash_transaction_row.payment_amount = 0
             else:
-                db_cash_row.payment_amount = self.__transaction_amount
-                db_cash_row.receipt_amount = 0
+                db_cash_transaction_row.payment_amount = self.__transaction_amount
+                db_cash_transaction_row.receipt_amount = 0
             
-            db_cash_row.party_type = 'User'
-            db_cash_row.customer = self.__ui.user_id
-            db_cash_row.branch_id = self.__branch_id
-            db_cash_row.terminal_id = self.__terminal_id
+            db_cash_transaction_row.party_type = 'User'
+            db_cash_transaction_row.customer = self.__ui.user_id
+            db_cash_transaction_row.branch_id = self.__branch_id
+            db_cash_transaction_row.terminal_id = self.__terminal_id
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S.000001")
-            db_cash_row.creation = dt_string
-            db_cash_row.owner = self.__ui.user_id
-            db_cash_row.approved_by = self.__approved_by
+            db_cash_transaction_row.creation = dt_string
+            db_cash_transaction_row.owner = self.__ui.user_id
+            db_cash_transaction_row.approved_by = self.__approved_by
             
-            self.__db_cash_table.create_row(db_cash_row)
+            self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
 
             if not self.__transaction_denomination_dict:
                 self.__transaction_denomination_dict['None'] = int(float(self.__transaction_amount))
 
             for denomination, count in self.__transaction_denomination_dict.items():
                 if int(count) > 0:
-                    db_cash_denomination_row = self.__db_cash_denomination_table.new_row()
-                    db_cash_denomination_row.cash_denomination_id = str(cash_transaction_number) + denomination
-                    db_cash_denomination_row.cash_transaction_number = str(cash_transaction_number)
-                    db_cash_denomination_row.denomination_name = denomination
-                    db_cash_denomination_row.count = count
-                    self.__db_cash_denomination_table.create_row(db_cash_denomination_row)
+                    db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
+                    db_cash_transaction_denomination_row.cash_transaction_denomination_id = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.cash_transaction_number = str(cash_transaction_number)
+                    db_cash_transaction_denomination_row.denomination_name = denomination
+                    db_cash_transaction_denomination_row.count = count
+                    self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
 
             self.__db_session.commit()
 
@@ -396,84 +396,84 @@ class Cash:
             for db_row in db_query.result:
                 cash_transaction_number = db_row[0]
 
-            db_cash_row = self.__db_cash_table.new_row()
+            db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
 
-            db_cash_row.cash_transaction_number = cash_transaction_number
-            db_cash_row.transaction_type = 'Receipt'
-            db_cash_row.transaction_context = 'Change'
-            db_cash_row.transaction_reference = transaction_reference
-            db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
-            db_cash_row.receipt_amount = self.__change_amount
-            db_cash_row.payment_amount = 0
+            db_cash_transaction_row.cash_transaction_number = cash_transaction_number
+            db_cash_transaction_row.transaction_type = 'Receipt'
+            db_cash_transaction_row.transaction_context = 'Change'
+            db_cash_transaction_row.transaction_reference = transaction_reference
+            db_cash_transaction_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+            db_cash_transaction_row.receipt_amount = self.__change_amount
+            db_cash_transaction_row.payment_amount = 0
             
-            db_cash_row.party_type = 'User'
-            db_cash_row.customer = self.__ui.user_id
-            db_cash_row.branch_id = self.__branch_id
-            db_cash_row.terminal_id = self.__terminal_id
+            db_cash_transaction_row.party_type = 'User'
+            db_cash_transaction_row.customer = self.__ui.user_id
+            db_cash_transaction_row.branch_id = self.__branch_id
+            db_cash_transaction_row.terminal_id = self.__terminal_id
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S.000001")
-            db_cash_row.creation = dt_string
-            db_cash_row.owner = self.__ui.user_id
-            db_cash_row.approved_by = self.__ui.user_id
+            db_cash_transaction_row.creation = dt_string
+            db_cash_transaction_row.owner = self.__ui.user_id
+            db_cash_transaction_row.approved_by = self.__ui.user_id
             
-            self.__db_cash_table.create_row(db_cash_row)
+            self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
 
             if not self.__from_denomination_dict:
                 self.__from_denomination_dict['None'] = int(float(self.__change_amount))
 
             for denomination, count in self.__from_denomination_dict.items():
                 if int(count) > 0:
-                    db_cash_denomination_row = self.__db_cash_denomination_table.new_row()
-                    db_cash_denomination_row.cash_denomination_id = str(cash_transaction_number) + denomination
-                    db_cash_denomination_row.cash_transaction_number = str(cash_transaction_number)
-                    db_cash_denomination_row.denomination_name = denomination
+                    db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
+                    db_cash_transaction_denomination_row.cash_transaction_denomination_id = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.cash_transaction_number = str(cash_transaction_number)
+                    db_cash_transaction_denomination_row.denomination_name = denomination
                     if denomination == 'None':
-                        db_cash_denomination_row.count = float(count)
+                        db_cash_transaction_denomination_row.count = float(count)
                     else:
-                        db_cash_denomination_row.count = int(count)
-                    self.__db_cash_denomination_table.create_row(db_cash_denomination_row)
+                        db_cash_transaction_denomination_row.count = int(count)
+                    self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
 
 
             db_query = DbQuery(self.__db_conn, 'SELECT nextval("CASH_TRANSACTION_NUMBER")')
             for db_row in db_query.result:
                 cash_transaction_number = db_row[0]
 
-            db_cash_row = self.__db_cash_table.new_row()
+            db_cash_transaction_row = self.__db_cash_transaction_table.new_row()
 
-            db_cash_row.cash_transaction_number = cash_transaction_number
-            db_cash_row.transaction_type = 'Payment'
-            db_cash_row.transaction_context = 'Change'
-            db_cash_row.transaction_reference = transaction_reference
-            db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
-            db_cash_row.payment_amount = self.__change_amount
-            db_cash_row.receipt_amount = 0
+            db_cash_transaction_row.cash_transaction_number = cash_transaction_number
+            db_cash_transaction_row.transaction_type = 'Payment'
+            db_cash_transaction_row.transaction_context = 'Change'
+            db_cash_transaction_row.transaction_reference = transaction_reference
+            db_cash_transaction_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+            db_cash_transaction_row.payment_amount = self.__change_amount
+            db_cash_transaction_row.receipt_amount = 0
             
-            db_cash_row.party_type = 'User'
-            db_cash_row.customer = self.__ui.user_id
-            db_cash_row.branch_id = self.__branch_id
-            db_cash_row.terminal_id = self.__terminal_id
+            db_cash_transaction_row.party_type = 'User'
+            db_cash_transaction_row.customer = self.__ui.user_id
+            db_cash_transaction_row.branch_id = self.__branch_id
+            db_cash_transaction_row.terminal_id = self.__terminal_id
             now = datetime.now()
             dt_string = now.strftime("%Y-%m-%d %H:%M:%S.000001")
-            db_cash_row.creation = dt_string
-            db_cash_row.owner = self.__ui.user_id
-            db_cash_row.approved_by = self.__ui.user_id
+            db_cash_transaction_row.creation = dt_string
+            db_cash_transaction_row.owner = self.__ui.user_id
+            db_cash_transaction_row.approved_by = self.__ui.user_id
             
-            self.__db_cash_table.create_row(db_cash_row)
+            self.__db_cash_transaction_table.create_row(db_cash_transaction_row)
 
             if not self.__to_denomination_dict:
                 self.__to_denomination_dict['None'] = int(float(self.__change_amount)) 
 
             for denomination, count in self.__to_denomination_dict.items():
                 if int(count) > 0:
-                    db_cash_denomination_row = self.__db_cash_denomination_table.new_row()
-                    db_cash_denomination_row.cash_denomination_id = str(cash_transaction_number) + denomination
-                    db_cash_denomination_row.cash_transaction_number = str(cash_transaction_number)
-                    db_cash_denomination_row.denomination_name = denomination
+                    db_cash_transaction_denomination_row = self.__db_cash_transaction_denomination_table.new_row()
+                    db_cash_transaction_denomination_row.cash_transaction_denomination_id = str(cash_transaction_number) + denomination
+                    db_cash_transaction_denomination_row.cash_transaction_number = str(cash_transaction_number)
+                    db_cash_transaction_denomination_row.denomination_name = denomination
                     if denomination == 'None':
-                        db_cash_denomination_row.count = float(count)
+                        db_cash_transaction_denomination_row.count = float(count)
                     else:
-                        db_cash_denomination_row.count = int(count)
-                    self.__db_cash_denomination_table.create_row(db_cash_denomination_row)
+                        db_cash_transaction_denomination_row.count = int(count)
+                    self.__db_cash_transaction_denomination_table.create_row(db_cash_transaction_denomination_row)
 
             self.__db_session.commit()
 
@@ -488,8 +488,8 @@ class DrawerTrn:
         self.__approved_by = ''
  
         self.__db_conn = DbConn()
-        self.__db_cash_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash)
-        self.__db_cash_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Denomination)
+        self.__db_cash_transaction_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction)
+        self.__db_cash_transaction_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction_Denomination)
  
         self.__canvas = DrawerTrnCanvas(transaction_type)
         
@@ -614,8 +614,8 @@ class DrawerChange:
         self.__change_amount = 0.00
  
         self.__db_conn = DbConn()
-        self.__db_cash_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash)
-        self.__db_cash_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Denomination)
+        self.__db_cash_transaction_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction)
+        self.__db_cash_transaction_denomination_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabCash_Transaction_Denomination)
  
         self.__canvas = DrawerChangeCanvas()
         

@@ -44,7 +44,7 @@ print_log('Download Settings - Version 1.1')
 
 ######
 # Connect to ERPNext web service
-ws_erp_host = config["ws_host"]
+ws_erp_host = config["ws_protocol"] + '://' + config["ws_host"]
 ws_erp_sess = requests.Session()
 ws_erp_user = config["ws_user"]
 ws_erp_passwd = config["ws_passwd"]
@@ -139,14 +139,9 @@ except requests.exceptions.RequestException as ws_err:
 ######
 # Fetch Alignpos Settings from ERP
 ws_settings_row = ws_erp_resp_json["branch"]
-#current_date = ws_settings_row["current_date"]
-#current_status = ws_settings_row["current_status"]
 favorite_items = ws_settings_row["favorites"]
 fast_moving_items = ws_settings_row["fast_moving"]
 terminals = ws_settings_row["terminals"]
-
-#kv.set('current_date', current_date)
-#kv.set('current_status', current_status)
 
 if favorite_items:
     ct = 0

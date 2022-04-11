@@ -7,8 +7,7 @@ CREATE TABLE `tabBranch` (
 	`branch_id` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`branch_name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`current_date` DATETIME(6) NULL DEFAULT NULL,
-	`day_open` int(1) DEFAULT 0,
-	`settings` JSON CHECK (JSON_VALID(settings)),
+	`current_status` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`name` VARCHAR(140) GENERATED ALWAYS AS (`branch_id`) VIRTUAL,
 	`creation` DATETIME(6) NULL DEFAULT NULL,
 	`modified` DATETIME(6) NULL DEFAULT NULL,
@@ -24,6 +23,8 @@ CREATE TABLE `tabTerminal` (
 	`terminal_id` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
 	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`enabled` int(1) DEFAULT 0,
+	`sales_allowed` int(1) DEFAULT 0,
+	`cash_allowed` int(1) DEFAULT 0,
 	`current_user` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
 	`name` VARCHAR(140) GENERATED ALWAYS AS (`terminal_id`) VIRTUAL,
 	`creation` DATETIME(6) NULL DEFAULT NULL,
@@ -305,6 +306,42 @@ COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
 
+CREATE TABLE `tabCash` (
+	`cash_transaction_number` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`transaction_type` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`transaction_context` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`transaction_reference` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`transaction_date` DATETIME(6) NULL DEFAULT NULL,
+	`posting_date` DATETIME(6) NULL DEFAULT NULL,
+	`receipt_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`payment_amount` DECIMAL(18,6) NULL DEFAULT NULL,
+	`party_type` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`customer_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`branch_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`terminal_id` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`approved_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`name` VARCHAR(100) GENERATED ALWAYS AS (`cash_transaction_number`) VIRTUAL,
+	`creation` DATETIME(6) NULL DEFAULT NULL,
+	`modified` DATETIME(6) NULL DEFAULT NULL,
+	`modified_by` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci',
+	`owner` VARCHAR(140) NULL DEFAULT NULL COLLATE 'utf8_general_ci'
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
+
+
+CREATE TABLE `tabCash_Denomination` (
+	`cash_denomination_id` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`cash_transaction_number` VARCHAR(100) NOT NULL COLLATE 'utf8_general_ci',
+	`denomination_name` VARCHAR(140) NOT NULL COLLATE 'utf8_general_ci',
+	`count` INT(1) NULL DEFAULT '0',
+	`name` VARCHAR(140) GENERATED ALWAYS AS (`cash_denomination_id`) VIRTUAL,
+	`parent` VARCHAR(140) GENERATED ALWAYS AS (`cash_transaction_number`) VIRTUAL
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
 
 
 CREATE TABLE `tabSequence` (

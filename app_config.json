@@ -1,5 +1,6 @@
 {
-	"ws_host" : "http://104.236.110.12/",
+	"ws_protocol" : "http",
+	"ws_host" : "104.236.110.12/",
 	"ws_user" : "administrator",
 	"ws_passwd" : "VAlignIt@2021",
 	
