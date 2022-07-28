@@ -10,7 +10,6 @@ import warnings
 
 from config import Config
 
-
 ###
 # alignpos Database Connection
 class DbConn():

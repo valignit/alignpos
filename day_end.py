@@ -21,15 +21,18 @@ class DayEnd():
               
         self.__kv_settings = KvDatabase('kv_settings')
         self.__kv_strings = KvDatabase('kv_strings')
-
-        self.__current_date = self.__kv_settings.get('current_date')
-        self.__current_status = self.__kv_settings.get('current_status')
-        
+      
         kb = Controller()
         self.__kb = kb
               
         self.__db_conn = DbConn()
         self.__db_session = self.__db_conn.session
+
+        self.__db_branch_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabBranch)
+        db_branch_row = self.__db_branch_table.get_row(self.__branch_id)
+        if db_branch_row:
+            self.__current_date = db_branch_row.current_date
+            self.__current_status = db_branch_row.current_status
         
         self.__canvas = DayEndCanvas()
         
@@ -46,7 +49,8 @@ class DayEnd():
 
         self.__ui = DayEndUi(self.__window)
 
-        self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
+        #self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
+        self.__ui.current_date = self.__current_date
         self.__ui.current_status = self.__current_status
         
         self.handler()

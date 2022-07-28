@@ -6,6 +6,8 @@ Global Parameters (doctype: Alignpos Parameter)
 Branch Parameters (doctype: Branch)
 -Price List
 -Terminals
+
+Remove from ERP
 -Favorite items
 -Fast items
 
@@ -26,16 +28,47 @@ tabTerminal (Branch Terminals)
 Rows deleted and created during download_settings
 -Terminal Id
 -Enabled Status
+-Sales Allowed
+-Cash Allowed
 
 tabFavorite_Item (Branch Favorite items)
 Rows deleted and created during download_settings
 -Item Code
 
+Remove the feature:
 tabFast_Item (Branch Fast Moving items)
 Rows deleted and created during download_settings
 -Item Code
 
 ================================================
+Branch Setup (accept branch id)
+Run in Server
+Install MariaDb
+Create DB
+Create Tables
+Create Functions
+Insert Branch row
+Insert Sequences
+Insert Denominations
+Update 'Init' as Current status in Branch row
+
+Terminal Setup (accept branch id and terminal id)
+Run in each terminal client
+Install git
+Install Python
+Set python path
+Set application path
+Generate Config file in specified folder - encrypt 
+Copy all python scripts in specified folder using git
+Insert Terminal row
+
+Day Begin
+If branch row Current status = 'Init' Current date = today else Current date = next date
+Run Download Settings (update Global parameters, update Branch parameters, reset Fast items, reset Favorite items and update all Terminals)
+Run Download *
+Update 'Open' as Current status in Branch row
+
+
 Branch Node Preparation
 -----------------------
 Install Python

@@ -26,8 +26,14 @@ class Cash:
         self.__kv_settings = KvDatabase('kv_settings')
         self.__kv_strings = KvDatabase('kv_strings')
 
-        self.__current_date = self.__kv_settings.get('current_date')
-        self.__current_status = self.__kv_settings.get('current_status')
+        self.__db_conn = DbConn()
+        self.__db_session = self.__db_conn.session
+        
+        self.__db_branch_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabBranch)
+        db_branch_row = self.__db_branch_table.get_row(self.__branch_id)
+        if db_branch_row:
+            self.__current_date = db_branch_row.current_date
+            self.__current_status = db_branch_row.current_status   
         
         self.__name = ''
 
@@ -83,8 +89,8 @@ class Cash:
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
         self.__ui.branch_id = branch_id   
-        #self.__ui.current_date = self.__current_date   
-        self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
+        self.__ui.current_date = self.__current_date.date()
+        #self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
                 
         self.__ui.cashs_list = []
 
@@ -402,7 +408,8 @@ class Cash:
             db_cash_row.transaction_type = 'Receipt'
             db_cash_row.transaction_context = 'Change'
             db_cash_row.transaction_reference = transaction_reference
-            db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+            #db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+            db_cash_row.transaction_date = self.__current_date
             db_cash_row.receipt_amount = self.__change_amount
             db_cash_row.payment_amount = 0
             
@@ -444,7 +451,8 @@ class Cash:
             db_cash_row.transaction_type = 'Payment'
             db_cash_row.transaction_context = 'Change'
             db_cash_row.transaction_reference = transaction_reference
-            db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+            #db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%Y-%m-%d")
+            db_cash_row.transaction_date = self.__current_date
             db_cash_row.payment_amount = self.__change_amount
             db_cash_row.receipt_amount = 0
             

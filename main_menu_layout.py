@@ -14,6 +14,8 @@ class MainMenuCanvas:
         lh = h
         rh = h
 
+        background_color='grey93'
+
         menu_def = [
                 ['&File', ['E&xit']],      
                 ['&Operations', ['&Estimate', '&Invoice', '&Cash']],      
@@ -83,13 +85,14 @@ class MainMenuCanvas:
 
         ui_footer_pane_layout = [
             [
-                sg.Text('USER:', **ap_style.footer_text),
+                sg.Image(filename = config.application_path + '/images/application_logo.PNG', background_color = background_color, pad = ((5,77),(0,0))),
+                sg.Text('USER:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_USER_ID_', **ap_style.footer_input),
-                sg.Text('COUNTER:', **ap_style.footer_text),
+                sg.Text('COUNTER:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_TERMINAL_ID_', **ap_style.footer_input),
-                sg.Text('BRANCH:', **ap_style.footer_text),
+                sg.Text('BRANCH:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_BRANCH_ID_', **ap_style.footer_input),
-                sg.Text('DATE:', **ap_style.footer_text),
+                sg.Text('DATE:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_CURRENT_DATE_', **ap_style.footer_input)
             ]
         ]
@@ -122,6 +125,7 @@ class MainMenuCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(5,0)),
+                    background_color=background_color,
                 )     
             ],
             [
@@ -130,6 +134,7 @@ class MainMenuCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((5,0),(0,0)),
+                    background_color=background_color,
                 )     
             ],
             [
@@ -137,7 +142,8 @@ class MainMenuCanvas:
                     ui_footer_pane_layout, 
                     vertical_alignment = 'top',
                     border_width = 0,                   
-                    pad = ((5,0),(230,0)),
+                    pad = ((5,0),(220,0)),
+                    background_color=background_color,
                 )     
             ],
         ]
@@ -162,18 +168,6 @@ class MainMenuCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((15,0),(2,0)),
-                )     
-            ],
-            [
-                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(5,10))),
-            ],
-            [
-                sg.Frame('',
-                    ui_bottom_pane_layout, 
-                    background_color = 'white',
-                    vertical_alignment = 'top',
-                    border_width = 0,                   
-                    pad = ((0,0),(13,0)),
                 )     
             ],
         ]

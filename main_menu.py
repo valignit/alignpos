@@ -4,6 +4,8 @@ import json
 from subprocess import run
 
 from db_nosql import KvDatabase
+from db_orm import DbConn, DbTable, DbQuery
+
 from main_menu_layout import MainMenuCanvas
 from main_menu_ui import MainMenuUi
 from estimate import Estimate
@@ -25,9 +27,17 @@ class MainMenu():
         self.__kv_settings = KvDatabase('kv_settings')
         self.__kv_strings = KvDatabase('kv_strings')
 
-        self.__current_date = self.__kv_settings.get('current_date')   
-        self.__current_status = self.__kv_settings.get('current_status')   
         self.__welcome_text = self.__kv_settings.get('welcome_text')   
+
+        self.__db_conn = DbConn()
+        self.__db_session = self.__db_conn.session
+        
+        self.__db_branch_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabBranch)
+        db_branch_row = self.__db_branch_table.get_row(self.__branch_id)
+        if db_branch_row:
+            self.__current_date = db_branch_row.current_date
+            self.__current_status = db_branch_row.current_status   
+
                 
         w, h = sg.Window.get_screen_size()
         
@@ -126,14 +136,15 @@ class MainMenu():
         estimate = Estimate('history', user_id, terminal_id, branch_id)
 
     ######
-    # Wrapper function for Billing window
+    # Wrapper function for Invoice window
     def invoice_window(self, user_id, terminal_id, branch_id):
-        draft_invoice = Invoice('operation', user_id, terminal_id, branch_id)
+        invoice = Invoice('operation', user_id, terminal_id, branch_id)
+        print(invoice.retval)
           
     ######
-    # Wrapper function for Invoice window
+    # Wrapper function for Invoice history window
     def invoice_history_window(self, user_id, terminal_id, branch_id):
-        tax_invoice = Invoice('history', user_id, terminal_id, branch_id)
+        invoice = Invoice('history', user_id, terminal_id, branch_id)
           
     ######
     # Wrapper function for Cash window
@@ -153,8 +164,7 @@ class MainMenu():
         self.__ui.user_id = self.__user_id
         self.__ui.terminal_id = self.__terminal_id
         self.__ui.branch_id = self.__branch_id
-        #self.__ui.current_date = self.__current_date
-        self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
+        self.__ui.current_date = self.__current_date.date()
 
     def initialize_ui_summary_pane(self):
         self.__ui.welcome_text = self.__welcome_text

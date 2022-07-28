@@ -19,7 +19,9 @@ from common import ItemList, CustomerList, Denomination
 class Invoice():
 
     def __init__(self, menu_opt, user_id, terminal_id, branch_id):
-    
+
+        self.__retval = None
+        
         config = Config()
         
         self.__menu_opt = menu_opt
@@ -33,8 +35,15 @@ class Invoice():
         self.__kv_strings = KvDatabase('kv_strings')
 
         self.__tax_included = self.__kv_settings.get('tax_included')
-        self.__current_date = self.__kv_settings.get('current_date')
-        self.__current_status = self.__kv_settings.get('current_status')
+        
+        self.__db_conn = DbConn()
+        self.__db_session = self.__db_conn.session
+        
+        self.__db_branch_table = DbTable(self.__db_conn, self.__db_conn.base.classes.tabBranch)
+        db_branch_row = self.__db_branch_table.get_row(self.__branch_id)
+        if db_branch_row:
+            self.__current_date = db_branch_row.current_date
+            self.__current_status = db_branch_row.current_status   
         
         kb = Controller()
         self.__kb = kb
@@ -97,8 +106,8 @@ class Invoice():
         self.__ui.user_id = user_id
         self.__ui.terminal_id = terminal_id    
         self.__ui.branch_id = branch_id    
-        #self.__ui.current_date = self.__current_date    
-        self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
+        self.__ui.current_date = self.__current_date.date()
+        #self.__ui.current_date = datetime.strptime(self.__current_date, "%Y-%m-%d").strftime("%d-%m-%Y")
         
         # Creating Item Groups list to populate search combo
         item_groups_list = ['None']
@@ -114,7 +123,8 @@ class Invoice():
         self.__ui.unfocus_favorite_pane(self.__fav_item_codes_list)
 
         ct = 0
-        
+
+        # Setting the images for Favorite items
         for item_code in self.__fav_item_codes_list:
             path = config.application_path + '/images/'
             file = path + item_code + '.png'
@@ -125,8 +135,7 @@ class Invoice():
                 self.__window.Element(element).update(image_filename = path + 'ITEM-0000.png')              
             self.__window.Element(element).set_tooltip(item_code + '\n' + self.__fav_item_names_list[ct] + '\n' + 'ALT-' + str( ct + 1))
             ct += 1
-        
-      
+            
         self.goto_last_row()
         self.download_process()
         
@@ -153,6 +162,10 @@ class Invoice():
             #print('---main---', '\nevent=', event, '\nprev=', prev_event, '\nfocus=', focus)
 
             if event in (sg.WIN_CLOSED, 'Escape:27', 'Escape', 'Exit'):
+                if not self.__actual_items_list == self.__ui.items_list and len(self.__ui.items_list) > 0:
+                    confirm_save = Message('OPT', 'Save current Invoice?')
+                    if confirm_save.ok:
+                        self.save_invoice()            
                 break
 
             if event == 'ENTER':        
@@ -201,7 +214,7 @@ class Invoice():
                 continue
 
             if event in ('Home:36', '_BEGIN_'):            
-                if not self.__actual_items_list == self.__ui.items_list:
+                if not self.__actual_items_list == self.__ui.items_list and len(self.__ui.items_list) > 0:
                     confirm_save = Message('OPT', 'Save current Invoice?')
                     if confirm_save.ok:
                         self.save_invoice()            
@@ -209,7 +222,7 @@ class Invoice():
                 continue
                 
             if event in ('Left:37', '_PREVIOUS_'):
-                if not self.__actual_items_list == self.__ui.items_list:
+                if not self.__actual_items_list == self.__ui.items_list and len(self.__ui.items_list) > 0:
                     confirm_save = Message('OPT', 'Save current Invoice?')
                     if confirm_save.ok:
                         self.save_invoice()            
@@ -217,7 +230,7 @@ class Invoice():
                 continue
                 
             if event in ('Right:39', '_NEXT_'):
-                if not self.__actual_items_list == self.__ui.items_list:
+                if not self.__actual_items_list == self.__ui.items_list and len(self.__ui.items_list) > 0:
                     confirm_save = Message('OPT', 'Save current Invoice?')
                     if confirm_save.ok:
                         self.save_invoice()            
@@ -225,7 +238,7 @@ class Invoice():
                 continue
 
             if event in ('End:35', '_END_'):
-                if not self.__actual_items_list == self.__ui.items_list:
+                if not self.__actual_items_list == self.__ui.items_list and len(self.__ui.items_list) > 0:
                     confirm_save = Message('OPT', 'Save current Invoice?')
                     if confirm_save.ok:
                         self.save_invoice()            
@@ -507,7 +520,6 @@ class Invoice():
                     if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12) or \
                        (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8) or \
                        (self.__ui.barcode[0] == 'D' and len(self.__ui.barcode) > 9):
-                        print('here0')
                         self.process_barcode()
                         self.initialize_search_pane()
                 continue
@@ -546,10 +558,10 @@ class Invoice():
                 if (self.__ui.barcode[0].isnumeric() and len(self.__ui.barcode) > 12) or \
                    (self.__ui.barcode[0] == 'I' and len(self.__ui.barcode) > 8) or \
                    (self.__ui.barcode[0] == 'D' and len(self.__ui.barcode) > 9):
-                    print('here1')
                     self.process_barcode()
                     self.initialize_search_pane()
                 continue
+
     
     ######
     # Wrapper function for Change Qty
@@ -841,7 +853,6 @@ class Invoice():
             self.__ui.draft_invoice_number = db_invoice_row.name
         else:
             self.__ui.final_invoice_number = db_invoice_row.final_invoice_number        
-        print('refs:', self.__ui.draft_invoice_number)
 
         customer_number = db_invoice_row.customer_id
         db_customer_row = self.__db_customer_table.get_row(customer_number)
@@ -1076,7 +1087,6 @@ class Invoice():
             self.__ui.qty = qty + 1
         else:
             if qty > 1:
-                print('qty:', qty)
                 self.__ui.qty = qty - 1
 
         self.__ui.selling_amount = float(self.__ui.qty) * float(self.__ui.applied_selling_price) - float(self.__ui.item_discount_amount)
@@ -1107,7 +1117,6 @@ class Invoice():
             if db_item_row:
                 self.move_db_item_to_ui_detail_pane(db_item_row)
         elif (self.__ui.barcode[0] == 'D' and len(self.__ui.barcode) > 9):
-            print ('here2')
             filter = "parent='{}'"
             db_estimate_item_cursor = self.__db_estimate_item_table.list(filter.format(self.__ui.barcode))
             for db_estimate_item_row in db_estimate_item_cursor:
@@ -1247,7 +1256,6 @@ class Invoice():
         filter = "parent='{}'"
         db_invoice_item_cursor = self.__db_invoice_item_table.list(filter.format(self.__ui.draft_invoice_number))
         for db_invoice_item_row in db_invoice_item_cursor:
-            print(db_invoice_item_row.name)
             self.__db_invoice_item_table.delete_row(db_invoice_item_row)
 
         self.__db_session.flush()
@@ -1437,6 +1445,14 @@ class Invoice():
     def upload_process(self):   
         #pid = subprocess.Popen(["python", "upload_invoices.py"])
         None
+
+
+    def get_retval(self):
+        return self.__retval
+
+    
+    retval = property(get_retval)  
+
 
 
 class ChangeQty:
@@ -1696,7 +1712,7 @@ where tabInvoice.customer_id = tabCustomer.name and tabInvoice.final_invoice_num
                     if not self.__ui.mobile_number_search == '':
                         this_query = ' and tabCustomer.mobile_number = "' + self.__ui.mobile_number_search + '"'
                 new_query = self.__base_query + this_query + self.__order_by
-                print('query:', self.__base_query + this_query + self.__order_by)
+                #print('query:', self.__base_query + this_query + self.__order_by)
                 db_query = DbQuery(self.__db_conn, self.__base_query + this_query + self.__order_by)     
                 if  db_query.result:
                     self.__ui.invoices_list = [] 
@@ -1858,7 +1874,6 @@ class Payment:
                     default_amount_dict = dict()
                     default_amount_dict['None'] = self.__ui.cash_amount
                     self.__cash_denomination_dict = self.denomination(default_amount_dict, 'edit')
-                    print('REC1:', self.__cash_denomination_dict)
 
             if event == '_RETURN_DENOMINATION_':
                 if float(self.__ui.cash_return) > 0:
@@ -2104,7 +2119,8 @@ class Payment:
             db_cash_row.transaction_type = 'Receipt'     
             db_cash_row.transaction_context = 'Invoice'
             db_cash_row.transaction_reference = self.__final_invoice_number
-            db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%d-%m-%Y").strftime("%Y-%m-%d")
+            #db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%d-%m-%Y").strftime("%Y-%m-%d")
+            db_cash_row.transaction_date = self.__current_date
             db_cash_row.receipt_amount = self.__ui.cash_amount
             db_cash_row.payment_amount = 0
             db_cash_row.party_type = 'Customer'
@@ -2140,7 +2156,8 @@ class Payment:
             db_cash_row.transaction_type = 'Payment'     
             db_cash_row.transaction_context = 'Invoice'
             db_cash_row.transaction_reference = self.__final_invoice_number
-            db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%d-%m-%Y").strftime("%Y-%m-%d")
+            #db_cash_row.transaction_date = datetime.strptime(self.__current_date, "%d-%m-%Y").strftime("%Y-%m-%d")
+            db_cash_row.transaction_date = self.__current_date
             db_cash_row.receipt_amount = 0
             db_cash_row.payment_amount = self.__ui.cash_return
             db_cash_row.party_type = 'Customer'

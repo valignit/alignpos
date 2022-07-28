@@ -63,7 +63,7 @@ class CashCanvas:
                      row_height=25,
                      right_click_menu=right_click_menu,
                      alternating_row_color='DarkSeaGreen3',
-                     num_rows=17,
+                     num_rows=16,
                      display_row_numbers=False,
                      bind_return_key = True,
                      col_widths=[15, 10, 10, 15, 20, 12, 12],
@@ -84,6 +84,7 @@ class CashCanvas:
 
         ui_footer_pane_layout = [
             [
+                sg.Image(filename = config.application_path + '/images/application_logo.PNG', background_color = background_color, pad = ((5,27),(0,0))),
                 sg.Text('USER:', **ElementStyle.footer_text, background_color=background_color),
                 sg.Input(key='_USER_ID_', **ElementStyle.footer_input),
                 sg.Text('COUNTER:', **ElementStyle.footer_text, background_color=background_color),
@@ -206,18 +207,6 @@ class CashCanvas:
                     vertical_alignment = 'top',
                     border_width = 0,                   
                     pad = ((15,0),(5,10)),
-                )     
-            ],
-            [
-                sg.HorizontalSeparator(color = 'white', pad = ((0,0),(20,3))),
-            ],
-           [
-                sg.Frame('',
-                    ui_bottom_pane_layout, 
-                    background_color = 'white',
-                    vertical_alignment = 'top',
-                    border_width = 0,                   
-                    pad = ((0,0),(10,0)),
                 )     
             ],
         ]

@@ -1,14 +1,14 @@
 {
 	"ws_protocol" : "http",
 	"ws_host" : "104.236.110.12",
-	"ws_user" : "rvj#9#K/lr/sl",
-	"ws_passwd" : "Y<$#p9i/B(5(I",
+	"ws_user" : "administrator",
+	"ws_passwd" : "VAlignIt@2021",
 	
 	"db_host" : "localhost",
 	"db_port" : 3306,
 	"db_database" : "alignpos",
-	"db_user" : "r$#p9ZsK",
-	"db_passwd" : "r$#p9ZsKI(H",
+	"db_user" : "alignpos",
+	"db_passwd" : "alignpos123",
 
 	"kv_settings" : "c:/alignpos/data/alignpos_settings",
 	"kv_strings" : "c:/alignpos/data/alignpos_strings",

@@ -22,7 +22,6 @@ class KvDatabase():
         self.__kv.dump()        
         
     def get(self, key):
-        #print(self.__kv.get(key))
         return self.__kv.get(key)
  
     def getall(self):

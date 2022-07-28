@@ -155,16 +155,16 @@ class ElementStyle:
     footer_text:  dict = {           
                         'font':("Helvetica 9"),
                         'size':(9,1),
-                        'justification': 'left',
+                        'justification': 'right',
                     }    
 
     footer_input:  dict = {           
                         'readonly':True, 
-                        'justification':'left', 
+                        'justification':'center', 
                         'disabled_readonly_text_color':'grey32', 
                         'disabled_readonly_background_color':'grey89', 
                         'font':("Helvetica", 9),
-                        'size':(12,1)                        
+                        'size':(14,1)                        
                     }
 
     search_text:  dict = {           

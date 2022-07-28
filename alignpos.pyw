@@ -1,4 +1,3 @@
-#! c:\\Users\\ghouseam\\AppData\\Local\\Programs\\Python\\Python37\\pythonw.exe
 import sys
 sys.path.append('c:\alignpos')
 

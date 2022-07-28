@@ -21,7 +21,7 @@ class InvoiceCanvas:
             title = 'INVOICE'        
             background_color='PaleTurquoise1'
             alternating_row_color = 'LightSkyBlue1'
-            item_rows = 13
+            item_rows = 12
             bottom_pane_top = 16
             print_left_pad = 0
             exit_left_pad = 20          
@@ -49,6 +49,7 @@ class InvoiceCanvas:
                     ['&Help', 'About'], 
             ]
             right_click_menu=["that",[]]   
+
         
         ui_header_pane_layout = [
             [
@@ -107,7 +108,7 @@ class InvoiceCanvas:
                      display_row_numbers=True,
                      right_click_menu=right_click_menu,
                      bind_return_key=True,
-                     col_widths=[9, 13, 24, 5, 5, 7, 8, 7, 8, 7, 9],
+                     col_widths=[9, 13, 23, 5, 5, 7, 8, 7, 8, 7, 9],
                 )            
             ],
         ]
@@ -131,6 +132,7 @@ class InvoiceCanvas:
 
         ui_footer_pane_layout = [
             [
+                sg.Image(filename = config.application_path + '/images/application_logo.PNG', background_color = background_color, pad = ((5,77),(0,0))),
                 sg.Text('USER:', **ap_style.footer_text, background_color=background_color),
                 sg.Input(key='_USER_ID_', **ap_style.footer_input),
                 sg.Text('COUNTER:', **ap_style.footer_text, background_color=background_color),
@@ -336,18 +338,6 @@ class InvoiceCanvas:
                     visible=(eval("menu_opt=='operation'"))
                 )     
             ],            
-            [
-                sg.HorizontalSeparator(color = 'white', key = '_RHS1_', pad = ((0,0),(bottom_pane_top,10))),
-            ],
-            [
-                sg.Frame('',
-                    ui_bottom_pane_layout, 
-                    background_color = 'white',
-                    vertical_alignment = 'top',
-                    border_width = 0,                   
-                    pad = ((0,0),(10,0)),
-                )     
-            ],
         ]
             
         self.__layout = [
